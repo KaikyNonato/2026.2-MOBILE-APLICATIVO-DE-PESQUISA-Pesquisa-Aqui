@@ -22,6 +22,7 @@ Plataforma para criar, aplicar e acompanhar pesquisas de campo. O projeto reúne
   - [2. Web](#2-web)
   - [3. Mobile](#3-mobile)
 - [Variáveis de ambiente](#variáveis-de-ambiente)
+- [Publicar na Vercel](#publicar-na-vercel)
 - [Perfis de usuário](#perfis-de-usuário)
 - [Modelo de dados](#modelo-de-dados)
 - [Endpoints da API](#endpoints-da-api)
@@ -206,7 +207,7 @@ npm run dev
 
 O painel abre em `http://localhost:3000`. Faça login com o usuário do seed.
 
-> Atenção: nesta branch a URL da API do painel está fixa em `http://localhost:3001` (`web/lib/apiFetcher.ts`). Se a API rodar em outro endereço, altere esse arquivo.
+> O painel chama a API pelo caminho `/api/...` do próprio painel, e o `next.config.ts` repassa para o endereço definido em `API_URL` (padrão `http://localhost:3001`). Se a API rodar em outro endereço, defina `API_URL` em `web/.env.local` e reinicie o `npm run dev`. Veja [Publicar na Vercel](#publicar-na-vercel).
 
 ### 3. Mobile
 
@@ -258,6 +259,7 @@ npm run ios          # simulador iOS
 | Variável | Obrigatória | Descrição |
 | --- | --- | --- |
 | `JWT_SECRET` | Sim | Mesmo segredo da API, usado para validar o cookie `access_token` |
+| `API_URL` | Não (em produção, sim) | Endereço da API, sem barra no final (padrão `http://localhost:3001`). É lido **no build**: ao mudar na Vercel, faça um novo deploy |
 
 ### Mobile (`mobile/.env`)
 
@@ -266,6 +268,55 @@ npm run ios          # simulador iOS
 | `EXPO_PUBLIC_API_URL` | Recomendada | URL base da API (padrão `http://localhost:3001`) |
 
 > Nunca faça commit de arquivos `.env` com valores reais.
+
+## Publicar na Vercel
+
+São **dois projetos** na Vercel, a partir do mesmo repositório: a **API** e o **painel web**. O app mobile não vai para a Vercel (ele só precisa do endereço da API).
+
+### 0. Banco de dados e mídias (antes de tudo)
+
+- Crie um PostgreSQL ≥ 15 na nuvem (Neon, Supabase, Vercel Postgres...). Em ambiente serverless use a string **com pooler** (Neon: host com `-pooler`; Supabase: porta `6543`), senão as funções esgotam as conexões.
+- Crie as tabelas e o superadministrador **pelo seu computador**, apontando o `api/.env` para o banco de produção:
+
+```bash
+cd api
+npx prisma db init
+npm run seed        # cria admin / admin123: TROQUE essa senha logo no primeiro acesso
+```
+
+- Crie uma conta no [Cloudinary](https://cloudinary.com/). Na Vercel o disco é somente leitura, então fotos e áudios **precisam** ir para o Cloudinary (`CLOUDINARY_URL`).
+
+### 1. API (projeto `pesquisa-aqui-api`)
+
+1. Vercel > **Add New > Project** > importe o repositório.
+2. **Root Directory:** `api`. A Vercel detecta o NestJS sozinha (entrada `src/main.ts`), sem build command.
+3. **Environment Variables:** `DATABASE_URL`, `JWT_SECRET` (um valor longo e aleatório), `CLOUDINARY_URL` e, se quiser, `CLOUDINARY_FOLDER`.
+4. Deploy. Teste abrindo `https://SUA-API.vercel.app/` no navegador.
+
+### 2. Painel web (projeto `pesquisa-aqui-web`)
+
+1. **Add New > Project** > o mesmo repositório.
+2. **Root Directory:** `web` (framework: Next.js).
+3. **Environment Variables:**
+   - `JWT_SECRET`: **exatamente o mesmo** da API.
+   - `API_URL`: `https://SUA-API.vercel.app` (sem barra no final).
+4. Deploy. Faça login com o usuário do seed.
+
+> Se você trocar o `API_URL`, é preciso **Redeploy** do painel, porque o valor é gravado no build.
+
+### 3. Mobile
+
+Em `mobile/.env`, aponte para a API publicada e reinicie o Expo:
+
+```env
+EXPO_PUBLIC_API_URL=https://SUA-API.vercel.app
+```
+
+### Limitações da API na Vercel
+
+- **Corpo da requisição de até 4,5 MB.** O app envia arquivos em pedaços de 1 MB, então cabe.
+- **Envio em pedaços de arquivos grandes (áudio longo):** os pedaços parciais ficam em `/tmp`, que é por instância. Se duas requisições caírem em instâncias diferentes, o app recomeça o arquivo do zero (nada se perde nem duplica, mas pode demorar). Para entrevistas longas com muito áudio, prefira hospedar a API num serviço com disco persistente (Render, Railway, Fly.io) e manter só o painel na Vercel: basta trocar o `API_URL` e fazer redeploy.
+- **Cookies:** o painel fala com a API pelo caminho `/api` do próprio domínio, então o cookie `access_token` fica no domínio do painel e não há problema de CORS ou `SameSite`.
 
 ## Perfis de usuário
 

@@ -29,7 +29,7 @@ const QUESTION_TYPES_LABEL: { type: FrontendQuestionType; label: string }[] = [
 export default function MontarPesquisaForm({ researchId, onSuccess }: MontarPesquisaFormProps) {
     const createNewQuestion = (order: number): FormQuestion => ({
         id: crypto.randomUUID(), title: "", type: "text", helpText: "",
-        required: false, order, options: [{ id: crypto.randomUUID(), text: "Opção 1" }],
+        required: false, order, options: [{ id: crypto.randomUUID(), text: "Opção 1", order: 1 }],
     });
 
     const createNewSection = (order: number): FormSection => ({

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { appendFile, mkdir, readFile, readdir, rm, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 // Envio em pedaços: o que já chegou de um arquivo grande fica aqui (sempre em disco, porque o arquivo
@@ -21,7 +22,11 @@ export function partialKey(collectionId: number, questionId: number | null, tota
 @Injectable()
 export class PartialUploadStore {
     private get root(): string {
-        return resolve(process.env.PARTIAL_UPLOAD_DIR || join(process.cwd(), 'storage', 'partial'));
+        if (process.env.PARTIAL_UPLOAD_DIR) return resolve(process.env.PARTIAL_UPLOAD_DIR);
+        // Na Vercel (serverless) o disco do projeto é somente leitura: só /tmp aceita escrita.
+        // Atenção: /tmp é por instância e some quando ela é reciclada; o app então recomeça o arquivo (nada se perde).
+        if (process.env.VERCEL) return join(tmpdir(), 'pesquisa-aqui-partial');
+        return resolve(join(process.cwd(), 'storage', 'partial'));
     }
 
     private pathOf(key: string): string {

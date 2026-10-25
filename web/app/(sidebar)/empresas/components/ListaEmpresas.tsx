@@ -24,8 +24,6 @@ import toast from 'react-hot-toast';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
 import EditarEmpresaDialog from './EditarEmpresaDialog';
 
-type Admin = UserItem;
-
 interface ListaEmpresasProps {
     allowActions?: boolean;
     /** Totais para os filtros (vêm de `getCompanyStats`): a lista em si é paginada no servidor. */

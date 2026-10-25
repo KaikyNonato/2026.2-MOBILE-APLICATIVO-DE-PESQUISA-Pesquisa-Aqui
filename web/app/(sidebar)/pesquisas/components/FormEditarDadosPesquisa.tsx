@@ -51,7 +51,7 @@ export default function FormEditarDadosPesquisa({ research, onSuccess }: FormEdi
         };
 
         try {
-            const response = await fetch(`http://localhost:3001/research/${research.id}`, {
+            const response = await fetch(`/api/research/${research.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
