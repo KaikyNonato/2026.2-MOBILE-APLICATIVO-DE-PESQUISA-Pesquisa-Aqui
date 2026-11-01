@@ -7,6 +7,12 @@ export interface ReportCollection {
     startedAt: string;
     finishedAt: string;
     receivedAt: string;
+    // Local de início (GPS), áudio da entrevista e consentimento: usados no mapa e na auditoria de qualidade.
+    startLatitude?: number | null;
+    startLongitude?: number | null;
+    locationAccuracy?: number | null;
+    audioPath?: string | null;
+    consentGiven?: boolean;
 }
 
 export interface ReportAnswer {
@@ -46,7 +52,7 @@ export interface ReportFilter {
 /** Tipos que viram gráfico: escolha única, múltipla escolha e sim/não. */
 export const CHART_TYPES = ['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'YES_NO'] as const;
 
-const time = (iso: string) => new Date(iso).getTime();
+export const time = (iso: string) => new Date(iso).getTime();
 
 /** Período e pesquisador, aplicados da mesma forma ao painel, ao relatório e à exportação. O período vale pelo INÍCIO da coleta. */
 export function filterCollections<T extends ReportCollection>(collections: T[], filter: ReportFilter): T[] {
@@ -150,7 +156,7 @@ function parseIds(raw: string): string[] {
 }
 
 /** A resposta de cada coleta: se a questão aparece mais de uma vez na mesma coleta, vale a última gravada. */
-function latestAnswers(answers: ReportAnswer[], collectionIds: Set<number>): Map<string, string> {
+export function latestAnswers(answers: ReportAnswer[], collectionIds: Set<number>): Map<string, string> {
     const sorted = [...answers].sort((a, b) => a.id - b.id);
     const latest = new Map<string, string>();
     for (const a of sorted) {
@@ -242,7 +248,7 @@ export interface CsvResearcherName {
     name: string;
 }
 
-function formatAnswerForCsv(q: ReportQuestion, raw: string | undefined): string {
+export function formatAnswerForCsv(q: ReportQuestion, raw: string | undefined): string {
     if (raw === undefined || raw.trim() === '') return '';
     const optionText = (id: string) => q.options.find((o) => String(o.id) === id)?.text ?? id;
 

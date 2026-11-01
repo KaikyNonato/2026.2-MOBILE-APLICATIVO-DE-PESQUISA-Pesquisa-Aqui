@@ -407,6 +407,13 @@ export async function buildCollectionInput(
         startedAt: collection.startedAt,
         finishedAt: collection.finishedAt,
         answers,
+        startLocation: collection.startLocation
+            ? {
+                  latitude: collection.startLocation.latitude,
+                  longitude: collection.startLocation.longitude,
+                  accuracy: collection.startLocation.accuracy,
+              }
+            : null,
         consent: collection.consent,
         audio: collection.audio,
         recordingIssues: collection.recordingIssues,

@@ -4,11 +4,12 @@ import { Contour } from "@/components/ui/contour";
 import { Button } from "@/components/ui/button";
 import DialogLayout from "@/components/ui/dialogLayout";
 import { LoadingState } from "@/components/ui/loadingState";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { deleteResearch, getResearchById, publishResearch, unpublishResearch, type Research } from "@/lib/research";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { deleteResearch, duplicateResearch, getResearchById, publishResearch, unpublishResearch, type Research } from "@/lib/research";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { ArrowLeft, CalendarRange, Check, BarChart3, ClipboardList, FileText, Flag, ListChecks, Lock, Mic, MicOff, Quote, ShieldAlert, Smartphone, Target, Trash2, Undo2, UsersRound } from "lucide-react";
+import { ArrowLeft, CalendarRange, Check, BarChart3, ClipboardList, FileText, Copy, Flag, ListChecks, Map as MapIcon, Menu, ShieldCheck, Lock, Mic, MicOff, Quote, ShieldAlert, Smartphone, Target, Trash2, Undo2, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -19,6 +20,8 @@ import ListarQuestoesSalvas from "../components/ListarQuestoesSalvas/ListarQuest
 import ColetasPesquisa from "../components/ColetasPesquisa";
 import CopiasEmCampo from "../components/CopiasEmCampo";
 import PainelResultados from "../components/PainelResultados";
+import MapaColetas from "../components/MapaColetas";
+import QualidadeColetas from "../components/QualidadeColetas";
 
 const STEPS: { key: Research["status"]; label: string }[] = [
     { key: "DRAFT", label: "Rascunho" },
@@ -45,8 +48,6 @@ const fmtLong = (iso?: string) => {
 };
 
 /** Abas da pesquisa. No celular a inativa vira só ícone (40px) e a ativa abre com o nome. */
-const TAB_CLASS = "group/tab h-10 px-4 data-active:bg-ink data-active:text-white max-sm:w-10 max-sm:flex-none max-sm:px-0 max-sm:data-active:w-auto max-sm:data-active:flex-1 max-sm:data-active:px-3.5";
-const TAB_LABEL = "max-sm:group-[:not([data-active])]/tab:sr-only";
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /** Onde estamos na vigência: texto e percentual (0 a 100). */
@@ -82,7 +83,8 @@ export default function PesquisaDetalhePage() {
     const searchParams = useSearchParams();
     // Links do buscador global: ?aba=coletas&coleta=12
     const openCollectionId = Number(searchParams.get('coleta')) || undefined;
-    const initialTab = searchParams.get('aba') === 'coletas' ? 'collections' : searchParams.get('aba') === 'painel' ? 'panel' : 'details';
+    const abaParam = searchParams.get('aba');
+    const initialTab = abaParam === 'coletas' ? 'collections' : abaParam === 'painel' ? 'panel' : abaParam === 'mapa' ? 'map' : abaParam === 'qualidade' ? 'quality' : 'details';
     const [state, setState] = useState<PageState>({ status: 'loading' });
     const { user } = useCurrentUser();
     const [now] = useState(() => Date.now());
@@ -175,6 +177,22 @@ export default function PesquisaDetalhePage() {
         }
     };
 
+    const handleDuplicate = async () => {
+        const ok = await confirmDialog({
+            title: 'Duplicar pesquisa',
+            description: `Cria um novo rascunho com as seções, questões e regras de "${research.title}". Coletas, respostas e pesquisadores não são copiados.`,
+            confirmLabel: 'Duplicar',
+        });
+        if (!ok) return;
+        try {
+            const copy = await duplicateResearch(research.id);
+            toast.success('Pesquisa duplicada! Você está na cópia (rascunho).');
+            router.push(`/pesquisas/${copy.id}`);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Erro ao duplicar pesquisa');
+        }
+    };
+
     const handleDelete = async () => {
         const confirmed = await confirmDialog({
             title: 'Excluir pesquisa',
@@ -208,6 +226,19 @@ export default function PesquisaDetalhePage() {
         .split(/[;\n]|,(?![^(]*\))/)
         .map((t) => t.trim())
         .filter(Boolean);
+
+    const navItems: { value: string; label: string; Icon: typeof FileText; badge?: number }[] = [
+        { value: 'details', label: 'Visão Geral', Icon: FileText },
+        { value: 'questions', label: 'Questões', Icon: ListChecks },
+        { value: 'researchers', label: 'Pesquisadores', Icon: UsersRound },
+        ...(canSeeCollections && research.status !== 'DRAFT' ? [
+            { value: 'panel', label: 'Painel', Icon: BarChart3 },
+            { value: 'map', label: 'Mapa', Icon: MapIcon },
+            { value: 'quality', label: 'Qualidade', Icon: ShieldCheck },
+        ] : []),
+        ...(canSeeCollections ? [{ value: 'collections', label: 'Coletas', Icon: ClipboardList }] : []),
+        ...(canSeeCopies && research.status !== 'DRAFT' ? [{ value: 'copies', label: 'Em campo', Icon: Smartphone, badge: activeCopies || undefined }] : []),
+    ];
 
     return (
         <section className="flex flex-col gap-5">
@@ -286,22 +317,29 @@ export default function PesquisaDetalhePage() {
             </article>
 
             <Tabs value={tab} onValueChange={(value) => setTab(String(value))} className="w-full flex flex-col gap-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    {/* Celular: só a aba ativa mostra o nome; as outras viram ícones, e as 6 abas cabem sem rolar */}
-                    <TabsList className="relative h-12 max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden border border-border bg-white p-1 shadow-[0_14px_26px_-22px_rgba(10,20,16,0.4)] max-sm:w-full max-sm:justify-between">
-                        <TabsTrigger value="details" className={TAB_CLASS} aria-label="Visão Geral" title="Visão Geral"><FileText /><span className={TAB_LABEL}>Visão Geral</span></TabsTrigger>
-                        <TabsTrigger value="questions" className={TAB_CLASS} aria-label="Questões" title="Questões"><ListChecks /><span className={TAB_LABEL}>Questões</span></TabsTrigger>
-                        <TabsTrigger value="researchers" className={TAB_CLASS} aria-label="Pesquisadores" title="Pesquisadores"><UsersRound /><span className={TAB_LABEL}>Pesquisadores</span></TabsTrigger>
-                        {canSeeCollections && research.status !== 'DRAFT' && <TabsTrigger value="panel" className={TAB_CLASS} aria-label="Painel" title="Painel"><BarChart3 /><span className={TAB_LABEL}>Painel</span></TabsTrigger>}
-                        {canSeeCollections && <TabsTrigger value="collections" className={TAB_CLASS} aria-label="Coletas" title="Coletas"><ClipboardList /><span className={TAB_LABEL}>Coletas</span></TabsTrigger>}
-                        {canSeeCopies && research.status !== 'DRAFT' && (
-                            <TabsTrigger value="copies" className={TAB_CLASS} aria-label="Em campo" title="Em campo">
-                                <Smartphone /><span className={TAB_LABEL}>Em campo</span>{activeCopies > 0 && <span className="ml-1 rounded-full bg-[#f3e0d9] px-1.5 text-[11px] font-semibold text-[#8a432f] max-sm:group-[:not([data-active])]/tab:absolute max-sm:group-[:not([data-active])]/tab:right-0 max-sm:group-[:not([data-active])]/tab:top-0 max-sm:group-[:not([data-active])]/tab:ml-0 max-sm:group-[:not([data-active])]/tab:px-1">{activeCopies}</span>}
-                            </TabsTrigger>
-                        )}
-                    </TabsList>
-
+                {/* Ações da pesquisa numa linha própria; a navegação ocupa a largura toda, em abas sublinhadas */}
+                <div className="flex flex-col gap-4">
                     <div className="flex flex-wrap items-center gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger
+                                aria-label="Menu da pesquisa"
+                                title="Menu da pesquisa"
+                                className="relative grid size-11 shrink-0 cursor-pointer place-items-center rounded-full bg-ink text-white shadow-md transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                            >
+                                <Menu className="size-6" strokeWidth={2.4} />
+                                {activeCopies > 0 && <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-[#c4623f] ring-2 ring-white" />}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" sideOffset={8} className="w-64 rounded-2xl p-1.5">
+                                {navItems.map(({ value, label, Icon, badge }) => (
+                                    <DropdownMenuItem key={value} onClick={() => setTab(value)} className={`cursor-pointer gap-3 rounded-xl px-3 py-2.5 text-sm ${tab === value ? '!bg-[#0f1713] font-semibold !text-white [&_svg]:!text-white [&>span:not(:last-child)]:!text-white' : '!text-[#0f1713] hover:!bg-[#e8f0ea] focus:!bg-[#e8f0ea] [&_svg]:!text-[#0f1713] [&>span:not(:last-child)]:!text-[#0f1713]'}`}>
+                                        <Icon className="size-4" />
+                                        <span className="grow">{label}</span>
+                                        {badge ? <span className="rounded-full bg-[#f3e0d9] px-1.5 text-[11px] font-semibold text-[#8a432f]">{badge}</span> : null}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <span className="mr-auto text-sm font-medium text-muted-foreground">{navItems.find((i) => i.value === tab)?.label}</span>
                         {locked && lockReason === 'ACTIVE_COPIES' && (
                             <Button variant="outline" size="sm" onClick={() => setTab('copies')} title={research.lockMessage ?? undefined}>
                                 <Lock />Questionário travado · {plural(activeCopies, 'cópia', 'cópias')}
@@ -322,6 +360,9 @@ export default function PesquisaDetalhePage() {
                         )}
                         {research.status === 'PUBLISHED' && research.canDelete && (
                             <Button size="sm" variant="outline" onClick={handleUnpublish}><Undo2 />Voltar para rascunho</Button>
+                        )}
+                        {canSeeCollections && (
+                            <Button size="sm" variant="outline" onClick={handleDuplicate}><Copy />Duplicar</Button>
                         )}
                         {research.canDelete && (
                             <Button size="sm" variant="destructive" onClick={handleDelete}><Trash2 />Excluir</Button>
@@ -499,6 +540,18 @@ export default function PesquisaDetalhePage() {
                 {canSeeCollections && research.status !== 'DRAFT' && (
                     <TabsContent value="panel" className="mt-0">
                         <PainelResultados researchId={research.id} status={research.status} onClosed={refreshResearch} />
+                    </TabsContent>
+                )}
+
+                {canSeeCollections && research.status !== 'DRAFT' && tab === 'map' && (
+                    <TabsContent value="map" className="mt-0">
+                        <MapaColetas researchId={research.id} />
+                    </TabsContent>
+                )}
+
+                {canSeeCollections && research.status !== 'DRAFT' && tab === 'quality' && (
+                    <TabsContent value="quality" className="mt-0">
+                        <QualidadeColetas researchId={research.id} />
                     </TabsContent>
                 )}
 

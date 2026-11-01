@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormSection } from "@/lib/questionnaire";
 import { QuestionCard, QuestionActions, OptionActions } from "./QuestionCard";
-import type { RulesContext } from "./RegrasExibicao";
+import { RegrasExibicao, type RulesContext } from "./RegrasExibicao";
 import { useReadOnly } from "./ReadOnlyContext";
 
 interface SectionCardProps {
@@ -101,6 +101,8 @@ export function SectionCard({
 
             {!collapsed && (
                 <div className="p-3 sm:p-4">
+                    {/* Pulo de seção: esconde (ou só mostra) a seção inteira conforme respostas anteriores */}
+                    {sIndex > 0 && total > 0 && <div className="mb-3"><RegrasExibicao section={section} ctx={rulesCtx} /></div>}
                     {total === 0 ? (
                         <p className="rounded-2xl border border-dashed border-input bg-muted/40 px-4 py-8 text-center text-sm text-muted-foreground">
                             Esta seção ainda não tem questões.

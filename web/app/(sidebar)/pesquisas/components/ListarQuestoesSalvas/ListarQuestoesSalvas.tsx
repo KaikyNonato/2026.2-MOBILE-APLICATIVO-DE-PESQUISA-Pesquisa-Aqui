@@ -21,6 +21,7 @@ import {
     reorderQuestionsApi,
     withRulesConfirm,
     type DisplayRule,
+    type RuleOperator,
     type FormSection,
     type FormQuestion,
     type FrontendQuestionType
@@ -426,19 +427,24 @@ export default function ListarQuestoesSalvas({ researchId, readOnly = false, rea
     }
 
     // ================= REGRAS DE EXIBIÇÃO =================
-    const handleAddRule = async (targetQuestionId: string, sourceQuestionId: string, triggerValue: string): Promise<boolean> => {
+    const handleAddRule = async (
+        target: { questionId?: string; sectionId?: string },
+        action: "SHOW" | "HIDE",
+        conditions: { sourceQuestionId: number; operator: RuleOperator; triggerValue: string }[],
+    ): Promise<boolean> => {
         try {
             await createRuleApi({
-                sourceQuestionId: Number(sourceQuestionId),
-                triggerValue,
-                targetQuestionId: Number(targetQuestionId),
+                conditions,
+                action,
+                targetQuestionId: target.questionId !== undefined ? Number(target.questionId) : undefined,
+                targetSectionId: target.sectionId !== undefined ? Number(target.sectionId) : undefined,
             });
             await reloadRules();
             toast.success("Regra de exibição salva!", { id: "rule-save", duration: 1500 });
             return true;
-        } catch (e: any) {
-            // A API explica o motivo da recusa (ciclo, ordem, resposta inválida...).
-            toast.error(e?.message || "Erro ao salvar a regra.", { duration: 7000 });
+        } catch (e) {
+            // A API explica o motivo da recusa (ciclo, ordem, valor inválido...).
+            toast.error((e as Error)?.message || "Erro ao salvar a regra.", { duration: 7000 });
             return false;
         }
     };
@@ -446,7 +452,8 @@ export default function ListarQuestoesSalvas({ researchId, readOnly = false, rea
     const handleDeleteRule = async (ruleId: number) => {
         try {
             await deleteRuleApi(ruleId);
-            setRules(prev => prev.filter(r => r.id !== ruleId));
+            // Regra com várias condições (E) some inteira: recarrega a lista em vez de tirar só uma linha.
+            await reloadRules();
             toast.success("Regra removida.", { id: "rule-del", duration: 1500 });
         } catch {
             toast.error("Erro ao remover a regra.");

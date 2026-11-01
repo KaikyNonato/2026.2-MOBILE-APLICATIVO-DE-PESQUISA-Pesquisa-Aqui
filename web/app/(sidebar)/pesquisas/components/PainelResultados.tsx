@@ -11,7 +11,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
     closeResearch,
-    downloadResearchCsv,
+    downloadResearchExport,
+    type ExportKind,
     formatSeconds,
     getResearchPanel,
     getResearchReport,
@@ -57,7 +58,7 @@ export default function PainelResultados({ researchId, status, onClosed }: Paine
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
-    const [exporting, setExporting] = useState(false);
+    const [exporting, setExporting] = useState<ExportKind | null>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [closing, setClosing] = useState(false);
 
@@ -109,14 +110,14 @@ export default function PainelResultados({ researchId, status, onClosed }: Paine
         }
     };
 
-    const handleExport = async () => {
-        setExporting(true);
+    const handleExport = async (kind: ExportKind) => {
+        setExporting(kind);
         try {
-            await downloadResearchCsv(researchId, filters);
+            await downloadResearchExport(researchId, kind, filters);
         } catch (err) {
             toast.error(err instanceof Error ? err.message : 'Erro ao exportar');
         } finally {
-            setExporting(false);
+            setExporting(null);
         }
     };
 
@@ -200,9 +201,12 @@ export default function PainelResultados({ researchId, status, onClosed }: Paine
                     <Button variant="outline" size="sm" className="h-10" onClick={handleRefresh} disabled={refreshing} title="Atualizar agora">
                         <RefreshCw className={refreshing ? 'animate-spin' : undefined} />Atualizar
                     </Button>
-                    <Button variant="outline" size="sm" className="h-10" onClick={handleExport} disabled={exporting}>
-                        {exporting ? <Spinner /> : <Download />}Exportar CSV
-                    </Button>
+                    {(['csv', 'xlsx', 'json', 'pdf'] as ExportKind[]).map((kind) => (
+                        <Button key={kind} variant="outline" size="sm" className="h-10" onClick={() => handleExport(kind)} disabled={exporting !== null}>
+                            {exporting === kind ? <Spinner /> : <Download />}
+                            {kind === 'csv' ? 'CSV' : kind === 'xlsx' ? 'Excel' : kind === 'json' ? 'JSON' : 'Relatório PDF'}
+                        </Button>
+                    ))}
                     {!closed && status !== 'DRAFT' && (
                         <Button variant="destructive" size="sm" className="h-10" onClick={handleClose} disabled={closing}>
                             {closing ? <Spinner /> : <Lock />}Encerrar

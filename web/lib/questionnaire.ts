@@ -61,17 +61,33 @@ export interface FormSection {
 // === REGRAS DE EXIBIÇÃO ===
 // A questão afetada (target) só aparece quando a questão de origem (source)
 // recebe a resposta triggerValue. YES_NO: "YES" | "NO"; escolhas: id da opção; escala: "1".."5".
+export type RuleOperator = "EQ" | "NEQ" | "GT" | "GTE" | "LT" | "LTE" | "CONTAINS" | "NOT_CONTAINS" | "ANSWERED" | "NOT_ANSWERED";
+
 export interface DisplayRule {
     id: number;
     researchId: number;
     sourceQuestionId: number;
     sourceLabel: string;
     sourceStatement: string;
+    operator: RuleOperator | string;
+    operatorLabel: string;
     triggerValue: string;
     triggerLabel: string;
-    targetQuestionId: number;
+    /** SHOW: o alvo só aparece quando a regra é verdadeira. HIDE: o alvo some (pulo). */
+    action: "SHOW" | "HIDE" | string;
+    /** Condições do mesmo alvo com a mesma groupKey valem juntas (E). null = condição sozinha. */
+    groupKey: string | null;
+    targetKind: "QUESTION" | "SECTION";
+    targetQuestionId: number | null;
+    targetSectionId: number | null;
     targetLabel: string;
     targetStatement: string;
+}
+
+export interface RuleConditionInput {
+    sourceQuestionId: number;
+    operator: RuleOperator;
+    triggerValue: string;
 }
 
 // A API devolve 409 quando a operação mexeria em regras; nada foi alterado ainda.
@@ -98,7 +114,7 @@ const forceQuery = (force?: boolean) => (force ? "?force=true" : "");
 
 export function describeRulesConflict(error: RulesConflictError): string {
     const lines = error.rules.map(
-        (r) => `• ${r.targetLabel} só aparece se ${r.sourceLabel} = ${r.triggerLabel}`
+        (r) => `• ${r.targetLabel}: ${r.action === "HIDE" ? "some" : "só aparece"} se ${r.sourceLabel} ${r.operatorLabel} ${r.triggerLabel}`
     );
     return `${error.message}\n\n${lines.join("\n")}\n\nDeseja continuar?`;
 }
@@ -117,7 +133,7 @@ export async function withRulesConfirm<T>(
         const confirmed = await confirmDialog({
             title: "Regras de exibição afetadas",
             description: error.message,
-            details: error.rules.map((r) => `${r.targetLabel} só aparece se ${r.sourceLabel} = ${r.triggerLabel}`),
+            details: error.rules.map((r) => `${r.targetLabel}: ${r.action === "HIDE" ? "some" : "só aparece"} se ${r.sourceLabel} ${r.operatorLabel} ${r.triggerLabel}`),
             confirmLabel: "Continuar",
             variant: "destructive",
         });
@@ -131,7 +147,9 @@ export const getRulesApi = async (researchId: number): Promise<DisplayRule[]> =>
     if (!response.ok) return throwApiError(response, 'Failed to get rules');
     return response.json();
 }
-export const createRuleApi = async (payload: { sourceQuestionId: number; triggerValue: string; targetQuestionId: number }): Promise<DisplayRule> => {
+export const createRuleApi = async (payload: {
+    conditions: RuleConditionInput[]; targetQuestionId?: number; targetSectionId?: number; action?: "SHOW" | "HIDE";
+}): Promise<DisplayRule> => {
     const response = await apiFetch(`/question-rule`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify(payload),

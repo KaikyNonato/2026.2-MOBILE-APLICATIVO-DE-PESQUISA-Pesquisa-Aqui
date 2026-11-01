@@ -8,6 +8,8 @@ export interface ReportFilters {
     /** Dia final (AAAA-MM-DD, no fuso do navegador). */
     to?: string;
     researcherId?: number;
+    /** Mapa e qualidade: só coletas com alerta de atenção. */
+    flagged?: boolean;
 }
 
 export interface PanelResearcher {
@@ -74,6 +76,7 @@ export const reportQueryString = (filters: ReportFilters): string => {
     if (filters.from) params.set("from", startOfDay(filters.from));
     if (filters.to) params.set("to", endOfDay(filters.to));
     if (filters.researcherId !== undefined) params.set("researcherId", String(filters.researcherId));
+    if (filters.flagged) params.set("flagged", "true");
     const text = params.toString();
     return text ? `?${text}` : "";
 };
@@ -112,6 +115,110 @@ export const downloadResearchCsv = async (researchId: number, filters: ReportFil
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+export type ExportKind = "csv" | "xlsx" | "json" | "pdf";
+
+const EXPORT_PATH: Record<ExportKind, { path: string; file: string }> = {
+    csv: { path: "export.csv", file: "coletas.csv" },
+    xlsx: { path: "export.xlsx", file: "coletas.xlsx" },
+    json: { path: "export.json", file: "coletas.json" },
+    pdf: { path: "report.pdf", file: "relatorio.pdf" },
+};
+
+/** Baixa o arquivo (CSV, Excel, JSON ou PDF do relatório) com os mesmos filtros da tela. */
+export const downloadResearchExport = async (researchId: number, kind: ExportKind, filters: ReportFilters = {}): Promise<void> => {
+    const { path, file } = EXPORT_PATH[kind];
+    const response = await apiFetch(`/research/${researchId}/${path}${reportQueryString(filters)}`, { method: "GET", credentials: "include" });
+    if (!response.ok) throw await readError(response, "Falha ao exportar");
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `pesquisa-${researchId}-${file}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+// ---------- auditoria de qualidade e mapa ----------
+
+export type QualityCode = "TOO_FAST" | "OUT_OF_AREA" | "NO_LOCATION" | "REPEATED_ANSWERS" | "MISSING_AUDIO";
+
+export const QUALITY_LABELS: Record<QualityCode, string> = {
+    TOO_FAST: "Coleta muito rápida",
+    OUT_OF_AREA: "Fora da área-alvo",
+    NO_LOCATION: "Sem localização",
+    REPEATED_ANSWERS: "Respostas repetidas",
+    MISSING_AUDIO: "Áudio ausente",
+};
+
+export interface QualityFlag {
+    code: QualityCode;
+    severity: "warning" | "info";
+    message: string;
+}
+
+export interface TargetArea {
+    latitude: number;
+    longitude: number;
+    radiusKm: number;
+}
+
+export interface ResearchQuality {
+    area: TargetArea | null;
+    recordInterview: boolean;
+    summary: {
+        totalCollections: number;
+        flaggedCollections: number;
+        collectionsWithWarning: number;
+        byCode: Record<QualityCode, number>;
+        flaggedByResearcher: { researcherId: number; flagged: number; name: string }[];
+    };
+    items: {
+        collectionId: number;
+        researcherId: number;
+        researcherName: string;
+        startedAt: string;
+        durationSeconds: number | null;
+        flags: QualityFlag[];
+    }[];
+}
+
+export const getResearchQuality = async (researchId: number, filters: ReportFilters = {}): Promise<ResearchQuality> => {
+    const response = await apiFetch(`/research/${researchId}/quality${reportQueryString(filters)}`, { method: "GET", credentials: "include" });
+    if (!response.ok) throw await readError(response, "Falha ao carregar a auditoria de qualidade");
+    return response.json();
+};
+
+export interface MapPoint {
+    collectionId: number;
+    researcherId: number;
+    researcherName: string;
+    latitude: number;
+    longitude: number;
+    accuracy: number | null;
+    startedAt: string;
+    finishedAt: string;
+    durationSeconds: number | null;
+    flags: QualityFlag[];
+}
+
+export interface ResearchMap {
+    area: TargetArea | null;
+    totalCollections: number;
+    withLocation: number;
+    withoutLocation: number;
+    researchers: { userId: number; name: string }[];
+    points: MapPoint[];
+}
+
+export const getResearchMap = async (researchId: number, filters: ReportFilters = {}): Promise<ResearchMap> => {
+    const response = await apiFetch(`/research/${researchId}/map${reportQueryString(filters)}`, { method: "GET", credentials: "include" });
+    if (!response.ok) throw await readError(response, "Falha ao carregar o mapa");
+    return response.json();
 };
 
 /** Encerra a pesquisa: bloqueia coleta nova e congela o resultado. Não tem volta. */

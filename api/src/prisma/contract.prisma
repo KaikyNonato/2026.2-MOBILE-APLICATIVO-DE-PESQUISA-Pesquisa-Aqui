@@ -85,6 +85,10 @@ model Research {
   targetAudience String
   status         ResearchStatus   @default(DRAFT)
   recordInterview Boolean @default(false)
+  // Área-alvo (círculo): coletas que começam fora dela são sinalizadas na auditoria. Tudo nulo = sem área definida.
+  areaLatitude   Float?
+  areaLongitude  Float?
+  areaRadiusKm   Float?
   companyId      Int
   company        Company  @relation(fields: [companyId], references: [id])
   sections       Section[]
@@ -102,6 +106,7 @@ model Section {
   researchId Int
   research   Research   @relation(fields: [researchId], references: [id], onDelete: Cascade)
   questions  Question[]
+  targetRules QuestionRule[] @relation("RuleTargetSection")
   createdAt  TimestamptzString @default(now())
   updatedAt  temporal.updatedAtString()
 }
@@ -164,6 +169,10 @@ model Collection {
   startedAt            TimestamptzString
   finishedAt           TimestamptzString
   receivedAt           TimestamptzString @default(now())
+  // Local onde a entrevista começou (GPS do aparelho). Nulo = sem permissão, sem sinal ou coleta antiga.
+  startLatitude        Float?
+  startLongitude       Float?
+  locationAccuracy     Float?
   consentGiven         Boolean  @default(false)
   consentAt            TimestamptzString?
   consentConfirmedById Int?
@@ -230,10 +239,21 @@ model QuestionRule {
   id               Int      @id @default(autoincrement())
   researchId       Int
   research         Research @relation(fields: [researchId], references: [id], onDelete: Cascade)
+  // Condição: a resposta da questão de origem, comparada com `triggerValue` pelo `operator`
+  // (EQ, NEQ, GT, GTE, LT, LTE, CONTAINS, NOT_CONTAINS, ANSWERED, NOT_ANSWERED).
   sourceQuestionId Int
   sourceQuestion   Question @relation("RuleSource", fields: [sourceQuestionId], references: [id], onDelete: Cascade)
+  operator         String   @default("EQ")
   triggerValue     String
-  targetQuestionId Int
-  targetQuestion   Question @relation("RuleTarget", fields: [targetQuestionId], references: [id], onDelete: Cascade)
+  // Alvo: uma questão OU uma seção inteira (pulo de seção). Exatamente um dos dois vem preenchido.
+  targetQuestionId Int?
+  targetQuestion   Question? @relation("RuleTarget", fields: [targetQuestionId], references: [id], onDelete: Cascade)
+  targetSectionId  Int?
+  targetSection    Section?  @relation("RuleTargetSection", fields: [targetSectionId], references: [id], onDelete: Cascade)
+  // SHOW: o alvo só aparece quando a regra é verdadeira. HIDE: o alvo some quando a regra é verdadeira (pular).
+  action           String   @default("SHOW")
+  // Condições do mesmo alvo com a mesma `groupKey` valem em conjunto (E). Grupos diferentes valem em alternativa (OU).
+  // Sem `groupKey` (regras antigas), a condição forma um grupo sozinha.
+  groupKey         String?
   createdAt        TimestamptzString @default(now())
 }

@@ -13,6 +13,10 @@ export interface Research {
     endDate: string;
     targetAudience: string;
     recordInterview: boolean;
+    /** Área-alvo (círculo) usada na auditoria de qualidade. Tudo nulo = sem área. */
+    areaLatitude?: number | null;
+    areaLongitude?: number | null;
+    areaRadiusKm?: number | null;
     /** true enquanto há cópia ativa (pesquisa baixada em algum aparelho) ou a pesquisa está encerrada: a estrutura do questionário não muda. */
     locked?: boolean;
     /** Por que está travada: ACTIVE_COPIES (há aparelho com a pesquisa) ou CLOSED (encerrada). null = editável. */
@@ -363,4 +367,56 @@ export const unblockResearchDevice = async (researchId: number, copyId: number):
         body: JSON.stringify({}),
     });
     if (!response.ok) throw await readError(response, 'Falha ao desbloquear o aparelho');
+};
+
+
+// ---------- duplicar e modelos prontos ----------
+
+export interface ResearchTemplate {
+    id: string;
+    name: string;
+    category: string;
+    description: string;
+    objective: string;
+    targetAudience: string;
+    recordInterview: boolean;
+    sectionCount: number;
+    questionCount: number;
+    ruleCount: number;
+    sections: { title: string; questions: { statement: string; type: string }[] }[];
+}
+
+const errorFrom = async (response: Response, fallback: string) => {
+    const body = await response.json().catch(() => null);
+    const message = Array.isArray(body?.message) ? body.message.join(" ") : body?.message;
+    return new Error(message || fallback);
+};
+
+export const getResearchTemplates = async (): Promise<ResearchTemplate[]> => {
+    const response = await apiFetch('/research/templates', { method: 'GET', credentials: 'include' });
+    if (!response.ok) throw await errorFrom(response, 'Falha ao carregar os modelos');
+    return response.json();
+};
+
+/** Cria um rascunho a partir de um modelo pronto. Tudo além de `templateId` é opcional. */
+export const createResearchFromTemplate = async (payload: {
+    templateId: string; title?: string; description?: string; objective?: string; targetAudience?: string; startDate?: string; endDate?: string; companyId?: number;
+}): Promise<Research> => {
+    const response = await apiFetch('/research/from-template', { method: 'POST', credentials: 'include', body: JSON.stringify(payload) });
+    if (!response.ok) throw await errorFrom(response, 'Falha ao criar a pesquisa a partir do modelo');
+    return response.json();
+};
+
+/** Duplica a estrutura (seções, questões, opções e regras) em um novo rascunho. Não leva coletas nem pesquisadores. */
+export const duplicateResearch = async (id: number, title?: string): Promise<Research> => {
+    const response = await apiFetch(`/research/${id}/duplicate`, { method: 'POST', credentials: 'include', body: JSON.stringify(title ? { title } : {}) });
+    if (!response.ok) throw await errorFrom(response, 'Falha ao duplicar a pesquisa');
+    return response.json();
+};
+
+/** Define (ou remove, com `null`) a área-alvo da pesquisa. */
+export const updateResearchArea = async (id: number, area: { areaLatitude: number | null; areaLongitude: number | null; areaRadiusKm: number | null }): Promise<Research> => {
+    const response = await apiFetch(`/research/${id}`, { method: 'PATCH', credentials: 'include', body: JSON.stringify(area) });
+    if (!response.ok) throw await errorFrom(response, 'Falha ao salvar a área-alvo');
+    return response.json();
 };

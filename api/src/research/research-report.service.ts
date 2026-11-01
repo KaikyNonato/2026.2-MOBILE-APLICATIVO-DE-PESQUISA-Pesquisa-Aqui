@@ -6,17 +6,22 @@ import {
     buildCsv,
     buildPanel,
     filterCollections,
+    durationSeconds,
     type ReportAnswer,
     type ReportCollection,
     type ReportFilter,
     type ReportQuestion,
     type ReportResearcher,
 } from './research-report.js';
+import { auditCollections, summarizeQuality, type TargetArea } from './research-quality.js';
+import { buildJson, buildPdf, buildXlsx, type ExportData } from './research-export.js';
 
 export interface ReportQuery {
     from?: string;
     to?: string;
     researcherId?: number;
+    /** Mapa e qualidade: só coletas com algum alerta de atenção. */
+    flagged?: boolean;
 }
 
 /** Aceita ISO completo (o navegador manda o dia no fuso local) ou só a data (AAAA-MM-DD, início/fim do dia em UTC). */
@@ -201,5 +206,128 @@ export class ResearchReportService {
             fileName: `pesquisa-${research.id}-coletas.csv`,
             content: buildCsv(questions, collections, answers, names),
         };
+    }
+
+    // ---------- qualidade, mapa e exportações ----------
+
+    private areaOf(research: { areaLatitude?: number | null; areaLongitude?: number | null; areaRadiusKm?: number | null }): TargetArea | null {
+        return typeof research.areaLatitude === 'number' && typeof research.areaLongitude === 'number' && typeof research.areaRadiusKm === 'number'
+            ? { latitude: research.areaLatitude, longitude: research.areaLongitude, radiusKm: research.areaRadiusKm }
+            : null;
+    }
+
+    /** Dados comuns de qualidade, mapa e exportações: pesquisa, filtros, questões, respostas e alertas. */
+    private async loadAudit(researchId: number, query: ReportQuery, currentUser: UserPayLoad) {
+        const research = await this.loadResearch(researchId, currentUser);
+        const { researchers, collections, filter } = await this.loadData(research, query);
+        const questions = await this.loadQuestions(research.id);
+        const answers = await this.loadAnswers(questions, collections);
+        const area = this.areaOf(research);
+        const items = auditCollections(questions, collections, answers, { recordInterview: research.recordInterview, area });
+        const names = new Map(researchers.map((r) => [r.userId, r.name]));
+        return { research, researchers, collections, filter, questions, answers, area, items, names };
+    }
+
+    /** Auditoria de qualidade: coletas muito rápidas, fora da área, com respostas repetidas ou sem áudio. */
+    async quality(researchId: number, query: ReportQuery, currentUser: UserPayLoad) {
+        const { research, collections, filter, area, items, names } = await this.loadAudit(researchId, query, currentUser);
+        const summary = summarizeQuality(items, collections);
+        const byId = new Map(collections.map((c) => [c.id, c]));
+        const shown = query.flagged ? items.filter((i) => i.flags.some((f) => f.severity === 'warning')) : items;
+
+        return {
+            ...this.meta(research, query, filter),
+            area,
+            recordInterview: research.recordInterview,
+            summary: {
+                ...summary,
+                flaggedByResearcher: summary.flaggedByResearcher.map((r) => ({ ...r, name: names.get(r.researcherId) ?? '' })),
+            },
+            items: shown
+                .map((item) => {
+                    const c = byId.get(item.collectionId)!;
+                    return {
+                        collectionId: c.id,
+                        researcherId: c.researcherId,
+                        researcherName: names.get(c.researcherId) ?? '',
+                        startedAt: c.startedAt,
+                        durationSeconds: durationSeconds(c),
+                        flags: item.flags,
+                    };
+                })
+                .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()),
+        };
+    }
+
+    /** Mapa: onde cada entrevista começou, com os mesmos filtros do painel (e opcionalmente só as com alerta). */
+    async map(researchId: number, query: ReportQuery, currentUser: UserPayLoad) {
+        const { research, researchers, collections, filter, area, items, names } = await this.loadAudit(researchId, query, currentUser);
+        const flagsOf = new Map(items.map((i) => [i.collectionId, i.flags]));
+
+        const withLocation = collections.filter((c) => typeof c.startLatitude === 'number' && typeof c.startLongitude === 'number');
+        const points = withLocation
+            .map((c) => {
+                const flags = flagsOf.get(c.id) ?? [];
+                return {
+                    collectionId: c.id,
+                    researcherId: c.researcherId,
+                    researcherName: names.get(c.researcherId) ?? '',
+                    latitude: c.startLatitude as number,
+                    longitude: c.startLongitude as number,
+                    accuracy: c.locationAccuracy ?? null,
+                    startedAt: c.startedAt,
+                    finishedAt: c.finishedAt,
+                    durationSeconds: durationSeconds(c),
+                    flags: flags.map((f) => ({ code: f.code, severity: f.severity, message: f.message })),
+                };
+            })
+            .filter((p) => !query.flagged || p.flags.some((f) => f.severity === 'warning'))
+            .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime() || a.collectionId - b.collectionId);
+
+        return {
+            ...this.meta(research, query, filter),
+            area,
+            totalCollections: collections.length,
+            withLocation: withLocation.length,
+            withoutLocation: collections.length - withLocation.length,
+            researchers: researchers.map((r) => ({ userId: r.userId, name: r.name })),
+            points,
+        };
+    }
+
+    private async exportData(researchId: number, query: ReportQuery, currentUser: UserPayLoad): Promise<ExportData & { fileBase: string }> {
+        const audit = await this.loadAudit(researchId, query, currentUser);
+        const { research, researchers, collections, filter, questions, answers, items, names } = audit;
+        return {
+            fileBase: `pesquisa-${research.id}`,
+            research: { id: research.id, title: research.title, status: research.status, description: research.description, objective: research.objective },
+            filter: { from: filter.from?.toISOString() ?? null, to: filter.to?.toISOString() ?? null, researcherId: query.researcherId ?? null },
+            generatedAt: new Date().toISOString(),
+            panel: buildPanel(researchers, collections),
+            charts: buildCharts(questions, collections, answers),
+            questions,
+            collections,
+            answers,
+            names,
+            quality: { items, summary: summarizeQuality(items, collections) },
+        };
+    }
+
+    /** XLSX: planilhas Resumo, Coletas, Pesquisadores, Respostas por questão e Qualidade. */
+    async exportXlsx(researchId: number, query: ReportQuery, currentUser: UserPayLoad) {
+        const data = await this.exportData(researchId, query, currentUser);
+        return { fileName: `${data.fileBase}-coletas.xlsx`, content: await buildXlsx(data) };
+    }
+
+    /** JSON completo: coletas com respostas (cruas e legíveis), local, alertas de qualidade e gráficos. */
+    async exportJson(researchId: number, query: ReportQuery, currentUser: UserPayLoad) {
+        const data = await this.exportData(researchId, query, currentUser);
+        return { fileName: `${data.fileBase}-coletas.json`, content: JSON.stringify(buildJson(data), null, 2) };
+    }
+
+    /** PDF do relatório: resumo, pesquisadores, gráficos por questão e auditoria de qualidade. */
+    async exportPdf(researchId: number, query: ReportQuery, currentUser: UserPayLoad) {
+        const data = await this.exportData(researchId, query, currentUser);
+        return { fileName: `${data.fileBase}-relatorio.pdf`, content: await buildPdf(data) };
     }
 }

@@ -66,6 +66,9 @@ export class ResearchService {
             targetAudience: createResearchDto.targetAudience,
             status: 'DRAFT',
             recordInterview: createResearchDto.recordInterview ?? false,
+            areaLatitude: createResearchDto.areaLatitude ?? null,
+            areaLongitude: createResearchDto.areaLongitude ?? null,
+            areaRadiusKm: createResearchDto.areaRadiusKm ?? null,
             companyId: companyId,
         })
     }
@@ -301,6 +304,18 @@ export class ResearchService {
                 if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot publish research');
                 await this.assertHasQuestions(id);
             }
+        }
+
+        // A área-alvo só vale completa: centro e raio juntos, ou nenhum dos três.
+        const area = [updateResearchDto.areaLatitude, updateResearchDto.areaLongitude, updateResearchDto.areaRadiusKm];
+        if (area.some((v) => v !== undefined)) {
+            const merged = [
+                updateResearchDto.areaLatitude !== undefined ? updateResearchDto.areaLatitude : research.areaLatitude,
+                updateResearchDto.areaLongitude !== undefined ? updateResearchDto.areaLongitude : research.areaLongitude,
+                updateResearchDto.areaRadiusKm !== undefined ? updateResearchDto.areaRadiusKm : research.areaRadiusKm,
+            ];
+            const filled = merged.filter((v) => v !== null && v !== undefined).length;
+            if (filled !== 0 && filled !== 3) throw new BadRequestException('Informe latitude, longitude e raio da área-alvo juntos (ou nenhum deles).');
         }
 
         return await this.prisma.client.orm.public.Research.where({ id }).update(updateResearchDto);
@@ -845,11 +860,18 @@ export class ResearchService {
         // Regras de pulo/exibição: a questão alvo só aparece quando a questão de origem
         // recebe a resposta triggerValue.
         const rules = await orm.QuestionRule.where({ researchId: research.id }).all();
+        // Cada linha é uma CONDIÇÃO. O aplicativo agrupa por alvo + groupKey (E) e combina os grupos (OU).
+        // Os campos antigos (sourceQuestionId, triggerValue, targetQuestionId) continuam; os novos têm padrão
+        // EQ / SHOW, então um app antigo ainda entende as regras simples.
         const displayRules = rules.map((rule) => ({
             id: rule.id,
             sourceQuestionId: rule.sourceQuestionId,
+            operator: rule.operator ?? 'EQ',
             triggerValue: rule.triggerValue,
-            targetQuestionId: rule.targetQuestionId,
+            targetQuestionId: rule.targetQuestionId ?? null,
+            targetSectionId: rule.targetSectionId ?? null,
+            action: rule.action ?? 'SHOW',
+            groupKey: rule.groupKey ?? null,
         }));
 
         // Registra a cópia ativa (pesquisador + aparelho + data). O mesmo aparelho baixando de novo renova a

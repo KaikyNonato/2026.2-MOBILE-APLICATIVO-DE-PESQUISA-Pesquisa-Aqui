@@ -14,9 +14,10 @@ import { isSessionExpiredError } from "@/lib/apiFetcher";
 import type { Research } from "@/lib/research";
 import { deleteResearch, getResearchesPage, getResearchSummary, publishResearch, unpublishResearch, type ResearchListItem, type ResearchSummary } from "@/lib/research";
 import type { UserItem } from "@/lib/user";
-import { ArrowDownAZ, CalendarClock, Plus, SearchX, Timer } from "lucide-react";
+import { ArrowDownAZ, CalendarClock, LibraryBig, Plus, SearchX, Timer } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import ModelosPesquisa from "./components/ModelosPesquisa";
 import CadastrarPesquisaForm from "./components/CadastrarPesquisaForm";
 import CalendarioCampo, { type LegendItem } from "./components/CalendarioCampo";
 import MinhasPesquisas from "./components/MinhasPesquisas";
@@ -181,13 +182,24 @@ function PesquisasAdmin() {
                 title="Pesquisas"
                 description="Monte questionários, publique para o campo e acompanhe cada pesquisa."
                 actions={
-                    <DialogLayout
-                        triggerButtonSize="default"
-                        dialogTrigger={<><Plus />Nova pesquisa</>}
-                        dialogTitle="Nova pesquisa"
-                        dialogDescription="Informe os dados principais. As questões entram na próxima etapa."
-                        dialogContent={<CadastrarPesquisaForm onSuccess={forceRefresh} />}
-                    />
+                    <div className="flex flex-wrap gap-2">
+                        <DialogLayout
+                            triggerButtonSize="default"
+                            triggerButtonVariant="outline"
+                            dialogTrigger={<><LibraryBig />Usar modelo</>}
+                            dialogTitle="Modelos de pesquisa"
+                            dialogDescription="Questionários prontos, com seções, questões e regras. Escolha um e ajuste depois."
+                            dialogContent={(close) => <ModelosPesquisa onClose={close} />}
+                        />
+                        <DialogLayout
+                            triggerButtonSize="default"
+                            dialogTrigger={<><Plus />Nova pesquisa</>}
+                            dialogTitle="Nova pesquisa"
+                            dialogDescription="Informe os dados principais. As questões entram na próxima etapa."
+                            dialogContent={<CadastrarPesquisaForm onSuccess={forceRefresh} />}
+                        />
+
+                    </div>
                 }
             />
 

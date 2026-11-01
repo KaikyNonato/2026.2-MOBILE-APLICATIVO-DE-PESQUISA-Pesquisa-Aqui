@@ -88,6 +88,7 @@ async function sendViaSync(input: CollectionInput): Promise<SendOutcome> {
                 startedAt: input.startedAt,
                 finishedAt: input.finishedAt,
                 consent: input.consent,
+                startLocation: input.startLocation ?? undefined,
                 answers: input.answers,
             },
         ],

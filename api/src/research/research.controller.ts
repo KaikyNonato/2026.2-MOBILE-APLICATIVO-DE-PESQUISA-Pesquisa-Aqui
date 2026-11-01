@@ -1,6 +1,8 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, UseGuards, Headers, Header, Query, StreamableFile } from '@nestjs/common';
 import { ResearchService } from './research.service.js';
 import { ResearchReportService } from './research-report.service.js';
+import { ResearchTemplateService } from './research-template.service.js';
+import { CreateFromTemplateDto, DuplicateResearchDto } from './dto/research-template.dto.js';
 import { CreateResearchDto } from './dto/create-research.dto.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { UserPayLoad } from '../auth/current-user.type.js';
@@ -14,7 +16,11 @@ import { TeamPageQueryDto, CopiesPageQueryDto, isPaged, normalizeText, paginateL
 @UseGuards(AuthGuard)
 @Controller('research')
 export class ResearchController {
-    constructor(private researchService: ResearchService, private reportService: ResearchReportService) { }
+    constructor(
+        private researchService: ResearchService,
+        private reportService: ResearchReportService,
+        private templateService: ResearchTemplateService,
+    ) { }
 
     @Post()
     create(@Body() createResearchDto: CreateResearchDto, @CurrentUser() currentUser: UserPayLoad) {
@@ -38,6 +44,24 @@ export class ResearchController {
     @Get('summary')
     summary(@CurrentUser() currentUser: UserPayLoad) {
         return this.researchService.summary(currentUser);
+    }
+
+    // Biblioteca de questionários prontos (precisa vir antes de ":id").
+    @Get('templates')
+    templates() {
+        return this.templateService.listTemplates();
+    }
+
+    // Cria uma pesquisa em rascunho a partir de um modelo pronto.
+    @Post('from-template')
+    fromTemplate(@Body() dto: CreateFromTemplateDto, @CurrentUser() currentUser: UserPayLoad) {
+        return this.templateService.fromTemplate(dto, currentUser);
+    }
+
+    // Duplica a estrutura da pesquisa (seções, questões, opções e regras) em um novo rascunho.
+    @Post(':id/duplicate')
+    duplicate(@Param('id', ParseIntPipe) id: number, @Body() dto: DuplicateResearchDto, @CurrentUser() currentUser: UserPayLoad) {
+        return this.templateService.duplicate(id, dto, currentUser);
     }
 
     @Get(':id')
@@ -98,6 +122,50 @@ export class ResearchController {
             type: 'text/csv; charset=utf-8',
             disposition: `attachment; filename="${fileName}"`,
         });
+    }
+
+    // Auditoria de qualidade das coletas (`?flagged=true`: só as com alerta de atenção).
+    @Get(':id/quality')
+    @Header('Cache-Control', 'private, no-store')
+    quality(@Param('id', ParseIntPipe) id: number, @Query() query: ReportQueryDto, @CurrentUser() currentUser: UserPayLoad) {
+        return this.reportService.quality(id, toReportQuery(query), currentUser);
+    }
+
+    // Mapa de coletas: onde cada entrevista começou, com os mesmos filtros do painel.
+    @Get(':id/map')
+    @Header('Cache-Control', 'private, no-store')
+    map(@Param('id', ParseIntPipe) id: number, @Query() query: ReportQueryDto, @CurrentUser() currentUser: UserPayLoad) {
+        return this.reportService.map(id, toReportQuery(query), currentUser);
+    }
+
+    @Get(':id/export.xlsx')
+    @Header('Cache-Control', 'private, no-store')
+    @Header('X-Content-Type-Options', 'nosniff')
+    async exportXlsx(@Param('id', ParseIntPipe) id: number, @Query() query: ReportQueryDto, @CurrentUser() currentUser: UserPayLoad) {
+        const { fileName, content } = await this.reportService.exportXlsx(id, toReportQuery(query), currentUser);
+        return new StreamableFile(content, {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            disposition: `attachment; filename="${fileName}"`,
+        });
+    }
+
+    @Get(':id/export.json')
+    @Header('Cache-Control', 'private, no-store')
+    @Header('X-Content-Type-Options', 'nosniff')
+    async exportJson(@Param('id', ParseIntPipe) id: number, @Query() query: ReportQueryDto, @CurrentUser() currentUser: UserPayLoad) {
+        const { fileName, content } = await this.reportService.exportJson(id, toReportQuery(query), currentUser);
+        return new StreamableFile(Buffer.from(content, 'utf8'), {
+            type: 'application/json; charset=utf-8',
+            disposition: `attachment; filename="${fileName}"`,
+        });
+    }
+
+    @Get(':id/report.pdf')
+    @Header('Cache-Control', 'private, no-store')
+    @Header('X-Content-Type-Options', 'nosniff')
+    async exportPdf(@Param('id', ParseIntPipe) id: number, @Query() query: ReportQueryDto, @CurrentUser() currentUser: UserPayLoad) {
+        const { fileName, content } = await this.reportService.exportPdf(id, toReportQuery(query), currentUser);
+        return new StreamableFile(content, { type: 'application/pdf', disposition: `attachment; filename="${fileName}"` });
     }
 
     @Get(':id/researchers')
@@ -197,7 +265,7 @@ export class ResearchController {
     }
 }
 
-type ReportQueryDto = { from?: string; to?: string; researcherId?: string };
+type ReportQueryDto = { from?: string; to?: string; researcherId?: string; flagged?: string };
 
 function toReportQuery(query: ReportQueryDto) {
     let researcherId: number | undefined;
@@ -205,7 +273,7 @@ function toReportQuery(query: ReportQueryDto) {
         researcherId = Number(query.researcherId);
         if (!Number.isInteger(researcherId)) throw new BadRequestException('researcherId inválido.');
     }
-    return { from: query.from || undefined, to: query.to || undefined, researcherId };
+    return { from: query.from || undefined, to: query.to || undefined, researcherId, flagged: query.flagged === 'true' };
 }
 
 // A cópia é registrada por pesquisador + aparelho: sem aparelho identificado não há como registrá-la.

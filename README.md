@@ -75,7 +75,8 @@ O fluxo de uso do sistema é:
 - Recebimento de coletas (em lote, com reenvio seguro) com validação de consentimento, e envio de fotos e áudios à parte, inclusive em pedaços para redes ruins.
 - Armazenamento de mídias no Cloudinary (privado) ou, só em desenvolvimento, em disco.
 - Controle de cópias da pesquisa por aparelho (download, devolução, revogação e desbloqueio).
-- Painel de resultados, relatório por questão e exportação em CSV.
+- Painel de resultados, relatório por questão e exportação em CSV, Excel (XLSX), JSON e relatório em PDF.
+- Mapa de coletas, auditoria de qualidade, modelos de pesquisa e duplicação de pesquisa.
 - **Listagens paginadas com limite de 100 itens por página** e endpoints de totais prontos para os dashboards.
 - Validação automática de entradas (`class-validator`, com `whitelist` e `transform`).
 
@@ -340,7 +341,7 @@ Principais entidades (definidas em `api/src/prisma/contract.prisma`):
 - **User**: usuário com `profile`, vinculado a uma empresa.
 - **Research**: pesquisa, com status `DRAFT`, `PUBLISHED`, `IN_FIELD` ou `CLOSED`, e a opção `recordInterview` (exige gravação e consentimento).
 - **Section** → **Question** → **QuestionOption**: estrutura do questionário.
-- **QuestionRule**: regra "a questão B só aparece se a questão A receber a resposta X".
+- **QuestionRule**: uma **condição** sobre a resposta de uma questão anterior (`operator` + `triggerValue`), que mostra (`SHOW`) ou esconde (`HIDE`) uma questão **ou uma seção inteira**. Condições do mesmo alvo com a mesma `groupKey` valem em conjunto (E); grupos diferentes valem em alternativa (OU).
 - **Collection**: uma entrevista feita por um pesquisador (respostas, consentimento, áudio opcional).
 - **Answer**: resposta a uma questão dentro de uma coleta.
 - **ResearchResearcher**: vínculo entre pesquisa e pesquisadores.
@@ -359,12 +360,14 @@ Todas as rotas, exceto `POST /auth/login` e `POST /auth/logout`, exigem autentic
 | Usuários | `POST /user`, `GET /user` ⁽ᵖ⁾, `GET /user/admins` ⁽ᵖ⁾, `GET /user/researchers/stats`, `PATCH /user/:username`, `POST /user/:username/reset-password`, `PATCH /user/:username/situation`, `DELETE /user/:username` |
 | Empresas | `GET /company` ⁽ᵖ⁾, `GET /company/stats`, `POST /company`, `PUT /company/:id`, `PATCH /company/:id`, `DELETE /company/:id` |
 | Pesquisas | `POST /research`, `GET /research` ⁽ᵖ⁾, `GET /research/summary`, `GET /research/:id`, `PATCH /research/:id`, `DELETE /research/:id`, `POST /research/:id/publish`, `POST /research/:id/close` |
-| Resultados | `GET /research/:id/panel`, `GET /research/:id/report`, `GET /research/:id/export.csv` |
+| Resultados | `GET /research/:id/panel`, `GET /research/:id/report`, `GET /research/:id/export.csv`, `export.xlsx`, `export.json`, `GET /research/:id/report.pdf` |
+| Mapa e qualidade | `GET /research/:id/map`, `GET /research/:id/quality` (filtros `from`, `to`, `researcherId`, `flagged`; só administrador da empresa) |
+| Modelos | `GET /research/templates`, `POST /research/from-template`, `POST /research/:id/duplicate` |
 | Equipe da pesquisa | `GET /research/:id/researchers` ⁽ᵖ⁾, `GET /research/:id/team` ⁽ᵖ⁾, `POST /research/:id/researchers/:userId`, `PATCH /research/:id/researchers/:userId`, `DELETE /research/:id/researchers/:userId` |
 | Cópias em campo | `GET /research/:id/copies` ⁽ᵖ⁾, `POST /research/:id/copies/:copyId/revoke`, `POST /research/:id/copies/:copyId/unblock`, `POST /research/:id/return`, `GET /research/:id/download` |
 | Seções | `POST /section`, `POST /section/reorder`, `GET /section`, `GET /section/:id`, `PATCH /section/:id`, `DELETE /section/:id` |
 | Questões | `POST /question`, `POST /question/reorder`, `GET /question`, `GET /question/:id`, `PATCH /question/:id`, `DELETE /question/:id`, `POST /question/:id/option`, `GET /question/:id/options`, `PATCH /question/option/:id`, `DELETE /question/option/:id` |
-| Regras | `POST /question-rule`, `GET /question-rule`, `DELETE /question-rule/:id` |
+| Regras | `POST /question-rule` (uma ou várias condições; alvo questão ou seção), `GET /question-rule`, `DELETE /question-rule/:id` (apaga o grupo inteiro) |
 | Coletas | `POST /collection`, `POST /collection/sync`, `POST /collection/:clientId/files`, `GET /collection/:clientId/files/progress`, `POST /collection/:clientId/files/chunk`, `GET /collection?researchId=` ⁽ᵖ⁾, `GET /collection/stats?researchId=`, `GET /collection/:id`, `GET /collection/:id/media/:name`, `GET /collection/:id/audio` |
 | Dashboard | `GET /dashboard/admin` (administrador) |
 
@@ -423,7 +426,10 @@ Para os números dos dashboards existem rotas que devolvem só totais, sem lista
 
 ## Regras de negócio importantes
 
-- **Regras de exibição**: a questão de origem precisa vir **antes** da questão afetada na ordem do questionário (seção, depois questão). Só os tipos `YES_NO`, `SINGLE_CHOICE`, `MULTIPLE_CHOICE` e `SCALE_1_5` podem ser origem de uma regra.
+- **Regras de exibição**: a questão de origem precisa vir **antes** do alvo na ordem do questionário (seção, depois questão); para uma seção, a origem precisa estar em seção anterior. Operadores: `EQ`, `NEQ` (sim/não, escolhas, escala, número, texto), `GT`, `GTE`, `LT`, `LTE` (número e escala), `CONTAINS`, `NOT_CONTAINS` (texto), `ANSWERED`, `NOT_ANSWERED` (qualquer tipo de resposta direta). Uma regra pode ter até 10 condições em conjunto (E). Um alvo é visível quando (não tem regras `SHOW` ou alguma `SHOW` é verdadeira) **e** nenhuma `HIDE` é verdadeira. Uma condição só vale se a questão de origem está visível (esconder uma questão esconde em cascata o que depende dela). Questão ou seção escondida deixa de ser obrigatória e suas respostas não são enviadas. O app aplica as mesmas regras offline.
+- **Área-alvo e qualidade**: a pesquisa pode ter uma área circular (`areaLatitude`, `areaLongitude`, `areaRadiusKm`). O app envia a localização do início da coleta (`startLocation`). Alertas da auditoria: `TOO_FAST` (abaixo de max(10 s, 2 s por resposta) ou abaixo de 35% da mediana, com ≥5 coletas), `OUT_OF_AREA`, `NO_LOCATION` (só informativo), `REPEATED_ANSWERS` (6+ respostas iguais seguidas de escolha/escala/sim-não, ou 3+ textos idênticos) e `MISSING_AUDIO` (pesquisa grava, há consentimento e não há áudio).
+- **Exportações**: CSV, XLSX (abas Resumo, Coletas, Pesquisadores, Respostas por questão e Qualidade), JSON e PDF seguem os mesmos filtros do painel. Células que começam com `=`, `+`, `-`, `@` são neutralizadas contra injeção de fórmula. Só o administrador da empresa da pesquisa exporta.
+- **Modelos e duplicação**: a biblioteca traz 5 questionários prontos; duplicar copia seções, questões, opções e regras (não copia coletas, equipe nem datas) e cria um rascunho.
 - **Consentimento**: em pesquisas que gravam a entrevista, a coleta só é aceita se o consentimento tiver sido registrado de forma explícita, com data e hora, **antes** do início da coleta. Caso contrário a API responde `400` com o código `CONSENT_REQUIRED`.
 - **Idempotência das coletas**: cada coleta carrega um `clientId` único gerado no aparelho, então reenvios após falha de rede não geram duplicidade.
 - **Sincronização em lote** (`POST /collection/sync`): o aparelho envia `{ deviceId, collections: [...] }` (até 100 coletas, cada uma com `clientId` em UUID, `researchId`, `startedAt`, `finishedAt`, `consent` e `answers`). A resposta traz, **por coleta**, `ACCEPTED`, `ALREADY_EXISTS` (mesmo UUID já recebido: pode sair da fila) ou `REJECTED` com `code`, `reason` e `retryable` (`false` = recusa definitiva; `true` = falha temporária, continuar tentando). Uma recusa nunca derruba o lote: pesquisa encerrada (`RESEARCH_CLOSED`), questão que não existe na pesquisa (`QUESTION_NOT_FOUND`, com os `questionIds`), consentimento ausente (`CONSENT_REQUIRED`), datas inconsistentes (`INVALID_DATES`) e dados malformados (`INVALID_PAYLOAD`) afetam só a coleta em questão. Cada envio fica registrado em `SyncLog` (aparelho, horário e resultado por coleta). O áudio da entrevista não viaja no lote.
@@ -453,6 +459,29 @@ ALTER TABLE "User"
   ADD COLUMN "failedLoginAttempts" integer NOT NULL DEFAULT 0,
   ADD COLUMN "lockedUntil" timestamptz NULL;
 ```
+
+Os recursos de produto (regras avançadas, mapa e qualidade) também precisam de colunas novas:
+
+```sql
+ALTER TABLE "QuestionRule"
+  ADD COLUMN "operator" text NOT NULL DEFAULT 'EQ',
+  ADD COLUMN "action" text NOT NULL DEFAULT 'SHOW',
+  ADD COLUMN "groupKey" text NULL,
+  ADD COLUMN "targetSectionId" integer NULL REFERENCES "Section"("id") ON DELETE CASCADE,
+  ALTER COLUMN "targetQuestionId" DROP NOT NULL;
+
+ALTER TABLE "Collection"
+  ADD COLUMN "startLatitude" double precision NULL,
+  ADD COLUMN "startLongitude" double precision NULL,
+  ADD COLUMN "locationAccuracy" double precision NULL;
+
+ALTER TABLE "Research"
+  ADD COLUMN "areaLatitude" double precision NULL,
+  ADD COLUMN "areaLongitude" double precision NULL,
+  ADD COLUMN "areaRadiusKm" double precision NULL;
+```
+
+Dependências novas: `exceljs` e `pdfkit` (API) e `leaflet` (web); rode `npm install` em `api/` e `web/`. A API e o app devem ser atualizados juntos: o app antigo não envia localização e não entende regras de seção.
 
 (Confira o nome/tipo exatos das colunas em `api/src/prisma/contract.json` no seu ambiente.) Depois da atualização **todos precisam entrar de novo**: os tokens antigos não têm `pv` e deixam de valer.
 

@@ -1,4 +1,4 @@
-import { IsBoolean, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsDateString, IsEnum, IsInt, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min, ValidateIf } from "class-validator";
 
 export enum ResearchStatus {
     DRAFT = 'DRAFT',
@@ -44,4 +44,23 @@ export class CreateResearchDto {
     @IsOptional()
     @IsBoolean()
     recordInterview?: boolean;
+
+    // Área-alvo (círculo): coletas que começam fora dela são sinalizadas na auditoria de qualidade.
+    // Enviar `null` nos três campos remove a área. Latitude e longitude do centro, e o raio em km.
+    @IsOptional()
+    @ValidateIf((_, value) => value !== null)
+    @IsLatitude()
+    areaLatitude?: number | null;
+
+    @IsOptional()
+    @ValidateIf((_, value) => value !== null)
+    @IsLongitude()
+    areaLongitude?: number | null;
+
+    @IsOptional()
+    @ValidateIf((_, value) => value !== null)
+    @IsNumber()
+    @Min(0.05)
+    @Max(20000)
+    areaRadiusKm?: number | null;
 }

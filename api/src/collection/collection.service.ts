@@ -156,6 +156,9 @@ export class CollectionService {
                 clientId: payload.clientId ?? null,
                 startedAt: new Date(payload.startedAt).toISOString(),
                 finishedAt: new Date(payload.finishedAt).toISOString(),
+                startLatitude: payload.startLocation?.latitude ?? null,
+                startLongitude: payload.startLocation?.longitude ?? null,
+                locationAccuracy: payload.startLocation?.accuracy ?? null,
                 consentGiven: consentAt !== null,
                 consentAt: consentAt ? consentAt.toISOString() : null,
                 // quem confirmou o aceite: o pesquisador autenticado, nunca um valor enviado pelo aparelho

@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'8857d2dddcb7431da9ee772ea0cd544258c45f018c9bdad69ce2b766aac98ee6'>;
+  StorageHashBase<'6445e8db92d169693133933673e6ee93841c7c4c0b504f76ef1fbbd0727d138c'>;
 export type ExecutionHash =
   ExecutionHashBase<'89005b7a2a0855ac410e36d032ac3f6fc09fa02bc982c27b23170ec528591c09'>;
 export type ProfileHash =
@@ -257,6 +257,9 @@ export type FieldOutputTypes = {
       readonly startedAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly finishedAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly receivedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly startLatitude: CodecTypes['pg/float8@1']['output'] | null;
+      readonly startLongitude: CodecTypes['pg/float8@1']['output'] | null;
+      readonly locationAccuracy: CodecTypes['pg/float8@1']['output'] | null;
       readonly consentGiven: CodecTypes['pg/bool@1']['output'];
       readonly consentAt: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly consentConfirmedById: CodecTypes['pg/int4@1']['output'] | null;
@@ -319,8 +322,12 @@ export type FieldOutputTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly researchId: CodecTypes['pg/int4@1']['output'];
       readonly sourceQuestionId: CodecTypes['pg/int4@1']['output'];
+      readonly operator: CodecTypes['pg/text@1']['output'];
       readonly triggerValue: CodecTypes['pg/text@1']['output'];
-      readonly targetQuestionId: CodecTypes['pg/int4@1']['output'];
+      readonly targetQuestionId: CodecTypes['pg/int4@1']['output'] | null;
+      readonly targetSectionId: CodecTypes['pg/int4@1']['output'] | null;
+      readonly action: CodecTypes['pg/text@1']['output'];
+      readonly groupKey: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly Research: {
@@ -333,6 +340,9 @@ export type FieldOutputTypes = {
       readonly targetAudience: CodecTypes['pg/text@1']['output'];
       readonly status: 'DRAFT' | 'PUBLISHED' | 'IN_FIELD' | 'CLOSED';
       readonly recordInterview: CodecTypes['pg/bool@1']['output'];
+      readonly areaLatitude: CodecTypes['pg/float8@1']['output'] | null;
+      readonly areaLongitude: CodecTypes['pg/float8@1']['output'] | null;
+      readonly areaRadiusKm: CodecTypes['pg/float8@1']['output'] | null;
       readonly companyId: CodecTypes['pg/int4@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -412,6 +422,9 @@ export type FieldInputTypes = {
       readonly startedAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly finishedAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly receivedAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly startLatitude: CodecTypes['pg/float8@1']['input'] | null;
+      readonly startLongitude: CodecTypes['pg/float8@1']['input'] | null;
+      readonly locationAccuracy: CodecTypes['pg/float8@1']['input'] | null;
       readonly consentGiven: CodecTypes['pg/bool@1']['input'];
       readonly consentAt: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly consentConfirmedById: CodecTypes['pg/int4@1']['input'] | null;
@@ -474,8 +487,12 @@ export type FieldInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly researchId: CodecTypes['pg/int4@1']['input'];
       readonly sourceQuestionId: CodecTypes['pg/int4@1']['input'];
+      readonly operator: CodecTypes['pg/text@1']['input'];
       readonly triggerValue: CodecTypes['pg/text@1']['input'];
-      readonly targetQuestionId: CodecTypes['pg/int4@1']['input'];
+      readonly targetQuestionId: CodecTypes['pg/int4@1']['input'] | null;
+      readonly targetSectionId: CodecTypes['pg/int4@1']['input'] | null;
+      readonly action: CodecTypes['pg/text@1']['input'];
+      readonly groupKey: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Research: {
@@ -488,6 +505,9 @@ export type FieldInputTypes = {
       readonly targetAudience: CodecTypes['pg/text@1']['input'];
       readonly status: 'DRAFT' | 'PUBLISHED' | 'IN_FIELD' | 'CLOSED';
       readonly recordInterview: CodecTypes['pg/bool@1']['input'];
+      readonly areaLatitude: CodecTypes['pg/float8@1']['input'] | null;
+      readonly areaLongitude: CodecTypes['pg/float8@1']['input'] | null;
+      readonly areaRadiusKm: CodecTypes['pg/float8@1']['input'] | null;
       readonly companyId: CodecTypes['pg/int4@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -570,10 +590,13 @@ export type StorageColumnTypes = {
       readonly deviceId: CodecTypes['pg/text@1']['output'] | null;
       readonly finishedAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly locationAccuracy: CodecTypes['pg/float8@1']['output'] | null;
       readonly receivedAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly researcherId: CodecTypes['pg/int4@1']['output'];
       readonly researchId: CodecTypes['pg/int4@1']['output'];
       readonly startedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly startLatitude: CodecTypes['pg/float8@1']['output'] | null;
+      readonly startLongitude: CodecTypes['pg/float8@1']['output'] | null;
     };
     readonly company: {
       readonly contactInformation: CodecTypes['pg/text@1']['output'];
@@ -626,14 +649,21 @@ export type StorageColumnTypes = {
       readonly text: CodecTypes['pg/text@1']['output'];
     };
     readonly questionRule: {
+      readonly action: CodecTypes['pg/text@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly groupKey: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly operator: CodecTypes['pg/text@1']['output'];
       readonly researchId: CodecTypes['pg/int4@1']['output'];
       readonly sourceQuestionId: CodecTypes['pg/int4@1']['output'];
-      readonly targetQuestionId: CodecTypes['pg/int4@1']['output'];
+      readonly targetQuestionId: CodecTypes['pg/int4@1']['output'] | null;
+      readonly targetSectionId: CodecTypes['pg/int4@1']['output'] | null;
       readonly triggerValue: CodecTypes['pg/text@1']['output'];
     };
     readonly research: {
+      readonly areaLatitude: CodecTypes['pg/float8@1']['output'] | null;
+      readonly areaLongitude: CodecTypes['pg/float8@1']['output'] | null;
+      readonly areaRadiusKm: CodecTypes['pg/float8@1']['output'] | null;
       readonly companyId: CodecTypes['pg/int4@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'];
@@ -725,10 +755,13 @@ export type StorageColumnInputTypes = {
       readonly deviceId: CodecTypes['pg/text@1']['input'] | null;
       readonly finishedAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly locationAccuracy: CodecTypes['pg/float8@1']['input'] | null;
       readonly receivedAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly researcherId: CodecTypes['pg/int4@1']['input'];
       readonly researchId: CodecTypes['pg/int4@1']['input'];
       readonly startedAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly startLatitude: CodecTypes['pg/float8@1']['input'] | null;
+      readonly startLongitude: CodecTypes['pg/float8@1']['input'] | null;
     };
     readonly company: {
       readonly contactInformation: CodecTypes['pg/text@1']['input'];
@@ -781,14 +814,21 @@ export type StorageColumnInputTypes = {
       readonly text: CodecTypes['pg/text@1']['input'];
     };
     readonly questionRule: {
+      readonly action: CodecTypes['pg/text@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly groupKey: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly operator: CodecTypes['pg/text@1']['input'];
       readonly researchId: CodecTypes['pg/int4@1']['input'];
       readonly sourceQuestionId: CodecTypes['pg/int4@1']['input'];
-      readonly targetQuestionId: CodecTypes['pg/int4@1']['input'];
+      readonly targetQuestionId: CodecTypes['pg/int4@1']['input'] | null;
+      readonly targetSectionId: CodecTypes['pg/int4@1']['input'] | null;
       readonly triggerValue: CodecTypes['pg/text@1']['input'];
     };
     readonly research: {
+      readonly areaLatitude: CodecTypes['pg/float8@1']['input'] | null;
+      readonly areaLongitude: CodecTypes['pg/float8@1']['input'] | null;
+      readonly areaRadiusKm: CodecTypes['pg/float8@1']['input'] | null;
       readonly companyId: CodecTypes['pg/int4@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'];
@@ -999,6 +1039,21 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-string@1';
                   readonly nullable: false;
                   readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly startLatitude: {
+                  readonly nativeType: 'float8';
+                  readonly codecId: 'pg/float8@1';
+                  readonly nullable: true;
+                };
+                readonly startLongitude: {
+                  readonly nativeType: 'float8';
+                  readonly codecId: 'pg/float8@1';
+                  readonly nullable: true;
+                };
+                readonly locationAccuracy: {
+                  readonly nativeType: 'float8';
+                  readonly codecId: 'pg/float8@1';
+                  readonly nullable: true;
                 };
                 readonly consentGiven: {
                   readonly nativeType: 'bool';
@@ -1368,6 +1423,15 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/int4@1';
                   readonly nullable: false;
                 };
+                readonly operator: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'EQ'>;
+                  };
+                };
                 readonly triggerValue: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -1376,7 +1440,26 @@ type ContractBase = Omit<
                 readonly targetQuestionId: {
                   readonly nativeType: 'int4';
                   readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                };
+                readonly targetSectionId: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                };
+                readonly action: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'SHOW'>;
+                  };
+                };
+                readonly groupKey: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                 };
                 readonly createdAt: {
                   readonly nativeType: 'timestamptz';
@@ -1404,6 +1487,12 @@ type ContractBase = Omit<
                   readonly name: 'questionRule_targetQuestionId_idx_99c9d653';
                   readonly prefix: 'questionRule_targetQuestionId_idx';
                   readonly columns: readonly ['targetQuestionId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'questionRule_targetSectionId_idx_7c2b67b1';
+                  readonly prefix: 'questionRule_targetSectionId_idx';
+                  readonly columns: readonly ['targetSectionId'];
                   readonly unique: false;
                 },
               ];
@@ -1441,6 +1530,18 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'question';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'questionRule';
+                    readonly columns: readonly ['targetSectionId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'section';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -1506,6 +1607,21 @@ type ContractBase = Omit<
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/bool@1', false>;
                   };
+                };
+                readonly areaLatitude: {
+                  readonly nativeType: 'float8';
+                  readonly codecId: 'pg/float8@1';
+                  readonly nullable: true;
+                };
+                readonly areaLongitude: {
+                  readonly nativeType: 'float8';
+                  readonly codecId: 'pg/float8@1';
+                  readonly nullable: true;
+                };
+                readonly areaRadiusKm: {
+                  readonly nativeType: 'float8';
+                  readonly codecId: 'pg/float8@1';
+                  readonly nullable: true;
                 };
                 readonly companyId: {
                   readonly nativeType: 'int4';
@@ -2156,6 +2272,18 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-string@1';
                 };
               };
+              readonly startLatitude: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
+              };
+              readonly startLongitude: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
+              };
+              readonly locationAccuracy: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
+              };
               readonly consentGiven: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
@@ -2240,6 +2368,9 @@ type ContractBase = Omit<
                 readonly startedAt: { readonly column: 'startedAt' };
                 readonly finishedAt: { readonly column: 'finishedAt' };
                 readonly receivedAt: { readonly column: 'receivedAt' };
+                readonly startLatitude: { readonly column: 'startLatitude' };
+                readonly startLongitude: { readonly column: 'startLongitude' };
+                readonly locationAccuracy: { readonly column: 'locationAccuracy' };
                 readonly consentGiven: { readonly column: 'consentGiven' };
                 readonly consentAt: { readonly column: 'consentAt' };
                 readonly consentConfirmedById: { readonly column: 'consentConfirmedById' };
@@ -2546,13 +2677,29 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly operator: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly triggerValue: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly targetQuestionId: {
-                readonly nullable: false;
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly targetSectionId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly action: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly groupKey: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly createdAt: {
                 readonly nullable: false;
@@ -2596,6 +2743,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly targetSection: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Section';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['targetSectionId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'questionRule';
@@ -2604,8 +2762,12 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly researchId: { readonly column: 'researchId' };
                 readonly sourceQuestionId: { readonly column: 'sourceQuestionId' };
+                readonly operator: { readonly column: 'operator' };
                 readonly triggerValue: { readonly column: 'triggerValue' };
                 readonly targetQuestionId: { readonly column: 'targetQuestionId' };
+                readonly targetSectionId: { readonly column: 'targetSectionId' };
+                readonly action: { readonly column: 'action' };
+                readonly groupKey: { readonly column: 'groupKey' };
                 readonly createdAt: { readonly column: 'createdAt' };
               };
             };
@@ -2653,6 +2815,18 @@ type ContractBase = Omit<
               readonly recordInterview: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly areaLatitude: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
+              };
+              readonly areaLongitude: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
+              };
+              readonly areaRadiusKm: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
               };
               readonly companyId: {
                 readonly nullable: false;
@@ -2743,6 +2917,9 @@ type ContractBase = Omit<
                 readonly targetAudience: { readonly column: 'targetAudience' };
                 readonly status: { readonly column: 'status' };
                 readonly recordInterview: { readonly column: 'recordInterview' };
+                readonly areaLatitude: { readonly column: 'areaLatitude' };
+                readonly areaLongitude: { readonly column: 'areaLongitude' };
+                readonly areaRadiusKm: { readonly column: 'areaRadiusKm' };
                 readonly companyId: { readonly column: 'companyId' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
@@ -2957,6 +3134,17 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['researchId'];
                   readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly targetRules: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'QuestionRule';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['targetSectionId'];
                 };
               };
             };

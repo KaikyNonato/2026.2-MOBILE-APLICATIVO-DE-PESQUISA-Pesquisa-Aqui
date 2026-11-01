@@ -69,6 +69,8 @@ export interface CollectionInput {
     startedAt: string;
     finishedAt: string;
     answers: CollectionAnswer[];
+    // Local onde a entrevista começou (GPS). Ausente = sem permissão ou sem sinal.
+    startLocation?: { latitude: number; longitude: number; accuracy: number | null } | null;
     consent?: InterviewConsent;
     audio?: CollectionAudio;
     recordingIssues?: RecordingIssue[];
@@ -94,6 +96,7 @@ export function buildCollectionFormData(input: CollectionInput): FormData {
         startedAt: input.startedAt,
         finishedAt: input.finishedAt,
         answers: input.answers,
+        startLocation: input.startLocation ?? undefined,
         consent: input.consent,
         audioDurationSeconds: input.audio ? Math.round(input.audio.durationSeconds) : undefined,
         photos: photos.map(({ questionId, name }) => ({ questionId, name })),

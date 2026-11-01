@@ -209,6 +209,9 @@ export class CollectionSyncService {
                     clientId: uuid,
                     startedAt: new Date(item.startedAt).toISOString(),
                     finishedAt: new Date(item.finishedAt).toISOString(),
+                    startLatitude: item.startLocation?.latitude ?? null,
+                    startLongitude: item.startLocation?.longitude ?? null,
+                    locationAccuracy: item.startLocation?.accuracy ?? null,
                     consentGiven: consentAt !== null,
                     consentAt: consentAt ? consentAt.toISOString() : null,
                     // quem confirmou o aceite: o pesquisador autenticado, nunca um valor enviado pelo aparelho

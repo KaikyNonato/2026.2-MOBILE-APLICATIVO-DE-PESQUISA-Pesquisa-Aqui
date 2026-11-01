@@ -14,7 +14,7 @@ import {
     Min,
     ValidateNested,
 } from 'class-validator';
-import { CollectionAnswerDto, ConsentDto } from './create-collection.dto.js';
+import { CollectionAnswerDto, ConsentDto, StartLocationDto } from './create-collection.dto.js';
 
 // Quantas coletas o aplicativo pode mandar de uma vez. Acima disso ele precisa dividir o envio.
 export const MAX_SYNC_BATCH = 100;
@@ -48,6 +48,11 @@ export class SyncCollectionItemDto {
     @Min(0)
     @Max(24 * 60 * 60)
     audioDurationSeconds?: number;
+
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => StartLocationDto)
+    startLocation?: StartLocationDto;
 
     @IsArray()
     @ValidateNested({ each: true })

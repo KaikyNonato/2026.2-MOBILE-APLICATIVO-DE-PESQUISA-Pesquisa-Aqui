@@ -347,6 +347,13 @@
                   "kind": "scalar"
                 }
               },
+              "locationAccuracy": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/float8@1",
+                  "kind": "scalar"
+                }
+              },
               "receivedAt": {
                 "nullable": false,
                 "type": {
@@ -365,6 +372,20 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "startLatitude": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/float8@1",
+                  "kind": "scalar"
+                }
+              },
+              "startLongitude": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/float8@1",
                   "kind": "scalar"
                 }
               },
@@ -473,6 +494,9 @@
                 "id": {
                   "column": "id"
                 },
+                "locationAccuracy": {
+                  "column": "locationAccuracy"
+                },
                 "receivedAt": {
                   "column": "receivedAt"
                 },
@@ -481,6 +505,12 @@
                 },
                 "researcherId": {
                   "column": "researcherId"
+                },
+                "startLatitude": {
+                  "column": "startLatitude"
+                },
+                "startLongitude": {
+                  "column": "startLongitude"
                 },
                 "startedAt": {
                   "column": "startedAt"
@@ -965,6 +995,13 @@
           },
           "QuestionRule": {
             "fields": {
+              "action": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -972,10 +1009,24 @@
                   "kind": "scalar"
                 }
               },
+              "groupKey": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "operator": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -994,7 +1045,14 @@
                 }
               },
               "targetQuestionId": {
-                "nullable": false,
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "targetSectionId": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -1053,15 +1111,39 @@
                   "model": "Question",
                   "namespace": "public"
                 }
+              },
+              "targetSection": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "targetSectionId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Section",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
               "fields": {
+                "action": {
+                  "column": "action"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
+                "groupKey": {
+                  "column": "groupKey"
+                },
                 "id": {
                   "column": "id"
+                },
+                "operator": {
+                  "column": "operator"
                 },
                 "researchId": {
                   "column": "researchId"
@@ -1071,6 +1153,9 @@
                 },
                 "targetQuestionId": {
                   "column": "targetQuestionId"
+                },
+                "targetSectionId": {
+                  "column": "targetSectionId"
                 },
                 "triggerValue": {
                   "column": "triggerValue"
@@ -1082,6 +1167,27 @@
           },
           "Research": {
             "fields": {
+              "areaLatitude": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/float8@1",
+                  "kind": "scalar"
+                }
+              },
+              "areaLongitude": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/float8@1",
+                  "kind": "scalar"
+                }
+              },
+              "areaRadiusKm": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/float8@1",
+                  "kind": "scalar"
+                }
+              },
               "companyId": {
                 "nullable": false,
                 "type": {
@@ -1252,6 +1358,15 @@
             },
             "storage": {
               "fields": {
+                "areaLatitude": {
+                  "column": "areaLatitude"
+                },
+                "areaLongitude": {
+                  "column": "areaLongitude"
+                },
+                "areaRadiusKm": {
+                  "column": "areaRadiusKm"
+                },
                 "companyId": {
                   "column": "companyId"
                 },
@@ -1605,6 +1720,21 @@
                 },
                 "to": {
                   "model": "Research",
+                  "namespace": "public"
+                }
+              },
+              "targetRules": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "targetSectionId"
+                  ]
+                },
+                "to": {
+                  "model": "QuestionRule",
                   "namespace": "public"
                 }
               }
@@ -2150,6 +2280,11 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "locationAccuracy": {
+                  "codecId": "pg/float8@1",
+                  "nativeType": "float8",
+                  "nullable": true
+                },
                 "receivedAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "default": {
@@ -2168,6 +2303,16 @@
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
                   "nullable": false
+                },
+                "startLatitude": {
+                  "codecId": "pg/float8@1",
+                  "nativeType": "float8",
+                  "nullable": true
+                },
+                "startLongitude": {
+                  "codecId": "pg/float8@1",
+                  "nativeType": "float8",
+                  "nullable": true
                 },
                 "startedAt": {
                   "codecId": "pg/timestamptz-string@1",
@@ -2572,6 +2717,15 @@
             },
             "questionRule": {
               "columns": {
+                "action": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "SHOW"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "default": {
@@ -2581,6 +2735,11 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "groupKey": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -2588,6 +2747,15 @@
                     "kind": "function"
                   },
                   "nativeType": "int4",
+                  "nullable": false
+                },
+                "operator": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "EQ"
+                  },
+                  "nativeType": "text",
                   "nullable": false
                 },
                 "researchId": {
@@ -2603,7 +2771,12 @@
                 "targetQuestionId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
-                  "nullable": false
+                  "nullable": true
+                },
+                "targetSectionId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
                 },
                 "triggerValue": {
                   "codecId": "pg/text@1",
@@ -2662,6 +2835,23 @@
                     "namespaceId": "public",
                     "tableName": "question"
                   }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "targetSectionId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "questionRule"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "section"
+                  }
                 }
               ],
               "indexes": [
@@ -2688,6 +2878,14 @@
                   "name": "questionRule_targetQuestionId_idx_99c9d653",
                   "prefix": "questionRule_targetQuestionId_idx",
                   "unique": false
+                },
+                {
+                  "columns": [
+                    "targetSectionId"
+                  ],
+                  "name": "questionRule_targetSectionId_idx_7c2b67b1",
+                  "prefix": "questionRule_targetSectionId_idx",
+                  "unique": false
                 }
               ],
               "primaryKey": {
@@ -2706,6 +2904,21 @@
                 }
               ],
               "columns": {
+                "areaLatitude": {
+                  "codecId": "pg/float8@1",
+                  "nativeType": "float8",
+                  "nullable": true
+                },
+                "areaLongitude": {
+                  "codecId": "pg/float8@1",
+                  "nativeType": "float8",
+                  "nullable": true
+                },
+                "areaRadiusKm": {
+                  "codecId": "pg/float8@1",
+                  "nativeType": "float8",
+                  "nullable": true
+                },
                 "companyId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -3417,7 +3630,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "8857d2dddcb7431da9ee772ea0cd544258c45f018c9bdad69ce2b766aac98ee6"
+    "storageHash": "6445e8db92d169693133933673e6ee93841c7c4c0b504f76ef1fbbd0727d138c"
   },
   "execution": {
     "executionHash": "89005b7a2a0855ac410e36d032ac3f6fc09fa02bc982c27b23170ec528591c09",

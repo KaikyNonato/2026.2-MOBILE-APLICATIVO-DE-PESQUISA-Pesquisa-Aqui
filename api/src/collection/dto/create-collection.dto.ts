@@ -6,6 +6,9 @@ import {
     IsDateString,
     IsDefined,
     IsInt,
+    IsLatitude,
+    IsLongitude,
+    IsNumber,
     IsOptional,
     IsString,
     Max,
@@ -43,6 +46,21 @@ export class CollectionMediaDto {
     @Min(0)
     @Max(24 * 60 * 60)
     durationSeconds?: number;
+}
+
+// Local onde a entrevista começou (GPS do aparelho). Usado no mapa de coletas e na auditoria de qualidade.
+export class StartLocationDto {
+    @IsLatitude()
+    latitude: number;
+
+    @IsLongitude()
+    longitude: number;
+
+    // Precisão em metros (opcional; o GPS nem sempre informa).
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    accuracy?: number | null;
 }
 
 export class ConsentDto {
@@ -86,6 +104,11 @@ export class CollectionPayloadDto {
     @ValidateNested({ each: true })
     @Type(() => CollectionAnswerDto)
     answers: CollectionAnswerDto[];
+
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => StartLocationDto)
+    startLocation?: StartLocationDto;
 
     @IsOptional()
     @IsInt()
