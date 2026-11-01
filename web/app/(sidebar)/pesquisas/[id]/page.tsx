@@ -330,13 +330,28 @@ export default function PesquisaDetalhePage() {
                                 {activeCopies > 0 && <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-[#c4623f] ring-2 ring-white" />}
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start" sideOffset={8} className="w-64 rounded-2xl p-1.5">
-                                {navItems.map(({ value, label, Icon, badge }) => (
-                                    <DropdownMenuItem key={value} onClick={() => setTab(value)} className={`cursor-pointer gap-3 rounded-xl px-3 py-2.5 text-sm ${tab === value ? '!bg-[#0f1713] font-semibold !text-white [&_svg]:!text-white [&>span:not(:last-child)]:!text-white' : '!text-[#0f1713] hover:!bg-[#e8f0ea] focus:!bg-[#e8f0ea] [&_svg]:!text-[#0f1713] [&>span:not(:last-child)]:!text-[#0f1713]'}`}>
-                                        <Icon className="size-4" />
-                                        <span className="grow">{label}</span>
-                                        {badge ? <span className="rounded-full bg-[#f3e0d9] px-1.5 text-[11px] font-semibold text-[#8a432f]">{badge}</span> : null}
-                                    </DropdownMenuItem>
-                                ))}
+                                {navItems.map(({ value, label, Icon, badge }) => {
+                                    const active = tab === value;
+                                    return (
+                                        <DropdownMenuItem
+                                            key={value}
+                                            onClick={() => setTab(value)}
+                                            className={`cursor-pointer gap-3 rounded-xl px-3 py-2.5 text-sm ${active
+                                                ? '!bg-[#0f1713] font-semibold !text-white'
+                                                : '!bg-transparent !text-[#0f1713] hover:!bg-[#e8f0ea] focus:!bg-[#e8f0ea] data-[highlighted]:!bg-[#e8f0ea]'}`}
+                                        >
+                                            {/* cor aplicada direto em cada filho: o item base pinta todos os descendentes
+                                                de escuro no foco/hover, o que deixava o item ativo preto sobre preto */}
+                                            <Icon
+                                                className="size-4"
+                                                color={active ? '#ffffff' : '#0f1713'}
+                                                style={{ color: active ? '#ffffff' : '#0f1713', stroke: active ? '#ffffff' : '#0f1713' }}
+                                            />
+                                            <span className={`grow ${active ? '!text-white' : '!text-[#0f1713]'}`}>{label}</span>
+                                            {badge ? <span className="rounded-full !bg-[#f3e0d9] px-1.5 text-[11px] font-semibold !text-[#8a432f]">{badge}</span> : null}
+                                        </DropdownMenuItem>
+                                    );
+                                })}
                             </DropdownMenuContent>
                         </DropdownMenu>
                         <span className="mr-auto text-sm font-medium text-muted-foreground">{navItems.find((i) => i.value === tab)?.label}</span>
