@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Pa
 import { ResearchService } from './research.service.js';
 import { ResearchReportService } from './research-report.service.js';
 import { ResearchTemplateService } from './research-template.service.js';
-import { CreateFromTemplateDto, DuplicateResearchDto } from './dto/research-template.dto.js';
+import { CreateFromSpecDto, CreateFromTemplateDto, DuplicateResearchDto } from './dto/research-template.dto.js';
 import { CreateResearchDto } from './dto/create-research.dto.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { UserPayLoad } from '../auth/current-user.type.js';
@@ -56,6 +56,18 @@ export class ResearchController {
     @Post('from-template')
     fromTemplate(@Body() dto: CreateFromTemplateDto, @CurrentUser() currentUser: UserPayLoad) {
         return this.templateService.fromTemplate(dto, currentUser);
+    }
+
+    // Cria um rascunho a partir de um modelo personalizado (JSON salvo ou importado).
+    @Post('from-spec')
+    fromSpec(@Body() dto: CreateFromSpecDto, @CurrentUser() currentUser: UserPayLoad) {
+        return this.templateService.fromSpec(dto, currentUser);
+    }
+
+    // Estrutura da pesquisa como arquivo de modelo (para salvar como modelo / baixar em JSON).
+    @Get(':id/template')
+    exportTemplate(@Param('id', ParseIntPipe) id: number, @CurrentUser() currentUser: UserPayLoad) {
+        return this.templateService.exportTemplate(id, currentUser);
     }
 
     // Duplica a estrutura da pesquisa (seções, questões, opções e regras) em um novo rascunho.

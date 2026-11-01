@@ -4,7 +4,8 @@ import { PrismaService } from '../prisma.service.js';
 import type { UserPayLoad } from '../auth/current-user.type.js';
 import { ResearchService } from './research.service.js';
 import { TEMPLATES, templateSummary, type QuestionnaireSpec, type SpecQuestion, type SpecRule, type SpecSection } from './research-templates.js';
-import type { CreateFromTemplateDto, DuplicateResearchDto } from './dto/research-template.dto.js';
+import { sanitizeSpec } from './research-template-spec.js';
+import type { CreateFromSpecDto, CreateFromTemplateDto, DuplicateResearchDto } from './dto/research-template.dto.js';
 
 const CHOICE = ['SINGLE_CHOICE', 'MULTIPLE_CHOICE'];
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -95,6 +96,53 @@ export class ResearchTemplateService {
             });
             await this.writeSpec(tx.orm.public, created.id, template);
             return { ...created, templateId: template.id };
+        });
+    }
+
+    // ---------- modelos personalizados (salvar uma pesquisa como modelo / importar JSON) ----------
+
+    /** Estrutura de uma pesquisa existente, num arquivo de modelo pronto para baixar e importar depois. */
+    async exportTemplate(id: number, currentUser: UserPayLoad) {
+        const research = await this.researchService.findOne(id, currentUser);
+        if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot export templates');
+        const spec = await this.exportSpec(research.id);
+        return {
+            format: 'pesquisa-aqui-template',
+            version: 1,
+            name: research.title,
+            category: 'Personalizado',
+            description: research.description ?? '',
+            objective: research.objective ?? '',
+            targetAudience: research.targetAudience ?? '',
+            recordInterview: research.recordInterview ?? false,
+            sections: spec.sections,
+            rules: spec.rules,
+        };
+    }
+
+    /** Rascunho a partir de um modelo personalizado (o JSON salvo ou importado). A estrutura é revalidada aqui. */
+    async fromSpec(dto: CreateFromSpecDto, currentUser: UserPayLoad) {
+        const companyId = this.companyFor(currentUser, dto.companyId);
+        const spec = sanitizeSpec(dto.spec);
+
+        const start = dto.startDate ? new Date(dto.startDate) : new Date();
+        const end = dto.endDate ? new Date(dto.endDate) : new Date(start.getTime() + 30 * DAY_MS);
+        if (end < start) throw new BadRequestException('The end date cannot be earlier than the start date');
+
+        return await this.prisma.client.transaction(async (tx) => {
+            const created = await tx.orm.public.Research.create({
+                title: dto.title?.trim() || dto.name?.trim() || 'Pesquisa a partir de modelo',
+                description: dto.description?.trim() || 'Pesquisa criada a partir de um modelo personalizado.',
+                objective: dto.objective?.trim() || 'Definir o objetivo da pesquisa.',
+                targetAudience: dto.targetAudience?.trim() || 'Definir o público-alvo.',
+                startDate: start.toISOString(),
+                endDate: end.toISOString(),
+                status: 'DRAFT',
+                recordInterview: dto.recordInterview ?? false,
+                companyId,
+            });
+            await this.writeSpec(tx.orm.public, created.id, spec);
+            return created;
         });
     }
 

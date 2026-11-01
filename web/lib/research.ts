@@ -414,6 +414,121 @@ export const duplicateResearch = async (id: number, title?: string): Promise<Res
     return response.json();
 };
 
+// ---------- modelos personalizados ----------
+// Ficam na biblioteca deste navegador (localStorage) e podem ir e voltar como arquivo JSON.
+// Ao usar um, a estrutura é enviada ao servidor, que a valida de novo antes de criar o rascunho.
+
+/** Arquivo/registro de modelo personalizado. `sections` e `rules` seguem o formato dos modelos prontos. */
+export interface CustomTemplate {
+    id: string;
+    name: string;
+    category: string;
+    description: string;
+    objective: string;
+    targetAudience: string;
+    recordInterview: boolean;
+    sections: { title: string; questions: { key: string; statement: string; type: string; [extra: string]: unknown }[] }[];
+    rules: unknown[];
+}
+
+const CUSTOM_TEMPLATES_KEY = 'pa:custom-templates';
+
+export const loadCustomTemplates = (): CustomTemplate[] => {
+    try {
+        const raw = window.localStorage.getItem(CUSTOM_TEMPLATES_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list : [];
+    } catch {
+        return [];
+    }
+};
+
+const storeCustomTemplates = (list: CustomTemplate[]) => {
+    try {
+        window.localStorage.setItem(CUSTOM_TEMPLATES_KEY, JSON.stringify(list));
+    } catch {
+        throw new Error('Não foi possível guardar o modelo neste navegador (armazenamento bloqueado ou cheio).');
+    }
+};
+
+export const addCustomTemplate = (template: Omit<CustomTemplate, 'id'>): CustomTemplate => {
+    const saved: CustomTemplate = { ...template, id: `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}` };
+    storeCustomTemplates([saved, ...loadCustomTemplates()]);
+    return saved;
+};
+
+export const removeCustomTemplate = (id: string) => storeCustomTemplates(loadCustomTemplates().filter((t) => t.id !== id));
+
+const asText = (v: unknown, fallback = '') => (typeof v === 'string' ? v : fallback);
+
+/** Lê o conteúdo de um arquivo JSON de modelo. Verificação leve: o servidor valida tudo de novo ao usar o modelo. */
+export const parseTemplateFile = (content: string, fallbackName = 'Modelo importado'): Omit<CustomTemplate, 'id'> => {
+    let data: unknown;
+    try {
+        data = JSON.parse(content);
+    } catch {
+        throw new Error('O arquivo não é um JSON válido.');
+    }
+    const obj = data as Record<string, unknown> | null;
+    if (!obj || typeof obj !== 'object' || !Array.isArray(obj.sections) || obj.sections.length === 0) {
+        throw new Error('O arquivo não parece um modelo: faltam as seções ("sections").');
+    }
+    const sections = obj.sections as CustomTemplate['sections'];
+    const sectionsOk = sections.every((sec) => sec && typeof sec === 'object' && typeof sec.title === 'string' && Array.isArray(sec.questions)
+        && sec.questions.every((q) => q && typeof q.key === 'string' && typeof q.statement === 'string' && typeof q.type === 'string'));
+    if (!sectionsOk) throw new Error('O arquivo tem seções ou questões fora do formato esperado.');
+    return {
+        name: asText(obj.name, fallbackName).trim().slice(0, 150) || fallbackName,
+        category: asText(obj.category, 'Personalizado').trim().slice(0, 40) || 'Personalizado',
+        description: asText(obj.description),
+        objective: asText(obj.objective),
+        targetAudience: asText(obj.targetAudience),
+        recordInterview: obj.recordInterview === true,
+        sections,
+        rules: Array.isArray(obj.rules) ? obj.rules : [],
+    };
+};
+
+/** Estrutura de uma pesquisa existente, no formato de arquivo de modelo. */
+export const exportResearchTemplate = async (id: number): Promise<Omit<CustomTemplate, 'id'>> => {
+    const response = await apiFetch(`/research/${id}/template`, { method: 'GET', credentials: 'include' });
+    if (!response.ok) throw await errorFrom(response, 'Falha ao ler a estrutura da pesquisa');
+    return parseTemplateFile(JSON.stringify(await response.json()));
+};
+
+/** Cria um rascunho a partir de um modelo personalizado. */
+export const createResearchFromSpec = async (template: CustomTemplate, title?: string): Promise<Research> => {
+    const response = await apiFetch('/research/from-spec', {
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({
+            spec: { sections: template.sections, rules: template.rules },
+            name: template.name,
+            title: title || undefined,
+            description: template.description || undefined,
+            objective: template.objective || undefined,
+            targetAudience: template.targetAudience || undefined,
+            recordInterview: template.recordInterview,
+        }),
+    });
+    if (!response.ok) throw await errorFrom(response, 'Falha ao criar a pesquisa a partir do modelo');
+    return response.json();
+};
+
+/** Baixa o modelo como arquivo .json. */
+export const downloadTemplateFile = (template: Omit<CustomTemplate, 'id'>) => {
+    const { name, category, description, objective, targetAudience, recordInterview, sections, rules } = template;
+    const body = JSON.stringify({ format: 'pesquisa-aqui-template', version: 1, name, category, description, objective, targetAudience, recordInterview, sections, rules }, null, 2);
+    const url = URL.createObjectURL(new Blob([body], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `modelo-${name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'pesquisa'}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+};
+
 /** Define (ou remove, com `null`) a área-alvo da pesquisa. */
 export const updateResearchArea = async (id: number, area: { areaLatitude: number | null; areaLongitude: number | null; areaRadiusKm: number | null }): Promise<Research> => {
     const response = await apiFetch(`/research/${id}`, { method: 'PATCH', credentials: 'include', body: JSON.stringify(area) });

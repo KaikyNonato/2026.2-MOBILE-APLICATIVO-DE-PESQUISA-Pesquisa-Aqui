@@ -6,10 +6,10 @@ import DialogLayout from "@/components/ui/dialogLayout";
 import { LoadingState } from "@/components/ui/loadingState";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { deleteResearch, duplicateResearch, getResearchById, publishResearch, unpublishResearch, type Research } from "@/lib/research";
+import { addCustomTemplate, deleteResearch, duplicateResearch, exportResearchTemplate, getResearchById, publishResearch, unpublishResearch, type Research } from "@/lib/research";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { ArrowLeft, CalendarRange, Check, BarChart3, ClipboardList, FileText, Copy, Flag, ListChecks, Map as MapIcon, Menu, ShieldCheck, Lock, Mic, MicOff, Quote, ShieldAlert, Smartphone, Target, Trash2, Undo2, UsersRound } from "lucide-react";
+import { ArrowLeft, CalendarRange, Check, BarChart3, ClipboardList, FileText, Copy, Flag, LibraryBig, ListChecks, Map as MapIcon, Menu, ShieldCheck, Lock, Mic, MicOff, Quote, ShieldAlert, Smartphone, Target, Trash2, Undo2, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -174,6 +174,16 @@ export default function PesquisaDetalhePage() {
             toast.success('Pesquisa voltou para rascunho!');
         } catch (err) {
             toast.error(err instanceof Error ? err.message : 'Erro ao voltar a pesquisa para rascunho');
+        }
+    };
+
+    // Guarda a estrutura desta pesquisa na biblioteca de modelos (aba "Usar modelo" da lista de pesquisas).
+    const handleSaveAsTemplate = async () => {
+        try {
+            addCustomTemplate(await exportResearchTemplate(research.id));
+            toast.success('Pesquisa salva como modelo! Ela aparece em "Usar modelo".');
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Erro ao salvar como modelo');
         }
     };
 
@@ -378,6 +388,9 @@ export default function PesquisaDetalhePage() {
                         )}
                         {canSeeCollections && (
                             <Button size="sm" variant="outline" onClick={handleDuplicate}><Copy />Duplicar</Button>
+                        )}
+                        {canSeeCollections && (
+                            <Button size="sm" variant="outline" onClick={handleSaveAsTemplate} title="Guarda as seções, questões e regras como modelo reutilizável"><LibraryBig />Salvar como modelo</Button>
                         )}
                         {research.canDelete && (
                             <Button size="sm" variant="destructive" onClick={handleDelete}><Trash2 />Excluir</Button>
