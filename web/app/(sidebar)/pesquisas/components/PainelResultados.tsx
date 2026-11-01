@@ -3,6 +3,7 @@
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { CountUp } from "@/components/ui/count-up";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LoadingState } from "@/components/ui/loadingState";
 import { PaginatedList, Pagination, usePagination } from "@/components/ui/pagination";
 import { RemoteComboBox } from "@/components/ui/remoteCombobox";
@@ -21,7 +22,7 @@ import {
     type ResearchPanel,
     type ResearchReport,
 } from "@/lib/report";
-import { BarChart3, Clock, Download, Gauge, Lock, PieChart as PieIcon, RefreshCw, TriangleAlert, Users, Wifi } from "lucide-react";
+import { BarChart3, ChevronDown, Clock, Download, FileJson, FileSpreadsheet, FileText, Table2, Gauge, Lock, PieChart as PieIcon, RefreshCw, TriangleAlert, Users, Wifi } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -159,7 +160,7 @@ export default function PainelResultados({ researchId, status, onClosed }: Paine
     return (
         <div className="flex flex-col gap-5">
             {/* Filtros e ações */}
-            <article className="pa-card flex flex-col gap-4 lg:flex-row lg:items-end">
+            <article className="pa-card flex flex-col gap-5">
                 <div className="grid grow grid-cols-1 gap-3 sm:grid-cols-3">
                     <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
                         De
@@ -194,21 +195,49 @@ export default function PainelResultados({ researchId, status, onClosed }: Paine
                     </label>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                    {filtered && (
-                        <Button variant="ghost" size="sm" className="h-10" onClick={() => { setFrom(''); setTo(''); setResearcherId(undefined); }}>Limpar filtros</Button>
-                    )}
+                {/* Ações: à esquerda atualizar e exportar; à direita a ação destrutiva, separada dos filtros */}
+                <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
                     <Button variant="outline" size="sm" className="h-10" onClick={handleRefresh} disabled={refreshing} title="Atualizar agora">
                         <RefreshCw className={refreshing ? 'animate-spin' : undefined} />Atualizar
                     </Button>
-                    {(['csv', 'xlsx', 'json', 'pdf'] as ExportKind[]).map((kind) => (
-                        <Button key={kind} variant="outline" size="sm" className="h-10" onClick={() => handleExport(kind)} disabled={exporting !== null}>
-                            {exporting === kind ? <Spinner /> : <Download />}
-                            {kind === 'csv' ? 'CSV' : kind === 'xlsx' ? 'Excel' : kind === 'json' ? 'JSON' : 'Relatório PDF'}
-                        </Button>
-                    ))}
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger
+                            disabled={exporting !== null}
+                            className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-border bg-white px-4 text-sm font-medium text-[#0f1713] transition hover:bg-[#e8f0ea] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-60"
+                        >
+                            {exporting !== null ? <Spinner /> : <Download className="size-4" />}
+                            Exportar
+                            <ChevronDown className="size-4 opacity-60" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" sideOffset={8} className="w-56 rounded-2xl p-1.5">
+                            {([
+                                { kind: 'csv', label: 'CSV', hint: 'Planilha simples', Icon: Table2 },
+                                { kind: 'xlsx', label: 'Excel', hint: 'Arquivo .xlsx', Icon: FileSpreadsheet },
+                                { kind: 'json', label: 'JSON', hint: 'Dados estruturados', Icon: FileJson },
+                                { kind: 'pdf', label: 'Relatório PDF', hint: 'Resumo para leitura', Icon: FileText },
+                            ] as { kind: ExportKind; label: string; hint: string; Icon: typeof Table2 }[]).map(({ kind, label, hint, Icon }) => (
+                                <DropdownMenuItem
+                                    key={kind}
+                                    onClick={() => handleExport(kind)}
+                                    className="cursor-pointer gap-3 rounded-xl px-3 py-2.5 text-sm !text-[#0f1713] hover:!bg-[#e8f0ea] focus:!bg-[#e8f0ea]"
+                                >
+                                    <Icon className="size-4" style={{ color: '#0f1713' }} />
+                                    <span className="flex grow flex-col leading-tight">
+                                        <span className="font-medium !text-[#0f1713]">{label}</span>
+                                        <span className="text-[11px] !text-[#5b6b62]">{hint}</span>
+                                    </span>
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {filtered && (
+                        <Button variant="ghost" size="sm" className="h-10" onClick={() => { setFrom(''); setTo(''); setResearcherId(undefined); }}>Limpar filtros</Button>
+                    )}
+
                     {!closed && status !== 'DRAFT' && (
-                        <Button variant="destructive" size="sm" className="h-10" onClick={handleClose} disabled={closing}>
+                        <Button variant="destructive" size="sm" className="ml-auto h-10" onClick={handleClose} disabled={closing}>
                             {closing ? <Spinner /> : <Lock />}Encerrar
                         </Button>
                     )}
