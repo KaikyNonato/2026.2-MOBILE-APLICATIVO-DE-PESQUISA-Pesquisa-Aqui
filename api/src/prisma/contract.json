@@ -1774,10 +1774,31 @@
                   "kind": "scalar"
                 }
               },
+              "failedLoginAttempts": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "lockedUntil": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "mustChangePassword": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
                   "kind": "scalar"
                 }
               },
@@ -1924,8 +1945,17 @@
                 "createdAt": {
                   "column": "createdAt"
                 },
+                "failedLoginAttempts": {
+                  "column": "failedLoginAttempts"
+                },
                 "id": {
                   "column": "id"
+                },
+                "lockedUntil": {
+                  "column": "lockedUntil"
+                },
+                "mustChangePassword": {
+                  "column": "mustChangePassword"
                 },
                 "name": {
                   "column": "name"
@@ -3211,6 +3241,15 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "failedLoginAttempts": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -3218,6 +3257,20 @@
                     "kind": "function"
                   },
                   "nativeType": "int4",
+                  "nullable": false
+                },
+                "lockedUntil": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "mustChangePassword": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
                   "nullable": false
                 },
                 "name": {
@@ -3364,7 +3417,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "a7ee7ae20babe8e8905946a3c484e17c5565ae8d15a8a580a696a5853ae0e5a5"
+    "storageHash": "8857d2dddcb7431da9ee772ea0cd544258c45f018c9bdad69ce2b766aac98ee6"
   },
   "execution": {
     "executionHash": "89005b7a2a0855ac410e36d032ac3f6fc09fa02bc982c27b23170ec528591c09",

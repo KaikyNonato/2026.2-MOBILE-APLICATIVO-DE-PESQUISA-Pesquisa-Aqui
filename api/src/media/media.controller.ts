@@ -1,5 +1,6 @@
 import { BadRequestException, Controller, Get, Headers, Param, ParseIntPipe, Query, Res, StreamableFile, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
+import { SkipThrottle } from '@nestjs/throttler';
 import { AuthGuard } from '../auth/auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { UserPayLoad } from '../auth/current-user.type.js';
@@ -7,6 +8,9 @@ import { MediaService, type CompanyImageKind, type MediaImage } from './media.se
 
 // Imagens (foto de perfil, logo e capa da empresa) entregues pela API. `?w=` e `?h=` pedem um tamanho menor; `?v=` é a
 // versão da imagem: com ela o navegador guarda a imagem por um ano, e uma troca muda o valor e força a baixar a nova.
+// Listas com muitas fotos de perfil fazem dezenas de requisições de imagem de uma vez: ficam fora do limite geral.
+// O acesso já exige login.
+@SkipThrottle()
 @Controller('media')
 @UseGuards(AuthGuard)
 export class MediaController {

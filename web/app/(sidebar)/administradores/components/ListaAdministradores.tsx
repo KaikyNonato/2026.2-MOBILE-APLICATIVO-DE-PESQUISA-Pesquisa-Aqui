@@ -22,6 +22,7 @@ import {
 import { UsersRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
+import { confirmAndResetPassword } from '@/components/ui/reset-password';
 import EditUserDialog from '@/components/ui/edit-user-dialog';
 
 type Admin = UserItem;
@@ -165,6 +166,9 @@ export default function ListaAdministradores({
                     <RowActions>
                         <Button variant="outline" size="sm" onClick={() => setEditingAdmin(a)}>
                             Editar
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => confirmAndResetPassword(a)}>
+                            Redefinir senha
                         </Button>
                         <Button
                             variant="outline"

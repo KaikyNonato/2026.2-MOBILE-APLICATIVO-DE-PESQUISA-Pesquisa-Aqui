@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 const PUBLIC_PATHS = ['/login']
 // O pesquisador só usa o início, a lista das próprias pesquisas e o perfil (a coleta é no aplicativo).
 // Qualquer outra tela do painel volta para o início, mesmo que ele digite o endereço.
-const RESEARCHER_PATHS = ['/', '/pesquisas', '/perfil']
+const RESEARCHER_PATHS = ['/', '/pesquisas', '/perfil', '/trocar-senha']
 const secret = new TextEncoder().encode(process.env.JWT_SECRET)
 
 export const proxy = async (request: NextRequest) => {

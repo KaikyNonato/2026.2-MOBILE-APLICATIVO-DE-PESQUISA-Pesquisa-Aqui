@@ -60,6 +60,11 @@ model User {
   situation    UserSituation @default(ACTIVE)
   // Foto de perfil: endereço da imagem no Cloudinary (nulo = sem foto, o painel mostra as iniciais).
   avatarUrl    String?
+  // Senha temporária (cadastro novo ou redefinição pelo administrador): a pessoa precisa trocá-la no próximo acesso.
+  mustChangePassword Boolean @default(false)
+  // Bloqueio temporário contra tentativas de senha: conta as falhas seguidas e, ao passar do limite, trava o login até `lockedUntil`.
+  failedLoginAttempts Int @default(0)
+  lockedUntil TimestamptzString?
   companyId    Int?
   company      Company?  @relation(fields: [companyId], references: [id])
   researchLinks ResearchResearcher[]

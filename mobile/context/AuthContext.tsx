@@ -11,7 +11,8 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: CurrentUser | null;
-  login: (username: string, password: string) => Promise<void>;
+  /** Devolve se a senha é temporária e precisa ser trocada. */
+  login: (username: string, password: string) => Promise<{ mustChangePassword: boolean }>;
   logout: () => Promise<void>;
   /** Lê o usuário de novo na API (ex.: depois de trocar a foto de perfil). */
   refreshUser: () => Promise<void>;
@@ -36,10 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    await loginRequest(username, password);
+    const result = await loginRequest(username, password);
     setIsAuthenticated(true);
     const me = await getCurrentUser();
     setUser(me);
+    return result;
   };
 
   const logout = async () => {

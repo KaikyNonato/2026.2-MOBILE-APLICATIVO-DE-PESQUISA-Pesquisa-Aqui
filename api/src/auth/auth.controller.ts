@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import { Body, Controller, Delete, Get, HttpCode, Patch, Post, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service.js';
@@ -6,6 +7,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { AVATAR_MAX_BYTES, type UploadedImage } from './avatar-storage.js';
 import type { Response } from 'express';
 import { AuthGuard } from './auth.guard.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
+import { AllowWhenPasswordChangeRequired } from './allow-password-change.decorator.js';
 
 const COOKIE_NAME = 'access_token';
 const COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
@@ -23,13 +26,15 @@ const cookieOptions = () => ({
 export class AuthController {
     constructor(private readonly authService: AuthService) { }
 
+    // Limite por IP (além do bloqueio por conta no AuthService): 10 tentativas por minuto.
+    @Throttle({ default: { limit: 10, ttl: 60_000 } })
     @Post('login')
     async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
-        const { access_token } = await this.authService.login(loginDto);
+        const { access_token, mustChangePassword } = await this.authService.login(loginDto);
 
         res.cookie(COOKIE_NAME, access_token, cookieOptions())
 
-        return { access_token, message: 'Logged in successfully' };
+        return { access_token, mustChangePassword, message: 'Logged in successfully' };
     }
 
     @Post('logout')
@@ -39,6 +44,7 @@ export class AuthController {
         return { message: 'Logged out' };
     }
 
+    @AllowWhenPasswordChangeRequired()
     @UseGuards(AuthGuard)
     @Get('me')
     async me(@Req() req: Request) {
@@ -46,6 +52,7 @@ export class AuthController {
     }
 
     // Perfil do usuário logado, direto do banco (nome, usuário, empresa, datas).
+    @AllowWhenPasswordChangeRequired()
     @UseGuards(AuthGuard)
     @Get('profile')
     async profile(@Req() req: Request) {
@@ -65,6 +72,24 @@ export class AuthController {
         res.cookie(COOKIE_NAME, access_token, cookieOptions());
 
         return profile;
+    }
+
+    // Troca de senha de qualquer perfil. Aberta também para quem está com senha temporária.
+    @Throttle({ default: { limit: 10, ttl: 60_000 } })
+    @AllowWhenPasswordChangeRequired()
+    @UseGuards(AuthGuard)
+    @Post('change-password')
+    @HttpCode(200)
+    async changePassword(
+        @Req() req: Request,
+        @Body() dto: ChangePasswordDto,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        const { access_token, message } = await this.authService.changePassword(req['user'], dto);
+
+        res.cookie(COOKIE_NAME, access_token, cookieOptions());
+
+        return { access_token, message };
     }
 
     // Foto de perfil (multipart/form-data, campo `file`: JPG, PNG ou WebP). Devolve o perfil já com o novo endereço.

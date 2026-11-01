@@ -1,4 +1,5 @@
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { StrongPassword } from '../../auth/password-policy.js';
 
 export enum Profile {
     SUPERADMINISTRATOR = 'SUPERADMINISTRATOR',
@@ -15,9 +16,7 @@ export class CreateUserDto {
     @IsNotEmpty()
     username: string;
 
-    @IsString()
-    @IsNotEmpty()
-    @MinLength(6)
+    @StrongPassword()
     password: string;
 
     @IsEnum(Profile)

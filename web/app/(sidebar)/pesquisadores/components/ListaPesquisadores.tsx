@@ -21,6 +21,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { avatarTone } from "@/lib/fieldData";
 import { deleteUser, getResearchersPage, setUserSituation, UserItem } from "@/lib/user";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { confirmAndResetPassword } from "@/components/ui/reset-password";
 import EditUserDialog from "@/components/ui/edit-user-dialog";
 import { Building2, CalendarClock, Pencil, Power, PowerOff, Sparkles, Trash2, UsersRound } from "lucide-react";
 import { ServerPagination } from "@/components/ui/pagination";
@@ -262,6 +263,11 @@ export default function ListaPesquisadores({
                         {canEdit && (
                             <Button variant="outline" size="sm" onClick={() => setEditing(r)}>
                                 Editar
+                            </Button>
+                        )}
+                        {canEdit && (
+                            <Button variant="outline" size="sm" onClick={() => confirmAndResetPassword(r)}>
+                                Redefinir senha
                             </Button>
                         )}
                         {canDeactivate && (

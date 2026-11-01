@@ -39,5 +39,15 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
         throw new ApiError('Session expired', 401);
     }
 
+    // Senha temporária: o app fica bloqueado até a pessoa definir a própria senha.
+    if (response.status === 403 && !path.includes('/auth/')) {
+        const body = await response.clone().json().catch(() => null);
+
+        if (body?.code === 'PASSWORD_CHANGE_REQUIRED') {
+            router.replace('/trocar-senha');
+            throw new ApiError('Password change required', 403);
+        }
+    }
+
     return response;
 }

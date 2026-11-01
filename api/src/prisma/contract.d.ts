@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'a7ee7ae20babe8e8905946a3c484e17c5565ae8d15a8a580a696a5853ae0e5a5'>;
+  StorageHashBase<'8857d2dddcb7431da9ee772ea0cd544258c45f018c9bdad69ce2b766aac98ee6'>;
 export type ExecutionHash =
   ExecutionHashBase<'89005b7a2a0855ac410e36d032ac3f6fc09fa02bc982c27b23170ec528591c09'>;
 export type ProfileHash =
@@ -385,6 +385,9 @@ export type FieldOutputTypes = {
       readonly profile: 'SUPERADMINISTRATOR' | 'ADMINISTRATOR' | 'RESEARCHER';
       readonly situation: 'ACTIVE' | 'INACTIVE';
       readonly avatarUrl: CodecTypes['pg/text@1']['output'] | null;
+      readonly mustChangePassword: CodecTypes['pg/bool@1']['output'];
+      readonly failedLoginAttempts: CodecTypes['pg/int4@1']['output'];
+      readonly lockedUntil: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly companyId: CodecTypes['pg/int4@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -537,6 +540,9 @@ export type FieldInputTypes = {
       readonly profile: 'SUPERADMINISTRATOR' | 'ADMINISTRATOR' | 'RESEARCHER';
       readonly situation: 'ACTIVE' | 'INACTIVE';
       readonly avatarUrl: CodecTypes['pg/text@1']['input'] | null;
+      readonly mustChangePassword: CodecTypes['pg/bool@1']['input'];
+      readonly failedLoginAttempts: CodecTypes['pg/int4@1']['input'];
+      readonly lockedUntil: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly companyId: CodecTypes['pg/int4@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -685,7 +691,10 @@ export type StorageColumnTypes = {
       readonly avatarUrl: CodecTypes['pg/text@1']['output'] | null;
       readonly companyId: CodecTypes['pg/int4@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly failedLoginAttempts: CodecTypes['pg/int4@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly lockedUntil: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly mustChangePassword: CodecTypes['pg/bool@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly passwordHash: CodecTypes['pg/text@1']['output'];
       readonly profile: 'SUPERADMINISTRATOR' | 'ADMINISTRATOR' | 'RESEARCHER';
@@ -837,7 +846,10 @@ export type StorageColumnInputTypes = {
       readonly avatarUrl: CodecTypes['pg/text@1']['input'] | null;
       readonly companyId: CodecTypes['pg/int4@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly failedLoginAttempts: CodecTypes['pg/int4@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly lockedUntil: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly mustChangePassword: CodecTypes['pg/bool@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly passwordHash: CodecTypes['pg/text@1']['input'];
       readonly profile: 'SUPERADMINISTRATOR' | 'ADMINISTRATOR' | 'RESEARCHER';
@@ -1894,6 +1906,29 @@ type ContractBase = Omit<
                 readonly avatarUrl: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly mustChangePassword: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                };
+                readonly failedLoginAttempts: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
+                };
+                readonly lockedUntil: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
                   readonly nullable: true;
                 };
                 readonly companyId: {
@@ -3036,6 +3071,21 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly mustChangePassword: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly failedLoginAttempts: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly lockedUntil: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
               readonly companyId: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
@@ -3123,6 +3173,9 @@ type ContractBase = Omit<
                 readonly profile: { readonly column: 'profile' };
                 readonly situation: { readonly column: 'situation' };
                 readonly avatarUrl: { readonly column: 'avatarUrl' };
+                readonly mustChangePassword: { readonly column: 'mustChangePassword' };
+                readonly failedLoginAttempts: { readonly column: 'failedLoginAttempts' };
+                readonly lockedUntil: { readonly column: 'lockedUntil' };
                 readonly companyId: { readonly column: 'companyId' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly updatedAt: { readonly column: 'updatedAt' };

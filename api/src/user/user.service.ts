@@ -4,6 +4,7 @@ import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import type { UserPayLoad } from '../auth/current-user.type.js';
 import * as bcrypt from 'bcrypt';
+import { generateTemporaryPassword } from '../auth/password-policy.js';
 import { runPaged, type UserPageQueryDto } from '../common/pagination.js';
 
 @Injectable()
@@ -166,6 +167,8 @@ export class UserService {
             passwordHash,
             profile: createUserDto.profile,
             companyId: companyId,
+            // A senha foi definida por quem cadastrou: a própria pessoa precisa trocá-la no primeiro acesso.
+            mustChangePassword: true,
         });
 
         const { passwordHash: _, ...userWithoutPassword } = newUser;
@@ -180,14 +183,14 @@ export class UserService {
     private assertCanManage(
         target: { profile: string; companyId: number | null },
         currentUser: UserPayLoad,
-        action: 'edit' | 'delete' | 'deactivate',
+        action: 'edit' | 'delete' | 'deactivate' | 'reset the password of',
     ) {
         if (currentUser.profile === 'RESEARCHER') {
             throw new ForbiddenException('Researchers cannot manage users');
         }
 
         if (target.profile === 'SUPERADMINISTRATOR') {
-            const verb = action === 'delete' ? 'deleted' : action === 'edit' ? 'edited' : 'deactivated';
+            const verb = action === 'delete' ? 'deleted' : action === 'edit' ? 'edited' : action === 'deactivate' ? 'deactivated' : 'reset by another user';
 
             throw new ForbiddenException(`Superadministrators cannot be ${verb}`);
         }
@@ -206,7 +209,7 @@ export class UserService {
 
         this.assertCanManage(target, currentUser, 'edit');
 
-        const data: { name?: string; username?: string; passwordHash?: string } = {};
+        const data: { name?: string; username?: string; passwordHash?: string; mustChangePassword?: boolean } = {};
 
         if (updateUserDto.name !== undefined) data.name = updateUserDto.name.trim();
 
@@ -222,6 +225,8 @@ export class UserService {
 
         if (updateUserDto.password) {
             data.passwordHash = await bcrypt.hash(updateUserDto.password, 10);
+            // Senha definida por outra pessoa é temporária; quem troca a própria senha não precisa trocar de novo.
+            data.mustChangePassword = target.username !== String(currentUser.sub);
         }
 
         if (Object.keys(data).length > 0) {
@@ -233,6 +238,30 @@ export class UserService {
         const { passwordHash: _, ...userWithoutPassword } = updated;
 
         return userWithoutPassword;
+    }
+
+    // Redefinição de senha feita por quem gerencia a conta (esqueceu a senha, aparelho perdido...). Gera uma senha
+    // temporária aleatória, que só aparece nesta resposta, e obriga a troca no próximo acesso. Também destrava a conta
+    // e derruba as sessões abertas (o token antigo deixa de valer porque a senha mudou).
+    async resetPassword(username: string, currentUser: UserPayLoad) {
+        if (username === String(currentUser.sub)) {
+            throw new ForbiddenException('Use the profile screen to change your own password');
+        }
+
+        const target = await this.findOne(username);
+
+        this.assertCanManage(target, currentUser, 'reset the password of');
+
+        const temporaryPassword = generateTemporaryPassword();
+
+        await this.prisma.client.orm.public.User.where({ username }).update({
+            passwordHash: await bcrypt.hash(temporaryPassword, 10),
+            mustChangePassword: true,
+            failedLoginAttempts: 0,
+            lockedUntil: null,
+        });
+
+        return { username, temporaryPassword, mustChangePassword: true };
     }
 
     async setSituation(username: string, situation: 'ACTIVE' | 'INACTIVE', currentUser: UserPayLoad) {

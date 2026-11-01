@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { StrongPassword } from '../../auth/password-policy.js';
 
 export class UpdateUserDto {
     @IsOptional()
@@ -13,7 +14,6 @@ export class UpdateUserDto {
 
     // Só é enviada quando a senha vai ser trocada.
     @IsOptional()
-    @IsString()
-    @MinLength(6)
+    @StrongPassword()
     password?: string;
 }

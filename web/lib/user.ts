@@ -56,6 +56,8 @@ const USER_ERRORS: Record<string, string> = {
     'User has collected data and cannot be deleted': 'Este usuário já possui coletas registradas e não pode ser excluído.',
     'Username already exists': 'Este nome de usuário já está em uso.',
     'Only company administrators can change access for all researchers': 'Somente o administrador da empresa pode alterar o acesso de todos os pesquisadores.',
+    'Superadministrators cannot be reset by another user': 'Não é possível redefinir a senha de um superadministrador.',
+    'Use the profile screen to change your own password': 'Para trocar a sua própria senha, use a tela de perfil.',
     'User not found': 'Usuário não encontrado. Atualize a lista e tente novamente.',
 };
 
@@ -202,5 +204,16 @@ export interface ResearcherStats {
 export const getResearcherStats = async (): Promise<ResearcherStats> => {
     const response = await apiFetch('/user/researchers/stats', { method: 'GET', credentials: 'include' });
     if (!response.ok) throw new Error('Falha ao carregar os números de pesquisadores');
+    return response.json();
+}
+
+export const resetUserPassword = async (username: string): Promise<{ username: string; temporaryPassword: string }> => {
+    const response = await apiFetch(`/user/${encodeURIComponent(username)}/reset-password`, {
+        method: 'POST',
+        credentials: 'include',
+    });
+
+    if (!response.ok) throw await userError(response, 'Falha ao redefinir a senha');
+
     return response.json();
 }

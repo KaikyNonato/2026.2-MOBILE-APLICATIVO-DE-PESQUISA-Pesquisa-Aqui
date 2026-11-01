@@ -21,6 +21,16 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
         throw new Error('Session expired');
     }
 
+    // Senha temporária: o painel inteiro fica bloqueado até a pessoa definir a própria senha.
+    if (response.status === 403 && typeof window !== 'undefined' && window.location.pathname !== '/trocar-senha') {
+        const body = await response.clone().json().catch(() => null);
+
+        if (body?.code === 'PASSWORD_CHANGE_REQUIRED') {
+            window.location.replace('/trocar-senha');
+            throw new Error('Password change required');
+        }
+    }
+
     return response;
 }
 

@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { StrongPassword } from '../password-policy.js';
 
 // Dados que o próprio usuário pode alterar no perfil. Tudo é opcional: só o que vier é alterado.
 export class UpdateProfileDto {
@@ -18,7 +19,6 @@ export class UpdateProfileDto {
     currentPassword?: string;
 
     @IsOptional()
-    @IsString()
-    @MinLength(6)
+    @StrongPassword()
     newPassword?: string;
 }

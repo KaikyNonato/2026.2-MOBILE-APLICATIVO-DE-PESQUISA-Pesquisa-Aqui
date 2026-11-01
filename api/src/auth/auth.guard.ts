@@ -1,18 +1,23 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { PrismaService } from '../prisma.service.js';
+import { ALLOW_PASSWORD_CHANGE_KEY } from './allow-password-change.decorator.js';
+import { passwordVersion } from './token-payload.js';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly reflector: Reflector,
   ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -36,19 +41,44 @@ export class AuthGuard implements CanActivate {
         }
       }
 
-      // Usuário desativado perde a sessão na hora, sem esperar o token expirar.
-      if (payload.sub) {
-        const user = await this.prisma.client.orm.public.User.where({ username: String(payload.sub) }).first()
+      // A conta é conferida no banco a cada requisição: quem foi desativado, excluído ou trocou a senha perde a sessão
+      // na hora, sem esperar o token expirar.
+      const user = payload.sub
+        ? await this.prisma.client.orm.public.User.where({ username: String(payload.sub) }).first()
+        : null;
 
-        if (user && user.situation === 'INACTIVE') {
-          throw new UnauthorizedException('Your session has ended because your account has been deactivated')
+      if (!user) {
+        throw new UnauthorizedException('Your session has ended because your account no longer exists')
+      }
+
+      if (user.situation === 'INACTIVE') {
+        throw new UnauthorizedException('Your session has ended because your account has been deactivated')
+      }
+
+      if (payload.pv !== passwordVersion(user.passwordHash)) {
+        throw new UnauthorizedException('Your session has ended because your password was changed')
+      }
+
+      // Senha temporária: só deixa ver o próprio perfil, trocar a senha e sair, até a troca ser feita.
+      if (user.mustChangePassword === true) {
+        const allowed = this.reflector.getAllAndOverride<boolean>(ALLOW_PASSWORD_CHANGE_KEY, [
+          context.getHandler(),
+          context.getClass(),
+        ]);
+
+        if (!allowed) {
+          throw new ForbiddenException({
+            statusCode: 403,
+            code: 'PASSWORD_CHANGE_REQUIRED',
+            message: 'You must change your temporary password before continuing',
+          })
         }
       }
 
       request['user'] = payload;
 
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
+      if (error instanceof UnauthorizedException || error instanceof ForbiddenException) {
         throw error
       }
       throw new UnauthorizedException('Invalid or expired token');

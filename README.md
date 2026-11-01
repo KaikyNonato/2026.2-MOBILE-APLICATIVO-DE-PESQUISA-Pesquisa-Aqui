@@ -28,6 +28,7 @@ Plataforma para criar, aplicar e acompanhar pesquisas de campo. O projeto reúne
 - [Endpoints da API](#endpoints-da-api)
 - [Paginação e limites de dados](#paginação-e-limites-de-dados)
 - [Regras de negócio importantes](#regras-de-negócio-importantes)
+- [Segurança](#segurança)
 - [Testes e qualidade de código](#testes-e-qualidade-de-código)
 - [Fluxo de trabalho com branches](#fluxo-de-trabalho-com-branches)
 - [Problemas comuns](#problemas-comuns)
@@ -171,10 +172,10 @@ A API sobe em `http://localhost:3001` (ou na porta definida em `PORT`).
 | Campo | Valor |
 | --- | --- |
 | Usuário | `admin` |
-| Senha | `admin123` |
+| Senha | a definida em `SEED_ADMIN_PASSWORD` ou, se vazia, uma senha aleatória mostrada no terminal ao rodar o seed |
 | Perfil | `SUPERADMINISTRATOR` |
 
-Troque essa senha antes de qualquer uso fora do ambiente local.
+A conta nasce com **senha temporária**: no primeiro acesso o sistema obriga a escolher uma senha nova.
 
 **Dados de demonstração (opcional):** para testar a paginação e os dashboards com volume, rode o seed de demonstração (é idempotente: pode rodar mais de uma vez sem duplicar).
 
@@ -253,6 +254,11 @@ npm run ios          # simulador iOS
 | `AUDIO_STORAGE_DIR` | Não | Só para desenvolvimento **sem** Cloudinary: pasta em disco dos áudios (padrão `./storage/audio`) |
 | `AUDIO_MAX_BYTES` | Não | Tamanho máximo do áudio de uma coleta, em bytes (padrão `157286400`, ou 150 MB) |
 | `PHOTO_MAX_BYTES` | Não | Tamanho máximo de cada foto, em bytes (padrão `31457280`, ou 30 MB) |
+| `CORS_ORIGINS` | Em produção, se um navegador chamar a API direto | Origens autorizadas, separadas por vírgula (ex.: `https://painel.exemplo.com`). Vazia em desenvolvimento libera tudo; vazia em produção nega todas as origens de navegador. O painel (usa `/api` do próprio domínio) e o app mobile (sem `Origin`) não dependem dela |
+| `TRUST_PROXY` | Atrás de proxy | Quantos proxies existem na frente da API (Vercel/Render: `1`). Sem isso o limite de requisições enxerga o IP do proxy, e não o do usuário |
+| `JWT_EXPIRES_IN` | Não | Validade do token de login (padrão `12h`) |
+| `LOGIN_MAX_ATTEMPTS` / `LOGIN_LOCK_MINUTES` | Não | Tentativas erradas seguidas até trancar a conta (padrão `5`) e por quanto tempo (padrão `15` minutos) |
+| `SEED_ADMIN_PASSWORD` | Não | Senha inicial do superadministrador criado por `npm run seed` (vazia = aleatória, mostrada no terminal) |
 
 ### Web (`web/.env.local`)
 
@@ -281,7 +287,7 @@ São **dois projetos** na Vercel, a partir do mesmo repositório: a **API** e o 
 ```bash
 cd api
 npx prisma db init
-npm run seed        # cria admin / admin123: TROQUE essa senha logo no primeiro acesso
+npm run seed        # cria o admin com senha temporária (anote a senha mostrada no terminal)
 ```
 
 - Crie uma conta no [Cloudinary](https://cloudinary.com/). Na Vercel o disco é somente leitura, então fotos e áudios **precisam** ir para o Cloudinary (`CLOUDINARY_URL`).
@@ -349,8 +355,8 @@ Todas as rotas, exceto `POST /auth/login` e `POST /auth/logout`, exigem autentic
 
 | Recurso | Rotas |
 | --- | --- |
-| Auth | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` |
-| Usuários | `POST /user`, `GET /user` ⁽ᵖ⁾, `GET /user/admins` ⁽ᵖ⁾, `GET /user/researchers/stats`, `PATCH /user/:username`, `PATCH /user/:username/situation`, `DELETE /user/:username` |
+| Auth | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `GET/PATCH /auth/profile`, `POST /auth/change-password` |
+| Usuários | `POST /user`, `GET /user` ⁽ᵖ⁾, `GET /user/admins` ⁽ᵖ⁾, `GET /user/researchers/stats`, `PATCH /user/:username`, `POST /user/:username/reset-password`, `PATCH /user/:username/situation`, `DELETE /user/:username` |
 | Empresas | `GET /company` ⁽ᵖ⁾, `GET /company/stats`, `POST /company`, `PUT /company/:id`, `PATCH /company/:id`, `DELETE /company/:id` |
 | Pesquisas | `POST /research`, `GET /research` ⁽ᵖ⁾, `GET /research/summary`, `GET /research/:id`, `PATCH /research/:id`, `DELETE /research/:id`, `POST /research/:id/publish`, `POST /research/:id/close` |
 | Resultados | `GET /research/:id/panel`, `GET /research/:id/report`, `GET /research/:id/export.csv` |
@@ -425,6 +431,30 @@ Para os números dos dashboards existem rotas que devolvem só totais, sem lista
 - **Cópias da pesquisa**: cada pesquisador baixa a pesquisa por aparelho (`X-Device-ID`). Enquanto houver cópias ativas, o **questionário** (seções, questões, opções e regras) fica travado para edição e a API responde `403` com o código `RESEARCH_LOCKED`; uma pesquisa encerrada também fica travada. A cópia sai quando o aparelho a devolve, ou quando o administrador a **revoga** (aparelho perdido, pesquisador que saiu); um aparelho revogado pode ser **desbloqueado** depois.
 - **Encerramento**: encerrar uma pesquisa bloqueia coletas novas e congela o resultado (`POST /research/:id/close`, só administrador).
 - **Sessão expirada**: ao receber `401`, o web faz logout e o mobile limpa o token e volta para a tela de login.
+
+## Segurança
+
+- **CORS restrito**: só as origens de `CORS_ORIGINS` chamam a API a partir de um navegador (ver [Variáveis de ambiente](#variáveis-de-ambiente)).
+- **Cabeçalhos de segurança** com `helmet`.
+- **Limite de requisições** por IP (`@nestjs/throttler`): 300 por minuto no geral e **10 por minuto** em `POST /auth/login` e `POST /auth/change-password`. A sincronização de coletas e as imagens ficam fora do limite geral (vários aparelhos no mesmo Wi-Fi compartilham o IP). O contador fica na memória de cada instância: em ambiente serverless com várias instâncias ele é aproximado, e a proteção firme contra adivinhar senha é o bloqueio por conta, abaixo.
+- **Bloqueio por conta**: depois de `LOGIN_MAX_ATTEMPTS` senhas erradas seguidas, o login daquela conta fica trancado por `LOGIN_LOCK_MINUTES` e a API responde `429` com o código `ACCOUNT_LOCKED`. O contador fica no banco (`failedLoginAttempts`, `lockedUntil`), então vale mesmo com várias instâncias.
+- **Sessão sempre conferida no banco**: a cada requisição o `AuthGuard` confere se o usuário ainda existe, está ativo e continua com a mesma senha. Usuário excluído, desativado ou que trocou a senha perde a sessão na hora, mesmo com o token ainda dentro do prazo (o token carrega `pv`, uma impressão digital da senha).
+- **Política de senha**: de 8 a 64 caracteres, com pelo menos uma letra e um número (cadastro, edição e troca).
+- **Senha temporária**: usuários cadastrados por outra pessoa, contas redefinidas e o superadministrador do seed têm `mustChangePassword`. Enquanto a senha não for trocada, a API responde `403` com o código `PASSWORD_CHANGE_REQUIRED` em tudo, menos `GET /auth/me`, `GET /auth/profile` e `POST /auth/change-password`. O painel e o app abrem a tela de troca automaticamente.
+- **Esqueci a senha (assistido)**: o cadastro não tem e-mail, então não há link de recuperação. Quem gerencia a conta usa **Redefinir senha** (`POST /user/:username/reset-password`): a API gera uma senha temporária aleatória, mostrada uma única vez, destrava a conta e encerra as sessões. Administrador redefine pesquisadores da própria empresa; superadministrador redefine administradores. Um superadministrador que perde a senha só é recuperado direto no banco.
+
+### Atualizar um banco que já existe
+
+Os campos novos de `User` precisam existir no banco. Em bancos já criados, rode:
+
+```sql
+ALTER TABLE "User"
+  ADD COLUMN "mustChangePassword" boolean NOT NULL DEFAULT false,
+  ADD COLUMN "failedLoginAttempts" integer NOT NULL DEFAULT 0,
+  ADD COLUMN "lockedUntil" timestamptz NULL;
+```
+
+(Confira o nome/tipo exatos das colunas em `api/src/prisma/contract.json` no seu ambiente.) Depois da atualização **todos precisam entrar de novo**: os tokens antigos não têm `pv` e deixam de valer.
 
 ## Testes e qualidade de código
 

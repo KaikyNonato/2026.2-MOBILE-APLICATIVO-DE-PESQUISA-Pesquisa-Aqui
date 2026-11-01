@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaService } from './prisma.service.js';
@@ -16,11 +17,15 @@ import { MediaModule } from './media/media.module.js';
 import { MediaUrlInterceptor } from './media/media-url.interceptor.js';
 
 @Module({
-  imports: [CompanyModule, AuthModule, UserModule, ResearchModule, SectionModule, QuestionModule, QuestionRuleModule, CollectionModule, DashboardModule, MediaModule],
+  imports: [
+    // Limite geral por IP: 300 requisições por minuto. O login tem um limite próprio, mais baixo (ver AuthController).
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
+    CompanyModule, AuthModule, UserModule, ResearchModule, SectionModule, QuestionModule, QuestionRuleModule, CollectionModule, DashboardModule, MediaModule],
   controllers: [AppController],
   providers: [
     AppService,
     PrismaService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     // Troca o endereço do Cloudinary das imagens por um caminho /media da própria API em todas as respostas.
     { provide: APP_INTERCEPTOR, useClass: MediaUrlInterceptor },
   ],

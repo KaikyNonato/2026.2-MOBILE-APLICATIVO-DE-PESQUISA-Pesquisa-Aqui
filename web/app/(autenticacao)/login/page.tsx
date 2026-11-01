@@ -3,7 +3,7 @@
 import { BrandMark, Contour, Pin } from "@/components/ui/contour";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { login } from "@/lib/auth";
+import { login, LoginError } from "@/lib/auth";
 import Link from "next/link";
 import { SubmitEventHandler, useState } from "react";
 
@@ -11,6 +11,7 @@ export default function Login() {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState<string | null>(null)
+    const [showForgotHint, setShowForgotHint] = useState(false)
 
     const [isLoadingLogin, setIsLoadingLogin] = useState(false)
     const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
@@ -19,11 +20,19 @@ export default function Login() {
         setError(null);
         setIsLoadingLogin(true);
 
+        let mustChangePassword = false;
+
         try {
-            await login(username, password);
-        } catch {
-            setError('Nome de usuário ou senha incorretos, ou empresa inativa.')
+            ({ mustChangePassword } = await login(username, password));
+        } catch (error) {
+            setError(error instanceof LoginError ? error.message : 'Não foi possível entrar agora. Tente novamente.')
             setIsLoadingLogin(false)
+            return;
+        }
+
+        // Senha temporária (primeiro acesso ou redefinida pelo administrador): troca antes de entrar no painel.
+        if (mustChangePassword) {
+            window.location.replace('/trocar-senha');
             return;
         }
 
@@ -85,8 +94,17 @@ export default function Login() {
                     </div>
 
                     <div style={{ textAlign: 'right', margin: '-4px 0 18px' }}>
-                        <Link className="pa-link" href="#">Esqueceu a senha?</Link>
+                        <button type="button" className="pa-link" onClick={() => setShowForgotHint((v) => !v)} aria-expanded={showForgotHint}>
+                            Esqueceu a senha?
+                        </button>
                     </div>
+
+                    {showForgotHint && (
+                        <p role="note" className="mb-4 rounded-xl bg-[#e9ede9] px-3.5 py-2.5 text-[13px] text-[#26332c]">
+                            Peça ao administrador da sua empresa para redefinir a senha. Ele gera uma senha temporária
+                            e você escolhe a sua própria no primeiro acesso.
+                        </p>
+                    )}
 
                     {error && (
                         <p role="alert" key={error} className="pa-shake mb-4 rounded-xl bg-[#f3e0d9] px-3.5 py-2.5 text-[13px] font-medium text-[#8a432f]">

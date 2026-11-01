@@ -14,9 +14,12 @@ export interface CurrentUser {
     avatarUrl?: string | null;
     /** Logo da empresa (endereço no Cloudinary); nulo = sem logo. */
     companyLogoUrl?: string | null;
+    /** Senha temporária: precisa ser trocada antes de usar o aplicativo. */
+    mustChangePassword?: boolean;
 }
 
-export async function login(username: string, password: string): Promise<void> {
+/** Entra e devolve se a senha é temporária (nesse caso o app abre a tela de troca de senha). */
+export async function login(username: string, password: string): Promise<{ mustChangePassword: boolean }> {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -40,6 +43,38 @@ export async function login(username: string, password: string): Promise<void> {
     }
 
     await saveToken(data.access_token);
+
+    return { mustChangePassword: data.mustChangePassword === true };
+}
+
+const PASSWORD_RULES = 'A senha deve ter de 8 a 64 caracteres, com pelo menos uma letra e um número.';
+
+/** Mesma regra da API (api/src/auth/password-policy.ts). Devolve o problema ou `null`. */
+export function passwordProblem(password: string): string | null {
+    return password.length >= 8 && password.length <= 64 && /\p{L}/u.test(password) && /\d/.test(password) ? null : PASSWORD_RULES;
+}
+
+/** Troca a senha do usuário logado. A API devolve um token novo (o antigo deixa de valer com a senha nova). */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const response = await apiFetch('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword, newPassword }),
+    });
+
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        const message = Array.isArray(data?.message) ? data.message[0] : data?.message;
+        const known: Record<string, string> = {
+            'Current password is incorrect': 'A senha atual está incorreta.',
+            'The new password must be different from the current one': 'A nova senha precisa ser diferente da atual.',
+        };
+
+        throw new Error(known[message] ?? (response.status === 400 ? PASSWORD_RULES : 'Não foi possível trocar a senha. Tente novamente.'));
+    }
+
+    const data = await response.json();
+
+    if (data.access_token) await saveToken(data.access_token);
 }
 
 export async function isLoggedIn(): Promise<boolean> {

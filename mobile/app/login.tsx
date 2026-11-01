@@ -34,8 +34,9 @@ export default function Login() {
         setError(null);
         setLoading(true);
         try {
-            await login(username, password);
-            router.replace('/(app)/(home)');
+            const { mustChangePassword } = await login(username, password);
+            // Senha temporária (primeiro acesso ou redefinida pelo administrador): troca antes de usar o app.
+            router.replace(mustChangePassword ? '/trocar-senha' : '/(app)/(home)');
         } catch (err: any) {
             setError(err.message || 'Erro ao fazer login.');
         } finally {

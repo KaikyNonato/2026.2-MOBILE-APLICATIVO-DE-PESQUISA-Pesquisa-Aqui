@@ -16,6 +16,7 @@ import {
     UseInterceptors,
 } from '@nestjs/common';
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
+import { SkipThrottle } from '@nestjs/throttler';
 import { AuthGuard } from '../auth/auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { UserPayLoad } from '../auth/current-user.type.js';
@@ -34,6 +35,9 @@ import { CollectionPageQueryDto, isPaged } from '../common/pagination.js';
 const MAX_AUDIO_BYTES = Number(process.env.AUDIO_MAX_BYTES) || 150 * 1024 * 1024;
 
 @UseGuards(AuthGuard)
+// Sincronização em lote e envio de arquivos em pedaços geram muitas requisições legítimas de vários aparelhos
+// no mesmo Wi-Fi (mesmo IP): ficam fora do limite geral. O acesso já exige login.
+@SkipThrottle()
 @Controller('collection')
 export class CollectionController {
     constructor(

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
@@ -50,6 +50,13 @@ export class UserController {
         @CurrentUser() currentUser: UserPayLoad,
     ) {
         return this.userService.update(username, updateUserDto, currentUser);
+    }
+
+    // Gera uma senha temporária (mostrada uma única vez) e obriga a troca no próximo acesso.
+    @Post(':username/reset-password')
+    @HttpCode(200)
+    resetPassword(@Param('username') username: string, @CurrentUser() currentUser: UserPayLoad) {
+        return this.userService.resetPassword(username, currentUser);
     }
 
     @Patch(':username/situation')
