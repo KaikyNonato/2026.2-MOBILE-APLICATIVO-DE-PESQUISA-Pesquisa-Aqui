@@ -16,9 +16,10 @@ export const BACKGROUND_SYNC_TASK = 'pesquisa-aqui-background-sync';
 
 /** Uma rodada completa, a mesma para o segundo plano e para quem abre o app: envia, atualiza a lista e avisa. */
 export async function syncAndNotify(): Promise<void> {
-    await syncQueue.run({ trigger: 'auto' });
+    // Primeiro a lista de pesquisas: o aviso não deve esperar o envio de coletas pesadas.
     await syncResearches();
     await reconcileNotifications();
+    await syncQueue.run({ trigger: 'auto' });
 }
 
 // A tarefa precisa ser definida no escopo do módulo, antes de qualquer tela (por isso é importada no layout raiz).

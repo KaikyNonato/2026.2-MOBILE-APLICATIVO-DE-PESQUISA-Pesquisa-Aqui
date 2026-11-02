@@ -8,6 +8,8 @@ import { syncQueue } from '@/lib/syncQueue';
 
 /** Intervalo mínimo entre duas rodadas completas disparadas por "o app voltou para a frente". */
 const MIN_GAP_MS = 30_000;
+/** De quanto em quanto tempo, com o app aberto, a lista de pesquisas é atualizada para achar pesquisa nova ou encerrada. */
+const FOREGROUND_REFRESH_MS = 60_000;
 /** Espera depois de uma mudança na fila de envio antes de reconferir a meta (evita reconferir a cada coleta enviada). */
 const QUEUE_DEBOUNCE_MS = 2_000;
 
@@ -47,6 +49,11 @@ export function useNotificationsAndBackgroundSync(): void {
             if (status === 'active') runRound();
         });
 
+        // Com o app aberto o aviso também precisa chegar: sem isto, só apareceria depois de sair e voltar ao app.
+        const refreshTimer = setInterval(() => {
+            if (AppState.currentState === 'active') runRound();
+        }, FOREGROUND_REFRESH_MS);
+
         const unsubscribeQueue = syncQueue.subscribe(() => {
             clearTimeout(debounce);
             debounce = setTimeout(() => void reconcileNotifications(), QUEUE_DEBOUNCE_MS);
@@ -63,6 +70,7 @@ export function useNotificationsAndBackgroundSync(): void {
 
         return () => {
             appState.remove();
+            clearInterval(refreshTimer);
             unsubscribeQueue();
             responseSubscription?.remove();
             clearTimeout(debounce);

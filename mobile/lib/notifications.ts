@@ -178,6 +178,7 @@ export async function reconcileNotifications({ silent = false }: { silent?: bool
         const seen = await readJson<SeenState | null>(SEEN_KEY, null);
 
         // Primeira conferência desta conta: o que já existe vira o ponto de partida, sem avisar de tudo de uma vez.
+        if (!seen) console.log('[avisos] primeira conferência desta conta: só marca o que já existe, sem avisar.');
         if (seen) {
             const known = new Set(seen.ids);
             const knownClosed = new Set(seen.closed);
@@ -185,6 +186,9 @@ export async function reconcileNotifications({ silent = false }: { silent?: bool
             const fresh = researches.filter((r) => !known.has(r.id) && r.status !== 'CLOSED');
             const justClosed = researches.filter((r) => r.status === 'CLOSED' && known.has(r.id) && !knownClosed.has(r.id));
 
+            console.log(
+                `[avisos] pesquisas no aparelho: ${researches.length} | novas: ${fresh.length} | encerradas agora: ${justClosed.length} | silencioso: ${silent} | permissão: ${permitted}`,
+            );
             if (canNotify) {
                 if (fresh.length === 1) {
                     await notifyNow('Nova pesquisa vinculada a você', fresh[0].title);
