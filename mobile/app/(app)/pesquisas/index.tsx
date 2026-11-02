@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, RefreshControl, Alert } from 'react-native';
-import { FileText, WifiOff } from 'lucide-react-native';
+import { FileText, PlayCircle, WifiOff } from 'lucide-react-native';
 import Animated, {
     Easing,
     FadeInDown,
@@ -23,6 +23,8 @@ import { listCollections, type LocalCollection } from '@/lib/collectionStore';
 import { useRemoveResearch } from '@/hooks/useRemoveResearch';
 import { listSent, type SentRecord } from '@/lib/sentHistory';
 import { computeProgress } from '@/lib/researchProgress';
+import { discardDraft } from '@/lib/collectionDiscard';
+import { formatRelativeTime, getDraftsProgress, type DraftProgress } from '@/lib/draftProgress';
 
 /** Entrada escalonada, igual à da Home: cada bloco sobe e aparece um pouco depois do anterior. */
 const enter = (index: number) =>
@@ -56,6 +58,7 @@ export default function Pesquisas() {
     // Pesquisa cujos rascunhos o pesquisador está escolhendo (null = lista fechada)
     const [pickingResearch, setPickingResearch] = useState<Research | null>(null);
     const [sent, setSent] = useState<SentRecord[]>([]);
+    const [draftProgress, setDraftProgress] = useState<Record<string, DraftProgress>>({});
     const isOnline = useNetworkStatus();
 
     // As curvas de nível "respiram" devagar, como na Home.
@@ -158,6 +161,43 @@ export default function Pesquisas() {
         if (drafts.length === 0) return startCollection(research.id);
         if (drafts.length === 1) return openDraft(research.id, drafts[0].clientId);
         setPickingResearch(research);
+    };
+
+    // Entrevista interrompida: o rascunho mexido mais recentemente, de uma pesquisa que ainda está no aparelho.
+    const interrupted = useMemo(() => {
+        const usable = new Set(pesquisas.filter((p) => p.isDownloaded && !p.revoked && p.status !== 'DRAFT').map((p) => p.id));
+        return collections
+            .filter((c) => c.status === 'IN_PROGRESS' && usable.has(c.researchId))
+            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0] ?? null;
+    }, [collections, pesquisas]);
+
+    // Quantas questões cada rascunho já tem respondidas (conta só as visíveis, segundo as regras de exibição).
+    useEffect(() => {
+        const drafts = collections.filter((c) => c.status === 'IN_PROGRESS');
+        if (drafts.length === 0) return;
+        let cancelled = false;
+        getDraftsProgress(drafts).then((result) => { if (!cancelled) setDraftProgress(result); }).catch(() => undefined);
+        return () => { cancelled = true; };
+    }, [collections]);
+
+    const askDiscardDraft = (draft: LocalCollection) => {
+        Alert.alert(
+            'Apagar rascunho',
+            'As respostas, fotos e áudios deste rascunho serão apagados do aparelho e não poderão ser recuperados.',
+            [
+                { text: 'Manter', style: 'cancel' },
+                {
+                    text: 'Apagar',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await discardDraft(draft.clientId);
+                        await loadFromCache();
+                        // Era o último rascunho da lista aberta: fecha o modal
+                        if (draftsOf(draft.researchId).filter((d) => d.clientId !== draft.clientId).length === 0) setPickingResearch(null);
+                    },
+                },
+            ],
+        );
     };
 
     const finishedOf = (researchId: number) =>
@@ -268,6 +308,23 @@ export default function Pesquisas() {
                             </Animated.View>
                         ) : null}
 
+                        {interrupted ? (
+                            <Animated.View entering={enter(1)}>
+                                <ActionCard
+                                    tone="calm"
+                                    icon={<PlayCircle size={22} color={Brand.greenDeep} strokeWidth={1.8} />}
+                                    title="Entrevista interrompida"
+                                    text={`${pesquisas.find((p) => p.id === interrupted.researchId)?.title ?? 'Pesquisa'}${
+                                        draftProgress[interrupted.clientId]
+                                            ? ` · ${draftProgress[interrupted.clientId].answered} de ${draftProgress[interrupted.clientId].total} questões`
+                                            : ''
+                                    } · editada ${formatRelativeTime(interrupted.updatedAt)}`}
+                                    cta="Continuar"
+                                    onPress={() => openDraft(interrupted.researchId, interrupted.clientId)}
+                                />
+                            </Animated.View>
+                        ) : null}
+
                         {onDevice.length > 0 ? (
                             <View style={styles.section}>
                                 <SectionHeader
@@ -302,6 +359,8 @@ export default function Pesquisas() {
                 visible={pickingResearch !== null}
                 title={pickingResearch?.title ?? ''}
                 drafts={pickingResearch ? draftsOf(pickingResearch.id) : []}
+                progress={draftProgress}
+                onDiscard={askDiscardDraft}
                 onClose={() => setPickingResearch(null)}
                 onSelect={(draft) => {
                     setPickingResearch(null);

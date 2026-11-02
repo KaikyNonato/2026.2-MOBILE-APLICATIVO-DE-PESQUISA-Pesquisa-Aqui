@@ -2,6 +2,8 @@ import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { BiometricLockProvider } from '@/context/BiometricLockContext';
+import BiometricGate from '@/components/BiometricGate';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/brand';
 
@@ -41,9 +43,13 @@ function RootLayoutNav() {
 export default function RootLayout() {
     return (
         <AuthProvider>
-            <SafeAreaProvider>
-                <RootLayoutNav />
-            </SafeAreaProvider>
+            <BiometricLockProvider>
+                <SafeAreaProvider>
+                    <RootLayoutNav />
+                    {/* Por cima de tudo: com a biometria ligada, o app só abre depois de confirmar quem está com o celular */}
+                    <BiometricGate />
+                </SafeAreaProvider>
+            </BiometricLockProvider>
         </AuthProvider>
     );
 }

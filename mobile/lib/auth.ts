@@ -3,6 +3,7 @@ import { saveToken, getToken, clearToken } from './secureStorage';
 import { clearResearchesCache } from './researchCache';
 import { returnAllCopies } from './researchReturn';
 import { filePart } from './collectionUpload';
+import { setBiometricEnabled } from './biometric';
 
 export interface CurrentUser {
     sub: string;
@@ -96,6 +97,8 @@ export async function logout(): Promise<void> {
     // Antes de apagar o token (a API precisa dele): devolve as cópias, para o contador de cópias do servidor cair.
     await returnAllCopies().catch(() => undefined);
     await clearToken();
+    // A biometria é de quem estava logado: a próxima pessoa que entrar escolhe a dela.
+    await setBiometricEnabled(false).catch(() => undefined);
     await clearResearchesCache();
 }
 

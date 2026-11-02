@@ -40,3 +40,16 @@ export async function discardCollection(clientId: string): Promise<void> {
     await removeCollection(clientId);
     removeCollectionFiles(collection);
 }
+
+/**
+ * Apaga um rascunho (entrevista ainda em andamento) do aparelho, com respostas, fotos e áudios.
+ * Só vale para rascunho: coleta finalizada tem fila de envio e regras próprias (veja `discardCollection`).
+ * Nada foi enviado ao servidor, então nada precisa ser avisado a ele.
+ */
+export async function discardDraft(clientId: string): Promise<void> {
+    const collection = await getCollection(clientId);
+    if (!collection || collection.status !== 'IN_PROGRESS') return;
+
+    await removeCollection(clientId);
+    removeCollectionFiles(collection);
+}

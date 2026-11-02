@@ -26,6 +26,12 @@
     "plugins": [
       "expo-router",
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Permitir que o $(PRODUCT_NAME) use o Face ID para desbloquear o aplicativo."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",

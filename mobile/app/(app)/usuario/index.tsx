@@ -1,8 +1,8 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { AtSign, Building2, IdCard, LogOut, Pencil, ShieldCheck, Smartphone } from 'lucide-react-native';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AtSign, Building2, Fingerprint, IdCard, LogOut, Pencil, ShieldCheck, Smartphone } from 'lucide-react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import Animated, {
     Easing,
     FadeInDown,
@@ -15,6 +15,7 @@ import Chip from '@/components/Chip';
 import Contour from '@/components/Contour';
 import { Brand, Radius, TAB_BAR_CLEARANCE } from '@/constants/brand';
 import { useAuth } from '@/context/AuthContext';
+import { useBiometricLock } from '@/context/BiometricLockContext';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { avatarSrc, logoSrc, useImageHeaders } from '@/lib/avatar';
 import MenuCard from './_components/MenuCard';
@@ -69,6 +70,7 @@ export default function Usuario() {
     const [photoFailed, setPhotoFailed] = useState(false);
     const [logoFailed, setLogoFailed] = useState(false);
     const isOnline = useNetworkStatus();
+    const biometric = useBiometricLock();
     const imageHeaders = useImageHeaders();
 
     // As curvas de nível "respiram" devagar, como na Home.
@@ -79,6 +81,11 @@ export default function Usuario() {
     const contourStyle = useAnimatedStyle(() => ({
         transform: [{ scale: 1 + breathe.value * 0.07 }, { translateX: breathe.value * -6 }],
     }));
+
+    const toggleBiometric = async (next: boolean) => {
+        const ok = await biometric.setEnabled(next);
+        if (next && !ok) Alert.alert('Biometria não confirmada', 'O desbloqueio por biometria continua desligado.');
+    };
 
     const handleLogout = () => {
         Alert.alert(
@@ -188,6 +195,24 @@ export default function Usuario() {
                         onPress={() => router.push('/editar-perfil')}
                         icon={<Pencil size={18} color={Brand.greenDeep} strokeWidth={1.8} />}
                     />
+                    {biometric.available ? (
+                        <View style={styles.switchCard}>
+                            <View style={styles.infoIcon}>
+                                <Fingerprint size={18} color={Brand.greenDeep} strokeWidth={1.8} />
+                            </View>
+                            <View style={styles.infoText}>
+                                <Text style={styles.switchLabel}>Desbloqueio por biometria</Text>
+                                <Text style={styles.infoLabel}>Pede digital ou rosto ao abrir o app</Text>
+                            </View>
+                            <Switch
+                                value={biometric.enabled}
+                                onValueChange={(value) => void toggleBiometric(value)}
+                                trackColor={{ false: Brand.chipGray, true: Brand.green }}
+                                thumbColor="#fff"
+                                accessibilityLabel="Desbloqueio por biometria"
+                            />
+                        </View>
+                    ) : null}
                 </Animated.View>
 
                 <Animated.View entering={enter(++sectionIndex)} style={styles.section}>
@@ -288,6 +313,17 @@ const styles = StyleSheet.create({
     infoText: { flex: 1, minWidth: 0 },
     infoLabel: { fontSize: 12.5, color: Brand.muted },
     infoValue: { fontSize: 15, fontWeight: '500', color: Brand.ink, marginTop: 1 },
+    switchCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        padding: 12,
+        borderRadius: 22,
+        borderWidth: 1,
+        borderColor: Brand.line,
+        backgroundColor: Brand.card,
+    },
+    switchLabel: { fontSize: 15, fontWeight: '500', color: Brand.ink },
     company: {
         flexDirection: 'row',
         alignItems: 'center',
