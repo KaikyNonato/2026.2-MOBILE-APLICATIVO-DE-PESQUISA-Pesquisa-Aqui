@@ -21,7 +21,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "postinstall": "prisma skills sync || exit 0",
     "contract:emit": "prisma contract emit",
-    "seed": "tsx src/prisma/seed.ts"
+    "seed": "tsx src/prisma/seed.ts",
+    "seed:demo": "tsx src/prisma/seed-demo.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

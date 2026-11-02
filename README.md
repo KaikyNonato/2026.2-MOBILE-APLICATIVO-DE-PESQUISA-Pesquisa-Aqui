@@ -178,15 +178,30 @@ A API sobe em `http://localhost:3001` (ou na porta definida em `PORT`).
 
 A conta nasce com **senha temporária**: no primeiro acesso o sistema obriga a escolher uma senha nova.
 
-**Dados de demonstração (opcional):** para testar a paginação e os dashboards com volume, rode o seed de demonstração (é idempotente: pode rodar mais de uma vez sem duplicar).
+**Dados de demonstração (opcional):** para testar paginação, dashboards, mapa de coletas, auditoria de qualidade e cópias em campo com volume, rode o seed de demonstração. Ele é idempotente: pode rodar mais de uma vez sem duplicar, e em um banco criado por uma versão antiga do seed ele completa o que faltava (senha, localização das coletas, área-alvo, metas).
 
 ```bash
-npx tsx src/prisma/seed-demo.ts
+npm run seed:demo
 # mais coletas na primeira pesquisa:
-SEED_COLLECTIONS=250 npx tsx src/prisma/seed-demo.ts
+SEED_COLLECTIONS=250 npm run seed:demo
+# outra senha para os usuários demo (8+ caracteres, com letra e número):
+SEED_DEMO_PASSWORD=MinhaSenha1 npm run seed:demo
 ```
 
-Ele cria a empresa *Empresa Demo (seed)*, o administrador `demo.admin`, pesquisadores `demo.ana`, `demo.bruno` etc. (senha `demo123`) e cinco pesquisas em situações diferentes, com coletas.
+O banco precisa estar com o contrato aplicado (`npx prisma db update`). O seed cria:
+
+| O quê | Detalhes |
+| --- | --- |
+| Empresas | *Empresa Demo (seed)* (ativa) e *Empresa Demo Inativa (seed)* |
+| Usuários | administrador `demo.admin`; pesquisadores `demo.ana`, `demo.bruno`, `demo.carla`, `demo.diego`, `demo.elisa`; `demo.fabio` (inativo). Senha `demo1234`, sem troca obrigatória |
+| Pesquisas | 6, uma em cada situação (em campo, encerrada, publicada, rascunho), com a de **água** usando as regras avançadas (operadores, grupos E/OU, `HIDE` e pulo de seção) |
+| Coletas | respostas variadas, localização de início, área-alvo por pesquisa e alguns casos de propósito para a auditoria (coleta muito rápida, fora da área, sem localização) |
+| Equipe | pesquisadores vinculados com **meta de coletas** |
+| Cópias em campo | ativas (pesquisas em campo), devolvidas (encerrada), um aparelho revogado e outro revogado e depois desbloqueado |
+| Sincronização | um `SyncLog` por envio (pesquisador, aparelho e dia) |
+| Modelos | um modelo de questionário salvo na biblioteca da empresa |
+
+Fotos e áudios não são gerados (dependem de arquivos): as questões de mídia ficam sem resposta.
 
 ### 2. Web
 
@@ -260,6 +275,7 @@ npm run ios          # simulador iOS
 | `JWT_EXPIRES_IN` | Não | Validade do token de login (padrão `12h`) |
 | `LOGIN_MAX_ATTEMPTS` / `LOGIN_LOCK_MINUTES` | Não | Tentativas erradas seguidas até trancar a conta (padrão `5`) e por quanto tempo (padrão `15` minutos) |
 | `SEED_ADMIN_PASSWORD` | Não | Senha inicial do superadministrador criado por `npm run seed` (vazia = aleatória, mostrada no terminal) |
+| `SEED_DEMO_PASSWORD` | Não | Senha dos usuários de demonstração criados por `npm run seed:demo` (vazia = `demo1234`; precisa seguir a política de senha) |
 
 ### Web (`web/.env.local`)
 
