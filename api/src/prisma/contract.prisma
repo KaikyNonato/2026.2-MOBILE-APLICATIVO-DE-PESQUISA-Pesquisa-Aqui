@@ -99,6 +99,23 @@ model Research {
   updatedAt      temporal.updatedAtString()
 }
 
+// Modelo de questionário salvo pela empresa (a partir de uma pesquisa ou de um arquivo JSON importado).
+// `spec` guarda a estrutura em JSON (texto): { sections, rules }, no mesmo formato dos modelos prontos.
+model SavedTemplate {
+  id             Int      @id @default(autoincrement())
+  name           String
+  category       String   @default("Personalizado")
+  description    String   @default("")
+  objective      String   @default("")
+  targetAudience String   @default("")
+  recordInterview Boolean @default(false)
+  spec           String
+  companyId      Int
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt      TimestamptzString @default(now())
+  updatedAt      temporal.updatedAtString()
+}
+
 model Section {
   id         Int      @id @default(autoincrement())
   title      String

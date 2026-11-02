@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Pa
 import { ResearchService } from './research.service.js';
 import { ResearchReportService } from './research-report.service.js';
 import { ResearchTemplateService } from './research-template.service.js';
-import { CreateFromSpecDto, CreateFromTemplateDto, DuplicateResearchDto } from './dto/research-template.dto.js';
+import { CreateFromSavedDto, CreateFromTemplateDto, DuplicateResearchDto, SaveTemplateDto } from './dto/research-template.dto.js';
 import { CreateResearchDto } from './dto/create-research.dto.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { UserPayLoad } from '../auth/current-user.type.js';
@@ -58,16 +58,33 @@ export class ResearchController {
         return this.templateService.fromTemplate(dto, currentUser);
     }
 
-    // Cria um rascunho a partir de um modelo personalizado (JSON salvo ou importado).
-    @Post('from-spec')
-    fromSpec(@Body() dto: CreateFromSpecDto, @CurrentUser() currentUser: UserPayLoad) {
-        return this.templateService.fromSpec(dto, currentUser);
+    // Modelos salvos pela empresa (precisam vir antes de ":id").
+    @Get('saved-templates')
+    savedTemplates(@CurrentUser() currentUser: UserPayLoad) {
+        return this.templateService.listSaved(currentUser);
     }
 
-    // Estrutura da pesquisa como arquivo de modelo (para salvar como modelo / baixar em JSON).
-    @Get(':id/template')
-    exportTemplate(@Param('id', ParseIntPipe) id: number, @CurrentUser() currentUser: UserPayLoad) {
-        return this.templateService.exportTemplate(id, currentUser);
+    // Guarda um modelo importado de arquivo JSON.
+    @Post('saved-templates')
+    saveTemplate(@Body() dto: SaveTemplateDto, @CurrentUser() currentUser: UserPayLoad) {
+        return this.templateService.saveTemplate(dto, currentUser);
+    }
+
+    // Cria um rascunho a partir de um modelo salvo.
+    @Post('saved-templates/:templateId/use')
+    useSavedTemplate(@Param('templateId', ParseIntPipe) templateId: number, @Body() dto: CreateFromSavedDto, @CurrentUser() currentUser: UserPayLoad) {
+        return this.templateService.fromSaved(templateId, dto, currentUser);
+    }
+
+    @Delete('saved-templates/:templateId')
+    deleteSavedTemplate(@Param('templateId', ParseIntPipe) templateId: number, @CurrentUser() currentUser: UserPayLoad) {
+        return this.templateService.deleteSaved(templateId, currentUser);
+    }
+
+    // Salva a estrutura desta pesquisa como modelo da empresa.
+    @Post(':id/save-as-template')
+    saveAsTemplate(@Param('id', ParseIntPipe) id: number, @CurrentUser() currentUser: UserPayLoad) {
+        return this.templateService.saveResearchAsTemplate(id, currentUser);
     }
 
     // Duplica a estrutura da pesquisa (seções, questões, opções e regras) em um novo rascunho.

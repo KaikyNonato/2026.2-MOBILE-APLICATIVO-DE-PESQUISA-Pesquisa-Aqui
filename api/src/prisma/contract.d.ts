@@ -33,9 +33,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'6445e8db92d169693133933673e6ee93841c7c4c0b504f76ef1fbbd0727d138c'>;
+  StorageHashBase<'1a0e795577a47b36e9475f8e2148401eb85bb41949e12319132ce53030e9b9c3'>;
 export type ExecutionHash =
-  ExecutionHashBase<'89005b7a2a0855ac410e36d032ac3f6fc09fa02bc982c27b23170ec528591c09'>;
+  ExecutionHashBase<'5b6824208f97f073625496036d994d2fe350d82fea679ec8729e3fff230b8a09'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -368,6 +368,19 @@ export type FieldOutputTypes = {
       readonly targetCount: CodecTypes['pg/int4@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
+    readonly SavedTemplate: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly category: CodecTypes['pg/text@1']['output'];
+      readonly description: CodecTypes['pg/text@1']['output'];
+      readonly objective: CodecTypes['pg/text@1']['output'];
+      readonly targetAudience: CodecTypes['pg/text@1']['output'];
+      readonly recordInterview: CodecTypes['pg/bool@1']['output'];
+      readonly spec: CodecTypes['pg/text@1']['output'];
+      readonly companyId: CodecTypes['pg/int4@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
     readonly Section: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly title: CodecTypes['pg/text@1']['output'];
@@ -532,6 +545,19 @@ export type FieldInputTypes = {
       readonly userId: CodecTypes['pg/int4@1']['input'];
       readonly targetCount: CodecTypes['pg/int4@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly SavedTemplate: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly category: CodecTypes['pg/text@1']['input'];
+      readonly description: CodecTypes['pg/text@1']['input'];
+      readonly objective: CodecTypes['pg/text@1']['input'];
+      readonly targetAudience: CodecTypes['pg/text@1']['input'];
+      readonly recordInterview: CodecTypes['pg/bool@1']['input'];
+      readonly spec: CodecTypes['pg/text@1']['input'];
+      readonly companyId: CodecTypes['pg/int4@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Section: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -698,6 +724,19 @@ export type StorageColumnTypes = {
       readonly targetCount: CodecTypes['pg/int4@1']['output'] | null;
       readonly userId: CodecTypes['pg/int4@1']['output'];
     };
+    readonly savedTemplate: {
+      readonly category: CodecTypes['pg/text@1']['output'];
+      readonly companyId: CodecTypes['pg/int4@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly description: CodecTypes['pg/text@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly objective: CodecTypes['pg/text@1']['output'];
+      readonly recordInterview: CodecTypes['pg/bool@1']['output'];
+      readonly spec: CodecTypes['pg/text@1']['output'];
+      readonly targetAudience: CodecTypes['pg/text@1']['output'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
     readonly section: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -862,6 +901,19 @@ export type StorageColumnInputTypes = {
       readonly researchId: CodecTypes['pg/int4@1']['input'];
       readonly targetCount: CodecTypes['pg/int4@1']['input'] | null;
       readonly userId: CodecTypes['pg/int4@1']['input'];
+    };
+    readonly savedTemplate: {
+      readonly category: CodecTypes['pg/text@1']['input'];
+      readonly companyId: CodecTypes['pg/int4@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly description: CodecTypes['pg/text@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly objective: CodecTypes['pg/text@1']['input'];
+      readonly recordInterview: CodecTypes['pg/bool@1']['input'];
+      readonly spec: CodecTypes['pg/text@1']['input'];
+      readonly targetAudience: CodecTypes['pg/text@1']['input'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly section: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -1838,6 +1890,114 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly savedTemplate: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly name: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly category: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'Personalizado'>;
+                  };
+                };
+                readonly description: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', ''>;
+                  };
+                };
+                readonly objective: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', ''>;
+                  };
+                };
+                readonly targetAudience: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', ''>;
+                  };
+                };
+                readonly recordInterview: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                };
+                readonly spec: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly companyId: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly updatedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'savedTemplate_companyId_idx_33acc5ed';
+                  readonly prefix: 'savedTemplate_companyId_idx';
+                  readonly columns: readonly ['companyId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'savedTemplate';
+                    readonly columns: readonly ['companyId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'company';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly section: {
               columns: {
                 readonly id: {
@@ -2138,6 +2298,10 @@ type ContractBase = Omit<
     readonly company: { readonly namespace: 'public' & NamespaceId; readonly model: 'Company' };
     readonly user: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
     readonly research: { readonly namespace: 'public' & NamespaceId; readonly model: 'Research' };
+    readonly savedTemplate: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'SavedTemplate';
+    };
     readonly section: { readonly namespace: 'public' & NamespaceId; readonly model: 'Section' };
     readonly question: { readonly namespace: 'public' & NamespaceId; readonly model: 'Question' };
     readonly questionOption: {
@@ -3080,6 +3244,90 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly SavedTemplate: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly category: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly description: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly objective: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly targetAudience: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly recordInterview: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly spec: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly companyId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly company: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Company';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['companyId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'savedTemplate';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly name: { readonly column: 'name' };
+                readonly category: { readonly column: 'category' };
+                readonly description: { readonly column: 'description' };
+                readonly objective: { readonly column: 'objective' };
+                readonly targetAudience: { readonly column: 'targetAudience' };
+                readonly recordInterview: { readonly column: 'recordInterview' };
+                readonly spec: { readonly column: 'spec' };
+                readonly companyId: { readonly column: 'companyId' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
           readonly Section: {
             readonly fields: {
               readonly id: {
@@ -3469,6 +3717,15 @@ type ContractBase = Omit<
           readonly ref: {
             readonly namespace: 'public';
             readonly table: 'research';
+            readonly column: 'updatedAt';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+          readonly onUpdate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'savedTemplate';
             readonly column: 'updatedAt';
           };
           readonly onCreate: { readonly kind: 'generator'; readonly id: 'timestampNow' };

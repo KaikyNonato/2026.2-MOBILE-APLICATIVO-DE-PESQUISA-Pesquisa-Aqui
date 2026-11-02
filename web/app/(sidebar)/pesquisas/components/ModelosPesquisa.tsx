@@ -3,30 +3,30 @@
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loadingState";
 import {
-    addCustomTemplate,
-    createResearchFromSpec,
+    createResearchFromSaved,
     createResearchFromTemplate,
+    deleteSavedTemplate,
     downloadTemplateFile,
-    exportResearchTemplate,
     getResearches,
     getResearchTemplates,
-    loadCustomTemplates,
+    getSavedTemplates,
     parseTemplateFile,
-    removeCustomTemplate,
-    type CustomTemplate,
+    saveResearchAsTemplate,
+    saveTemplate,
     type Research,
     type ResearchTemplate,
+    type SavedTemplate,
 } from "@/lib/research";
 import { Download, FileJson, FilePlus2, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
-// Item da biblioteca: modelo pronto (servidor) ou personalizado (guardado neste navegador).
-type Item = ResearchTemplate & { custom?: CustomTemplate };
+// Item da biblioteca: modelo pronto ou modelo salvo pela empresa (`custom`).
+type Item = Omit<ResearchTemplate, 'id'> & { id: string; custom?: SavedTemplate };
 
-const summarize = (c: CustomTemplate): Item => ({
-    id: c.id,
+const summarize = (c: SavedTemplate): Item => ({
+    id: `saved-${c.id}`,
     name: c.name,
     category: c.category,
     description: c.description || 'Modelo personalizado.',
@@ -45,7 +45,8 @@ export default function ModelosPesquisa({ onClose }: { onClose?: () => void }) {
     const router = useRouter();
     const fileInput = useRef<HTMLInputElement>(null);
     const [templates, setTemplates] = useState<ResearchTemplate[] | null>(null);
-    const [customs, setCustoms] = useState<CustomTemplate[]>([]);
+    const [customs, setCustoms] = useState<SavedTemplate[]>([]);
+    const [busy, setBusy] = useState(false);
     const [selected, setSelected] = useState<Item | null>(null);
     const [mode, setMode] = useState<'list' | 'pick'>('list');
     const [researches, setResearches] = useState<Research[] | null>(null);
@@ -54,19 +55,17 @@ export default function ModelosPesquisa({ onClose }: { onClose?: () => void }) {
     const [creating, setCreating] = useState(false);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage só existe no navegador
-        setCustoms(loadCustomTemplates());
+        getSavedTemplates().then(setCustoms).catch(() => setCustoms([]));
         getResearchTemplates().then(setTemplates).catch((e) => { toast.error(e instanceof Error ? e.message : 'Erro ao carregar os modelos'); setTemplates([]); });
     }, []);
 
-    const refreshCustoms = () => setCustoms(loadCustomTemplates());
 
     const create = async () => {
         if (!selected) return;
         setCreating(true);
         try {
             const created = selected.custom
-                ? await createResearchFromSpec(selected.custom, title.trim() || undefined)
+                ? await createResearchFromSaved(selected.custom.id, title.trim() || undefined)
                 : await createResearchFromTemplate({ templateId: selected.id, title: title.trim() || undefined });
             toast.success('Rascunho criado a partir do modelo!');
             onClose?.();
@@ -82,12 +81,14 @@ export default function ModelosPesquisa({ onClose }: { onClose?: () => void }) {
         try {
             if (file.size > 2 * 1024 * 1024) throw new Error('O arquivo é grande demais para um modelo (máximo 2 MB).');
             const parsed = parseTemplateFile(await file.text(), file.name.replace(/\.json$/i, ''));
-            addCustomTemplate(parsed);
-            refreshCustoms();
+            setBusy(true);
+            const saved = await saveTemplate(parsed);
+            setCustoms((list) => [saved, ...list]);
             toast.success(`Modelo "${parsed.name}" adicionado à biblioteca!`);
         } catch (e) {
             toast.error(e instanceof Error ? e.message : 'Erro ao importar o arquivo');
         } finally {
+            setBusy(false);
             if (fileInput.current) fileInput.current.value = '';
         }
     };
@@ -100,9 +101,8 @@ export default function ModelosPesquisa({ onClose }: { onClose?: () => void }) {
     const saveAsTemplate = async (research: Research) => {
         setSavingId(research.id);
         try {
-            const exported = await exportResearchTemplate(research.id);
-            addCustomTemplate(exported);
-            refreshCustoms();
+            const saved = await saveResearchAsTemplate(research.id);
+            setCustoms((list) => [saved, ...list]);
             toast.success(`"${research.title}" salva como modelo!`);
             setMode('list');
         } catch (e) {
@@ -112,11 +112,19 @@ export default function ModelosPesquisa({ onClose }: { onClose?: () => void }) {
         }
     };
 
-    const remove = (item: Item) => {
-        removeCustomTemplate(item.id);
-        refreshCustoms();
-        setSelected(null);
-        toast.success('Modelo removido da biblioteca.');
+    const remove = async (item: Item) => {
+        if (!item.custom) return;
+        setBusy(true);
+        try {
+            await deleteSavedTemplate(item.custom.id);
+            setCustoms((list) => list.filter((c) => c.id !== item.custom!.id));
+            setSelected(null);
+            toast.success('Modelo removido da biblioteca.');
+        } catch (e) {
+            toast.error(e instanceof Error ? e.message : 'Erro ao remover o modelo');
+        } finally {
+            setBusy(false);
+        }
     };
 
     if (!templates) return <LoadingState label="Carregando..." />;
@@ -145,7 +153,7 @@ export default function ModelosPesquisa({ onClose }: { onClose?: () => void }) {
                 <div className="flex flex-wrap justify-end gap-2">
                     {selected.custom && (
                         <>
-                            <Button variant="ghost" onClick={() => remove(selected)} disabled={creating} className="mr-auto text-destructive"><Trash2 />Remover</Button>
+                            <Button variant="ghost" onClick={() => remove(selected)} disabled={creating || busy} className="mr-auto text-destructive"><Trash2 />Remover</Button>
                             <Button variant="outline" onClick={() => downloadTemplateFile(selected.custom!)} disabled={creating}><Download />Baixar JSON</Button>
                         </>
                     )}
@@ -193,8 +201,8 @@ export default function ModelosPesquisa({ onClose }: { onClose?: () => void }) {
             {/* Adicionar mais modelos */}
             <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-border bg-muted/30 p-3">
                 <p className="mr-auto flex items-center gap-2 text-sm font-medium"><FilePlus2 className="size-4" />Adicionar mais modelos</p>
-                <Button variant="outline" size="sm" onClick={openPicker}><FileJson />De uma pesquisa existente</Button>
-                <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()}><Upload />Importar JSON</Button>
+                <Button variant="outline" size="sm" onClick={openPicker} disabled={busy}><FileJson />De uma pesquisa existente</Button>
+                <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()} disabled={busy}><Upload />{busy ? 'Importando...' : 'Importar JSON'}</Button>
                 <input ref={fileInput} type="file" accept=".json,application/json" className="hidden" onChange={(e) => importFile(e.target.files?.[0])} />
             </div>
 
@@ -212,7 +220,7 @@ export default function ModelosPesquisa({ onClose }: { onClose?: () => void }) {
                     </button>
                 ))}
             </div>
-            <p className="text-[11px] text-muted-foreground">Os modelos adicionados ficam guardados neste navegador. Para levar a outro computador ou compartilhar, use “Baixar JSON” no modelo e importe lá.</p>
+            <p className="text-[11px] text-muted-foreground">Os modelos adicionados ficam salvos na sua empresa e aparecem para todos os administradores. Para compartilhar com outra empresa, use “Baixar JSON” no modelo e importe lá.</p>
         </div>
     );
 }

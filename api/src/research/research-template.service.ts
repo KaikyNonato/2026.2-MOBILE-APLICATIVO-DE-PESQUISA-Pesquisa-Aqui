@@ -5,7 +5,7 @@ import type { UserPayLoad } from '../auth/current-user.type.js';
 import { ResearchService } from './research.service.js';
 import { TEMPLATES, templateSummary, type QuestionnaireSpec, type SpecQuestion, type SpecRule, type SpecSection } from './research-templates.js';
 import { sanitizeSpec } from './research-template-spec.js';
-import type { CreateFromSpecDto, CreateFromTemplateDto, DuplicateResearchDto } from './dto/research-template.dto.js';
+import type { CreateFromSavedDto, CreateFromTemplateDto, DuplicateResearchDto, SaveTemplateDto } from './dto/research-template.dto.js';
 
 const CHOICE = ['SINGLE_CHOICE', 'MULTIPLE_CHOICE'];
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -99,47 +99,99 @@ export class ResearchTemplateService {
         });
     }
 
-    // ---------- modelos personalizados (salvar uma pesquisa como modelo / importar JSON) ----------
+    // ---------- modelos salvos pela empresa (ficam no banco) ----------
 
-    /** Estrutura de uma pesquisa existente, num arquivo de modelo pronto para baixar e importar depois. */
-    async exportTemplate(id: number, currentUser: UserPayLoad) {
-        const research = await this.researchService.findOne(id, currentUser);
-        if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot export templates');
-        const spec = await this.exportSpec(research.id);
+    private toSaved(row: { id: number; name: string; category: string; description: string; objective: string; targetAudience: string; recordInterview: boolean; spec: string; companyId: number }) {
+        const spec = JSON.parse(row.spec) as QuestionnaireSpec;
         return {
-            format: 'pesquisa-aqui-template',
-            version: 1,
-            name: research.title,
-            category: 'Personalizado',
-            description: research.description ?? '',
-            objective: research.objective ?? '',
-            targetAudience: research.targetAudience ?? '',
-            recordInterview: research.recordInterview ?? false,
+            id: row.id,
+            name: row.name,
+            category: row.category,
+            description: row.description,
+            objective: row.objective,
+            targetAudience: row.targetAudience,
+            recordInterview: row.recordInterview,
+            companyId: row.companyId,
             sections: spec.sections,
             rules: spec.rules,
         };
     }
 
-    /** Rascunho a partir de um modelo personalizado (o JSON salvo ou importado). A estrutura é revalidada aqui. */
-    async fromSpec(dto: CreateFromSpecDto, currentUser: UserPayLoad) {
+    /** Modelos da empresa do usuário (o superadministrador vê todos), do mais novo para o mais antigo. */
+    async listSaved(currentUser: UserPayLoad) {
+        if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot use templates');
+        const rows = currentUser.profile === 'SUPERADMINISTRATOR'
+            ? await this.orm.SavedTemplate.all()
+            : await this.orm.SavedTemplate.where({ companyId: currentUser.companyId as number }).all();
+        return [...rows].sort((a, b) => b.id - a.id).map((row) => this.toSaved(row));
+    }
+
+    /** Guarda um modelo (arquivo JSON importado). A estrutura é validada e normalizada antes de gravar. */
+    async saveTemplate(dto: SaveTemplateDto, currentUser: UserPayLoad) {
         const companyId = this.companyFor(currentUser, dto.companyId);
         const spec = sanitizeSpec(dto.spec);
+        const row = await this.orm.SavedTemplate.create({
+            name: dto.name.trim(),
+            category: dto.category?.trim() || 'Personalizado',
+            description: dto.description?.trim() ?? '',
+            objective: dto.objective?.trim() ?? '',
+            targetAudience: dto.targetAudience?.trim() ?? '',
+            recordInterview: dto.recordInterview ?? false,
+            spec: JSON.stringify(spec),
+            companyId,
+        });
+        return this.toSaved(row);
+    }
 
-        const start = dto.startDate ? new Date(dto.startDate) : new Date();
-        const end = dto.endDate ? new Date(dto.endDate) : new Date(start.getTime() + 30 * DAY_MS);
-        if (end < start) throw new BadRequestException('The end date cannot be earlier than the start date');
+    /** Guarda a estrutura de uma pesquisa existente como modelo da empresa dela. */
+    async saveResearchAsTemplate(id: number, currentUser: UserPayLoad) {
+        if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot save templates');
+        const research = await this.researchService.findOne(id, currentUser);
+        const spec = await this.exportSpec(research.id);
+        const row = await this.orm.SavedTemplate.create({
+            name: research.title.slice(0, 150),
+            category: 'Personalizado',
+            description: research.description ?? '',
+            objective: research.objective ?? '',
+            targetAudience: research.targetAudience ?? '',
+            recordInterview: research.recordInterview ?? false,
+            spec: JSON.stringify(sanitizeSpec(spec)),
+            companyId: research.companyId,
+        });
+        return this.toSaved(row);
+    }
+
+    private async findSaved(id: number, currentUser: UserPayLoad) {
+        if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot use templates');
+        const row = await this.orm.SavedTemplate.where({ id }).first();
+        // Modelo de outra empresa se comporta como inexistente.
+        if (!row || (currentUser.profile !== 'SUPERADMINISTRATOR' && row.companyId !== currentUser.companyId)) throw new NotFoundException('Template not found');
+        return row;
+    }
+
+    async deleteSaved(id: number, currentUser: UserPayLoad) {
+        const row = await this.findSaved(id, currentUser);
+        await this.orm.SavedTemplate.where({ id: row.id }).delete();
+        return { id: row.id };
+    }
+
+    /** Rascunho a partir de um modelo salvo (a estrutura é revalidada). */
+    async fromSaved(id: number, dto: CreateFromSavedDto, currentUser: UserPayLoad) {
+        const row = await this.findSaved(id, currentUser);
+        const spec = sanitizeSpec(JSON.parse(row.spec));
+        const start = new Date();
 
         return await this.prisma.client.transaction(async (tx) => {
             const created = await tx.orm.public.Research.create({
-                title: dto.title?.trim() || dto.name?.trim() || 'Pesquisa a partir de modelo',
-                description: dto.description?.trim() || 'Pesquisa criada a partir de um modelo personalizado.',
-                objective: dto.objective?.trim() || 'Definir o objetivo da pesquisa.',
-                targetAudience: dto.targetAudience?.trim() || 'Definir o público-alvo.',
+                title: dto.title?.trim() || row.name,
+                description: row.description || 'Pesquisa criada a partir de um modelo.',
+                objective: row.objective || 'Definir o objetivo da pesquisa.',
+                targetAudience: row.targetAudience || 'Definir o público-alvo.',
                 startDate: start.toISOString(),
-                endDate: end.toISOString(),
+                endDate: new Date(start.getTime() + 30 * DAY_MS).toISOString(),
                 status: 'DRAFT',
-                recordInterview: dto.recordInterview ?? false,
-                companyId,
+                recordInterview: row.recordInterview,
+                companyId: row.companyId,
             });
             await this.writeSpec(tx.orm.public, created.id, spec);
             return created;

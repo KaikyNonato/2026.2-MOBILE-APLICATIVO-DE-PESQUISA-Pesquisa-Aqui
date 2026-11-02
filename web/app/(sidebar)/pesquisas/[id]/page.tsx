@@ -6,7 +6,7 @@ import DialogLayout from "@/components/ui/dialogLayout";
 import { LoadingState } from "@/components/ui/loadingState";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { addCustomTemplate, deleteResearch, duplicateResearch, exportResearchTemplate, getResearchById, publishResearch, unpublishResearch, type Research } from "@/lib/research";
+import { deleteResearch, duplicateResearch, getResearchById, publishResearch, saveResearchAsTemplate, unpublishResearch, type Research } from "@/lib/research";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { ArrowLeft, CalendarRange, Check, BarChart3, ClipboardList, FileText, Copy, Flag, LibraryBig, ListChecks, Map as MapIcon, Menu, ShieldCheck, Lock, Mic, MicOff, Quote, ShieldAlert, Smartphone, Target, Trash2, Undo2, UsersRound } from "lucide-react";
@@ -177,10 +177,10 @@ export default function PesquisaDetalhePage() {
         }
     };
 
-    // Guarda a estrutura desta pesquisa na biblioteca de modelos (aba "Usar modelo" da lista de pesquisas).
+    // Guarda a estrutura desta pesquisa como modelo da empresa (aparece em "Usar modelo", na lista de pesquisas).
     const handleSaveAsTemplate = async () => {
         try {
-            addCustomTemplate(await exportResearchTemplate(research.id));
+            await saveResearchAsTemplate(research.id);
             toast.success('Pesquisa salva como modelo! Ela aparece em "Usar modelo".');
         } catch (err) {
             toast.error(err instanceof Error ? err.message : 'Erro ao salvar como modelo');

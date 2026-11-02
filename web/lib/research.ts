@@ -414,13 +414,13 @@ export const duplicateResearch = async (id: number, title?: string): Promise<Res
     return response.json();
 };
 
-// ---------- modelos personalizados ----------
-// Ficam na biblioteca deste navegador (localStorage) e podem ir e voltar como arquivo JSON.
-// Ao usar um, a estrutura é enviada ao servidor, que a valida de novo antes de criar o rascunho.
+// ---------- modelos salvos pela empresa ----------
+// Ficam no servidor (por empresa) e também podem ir e voltar como arquivo JSON.
+// O servidor valida a estrutura ao salvar e de novo ao criar uma pesquisa a partir do modelo.
 
-/** Arquivo/registro de modelo personalizado. `sections` e `rules` seguem o formato dos modelos prontos. */
-export interface CustomTemplate {
-    id: string;
+/** Modelo salvo. `sections` e `rules` seguem o formato dos modelos prontos. */
+export interface SavedTemplate {
+    id: number;
     name: string;
     category: string;
     description: string;
@@ -431,38 +431,45 @@ export interface CustomTemplate {
     rules: unknown[];
 }
 
-const CUSTOM_TEMPLATES_KEY = 'pa:custom-templates';
+export type TemplateDraft = Omit<SavedTemplate, 'id'>;
 
-export const loadCustomTemplates = (): CustomTemplate[] => {
-    try {
-        const raw = window.localStorage.getItem(CUSTOM_TEMPLATES_KEY);
-        const list = raw ? JSON.parse(raw) : [];
-        return Array.isArray(list) ? list : [];
-    } catch {
-        return [];
-    }
+export const getSavedTemplates = async (): Promise<SavedTemplate[]> => {
+    const response = await apiFetch('/research/saved-templates', { method: 'GET', credentials: 'include' });
+    if (!response.ok) throw await errorFrom(response, 'Falha ao carregar os modelos salvos');
+    return response.json();
 };
 
-const storeCustomTemplates = (list: CustomTemplate[]) => {
-    try {
-        window.localStorage.setItem(CUSTOM_TEMPLATES_KEY, JSON.stringify(list));
-    } catch {
-        throw new Error('Não foi possível guardar o modelo neste navegador (armazenamento bloqueado ou cheio).');
-    }
+/** Guarda na empresa um modelo vindo de arquivo JSON. */
+export const saveTemplate = async (template: TemplateDraft): Promise<SavedTemplate> => {
+    const { sections, rules, ...meta } = template;
+    const response = await apiFetch('/research/saved-templates', { method: 'POST', credentials: 'include', body: JSON.stringify({ ...meta, spec: { sections, rules } }) });
+    if (!response.ok) throw await errorFrom(response, 'Falha ao salvar o modelo');
+    return response.json();
 };
 
-export const addCustomTemplate = (template: Omit<CustomTemplate, 'id'>): CustomTemplate => {
-    const saved: CustomTemplate = { ...template, id: `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}` };
-    storeCustomTemplates([saved, ...loadCustomTemplates()]);
-    return saved;
+/** Guarda a estrutura de uma pesquisa existente como modelo da empresa. */
+export const saveResearchAsTemplate = async (id: number): Promise<SavedTemplate> => {
+    const response = await apiFetch(`/research/${id}/save-as-template`, { method: 'POST', credentials: 'include', body: JSON.stringify({}) });
+    if (!response.ok) throw await errorFrom(response, 'Falha ao salvar a pesquisa como modelo');
+    return response.json();
 };
 
-export const removeCustomTemplate = (id: string) => storeCustomTemplates(loadCustomTemplates().filter((t) => t.id !== id));
+export const deleteSavedTemplate = async (id: number): Promise<void> => {
+    const response = await apiFetch(`/research/saved-templates/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (!response.ok) throw await errorFrom(response, 'Falha ao remover o modelo');
+};
+
+/** Cria um rascunho a partir de um modelo salvo. */
+export const createResearchFromSaved = async (id: number, title?: string): Promise<Research> => {
+    const response = await apiFetch(`/research/saved-templates/${id}/use`, { method: 'POST', credentials: 'include', body: JSON.stringify(title ? { title } : {}) });
+    if (!response.ok) throw await errorFrom(response, 'Falha ao criar a pesquisa a partir do modelo');
+    return response.json();
+};
 
 const asText = (v: unknown, fallback = '') => (typeof v === 'string' ? v : fallback);
 
-/** Lê o conteúdo de um arquivo JSON de modelo. Verificação leve: o servidor valida tudo de novo ao usar o modelo. */
-export const parseTemplateFile = (content: string, fallbackName = 'Modelo importado'): Omit<CustomTemplate, 'id'> => {
+/** Lê o conteúdo de um arquivo JSON de modelo. Verificação leve: o servidor valida tudo de novo ao salvar. */
+export const parseTemplateFile = (content: string, fallbackName = 'Modelo importado'): TemplateDraft => {
     let data: unknown;
     try {
         data = JSON.parse(content);
@@ -473,7 +480,7 @@ export const parseTemplateFile = (content: string, fallbackName = 'Modelo import
     if (!obj || typeof obj !== 'object' || !Array.isArray(obj.sections) || obj.sections.length === 0) {
         throw new Error('O arquivo não parece um modelo: faltam as seções ("sections").');
     }
-    const sections = obj.sections as CustomTemplate['sections'];
+    const sections = obj.sections as TemplateDraft['sections'];
     const sectionsOk = sections.every((sec) => sec && typeof sec === 'object' && typeof sec.title === 'string' && Array.isArray(sec.questions)
         && sec.questions.every((q) => q && typeof q.key === 'string' && typeof q.statement === 'string' && typeof q.type === 'string'));
     if (!sectionsOk) throw new Error('O arquivo tem seções ou questões fora do formato esperado.');
@@ -489,34 +496,8 @@ export const parseTemplateFile = (content: string, fallbackName = 'Modelo import
     };
 };
 
-/** Estrutura de uma pesquisa existente, no formato de arquivo de modelo. */
-export const exportResearchTemplate = async (id: number): Promise<Omit<CustomTemplate, 'id'>> => {
-    const response = await apiFetch(`/research/${id}/template`, { method: 'GET', credentials: 'include' });
-    if (!response.ok) throw await errorFrom(response, 'Falha ao ler a estrutura da pesquisa');
-    return parseTemplateFile(JSON.stringify(await response.json()));
-};
-
-/** Cria um rascunho a partir de um modelo personalizado. */
-export const createResearchFromSpec = async (template: CustomTemplate, title?: string): Promise<Research> => {
-    const response = await apiFetch('/research/from-spec', {
-        method: 'POST',
-        credentials: 'include',
-        body: JSON.stringify({
-            spec: { sections: template.sections, rules: template.rules },
-            name: template.name,
-            title: title || undefined,
-            description: template.description || undefined,
-            objective: template.objective || undefined,
-            targetAudience: template.targetAudience || undefined,
-            recordInterview: template.recordInterview,
-        }),
-    });
-    if (!response.ok) throw await errorFrom(response, 'Falha ao criar a pesquisa a partir do modelo');
-    return response.json();
-};
-
 /** Baixa o modelo como arquivo .json. */
-export const downloadTemplateFile = (template: Omit<CustomTemplate, 'id'>) => {
+export const downloadTemplateFile = (template: TemplateDraft) => {
     const { name, category, description, objective, targetAudience, recordInterview, sections, rules } = template;
     const body = JSON.stringify({ format: 'pesquisa-aqui-template', version: 1, name, category, description, objective, targetAudience, recordInterview, sections, rules }, null, 2);
     const url = URL.createObjectURL(new Blob([body], { type: 'application/json' }));
