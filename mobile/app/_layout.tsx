@@ -4,6 +4,8 @@ import { Stack } from 'expo-router';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { BiometricLockProvider } from '@/context/BiometricLockContext';
 import BiometricGate from '@/components/BiometricGate';
+// Só para registrar a tarefa de segundo plano: o sistema a acorda com o app fechado e ela precisa existir já na carga do app
+import '@/lib/backgroundSync';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/brand';
 

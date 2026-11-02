@@ -26,6 +26,12 @@
     "plugins": [
       "expo-router",
       [
+        "expo-notifications",
+        {
+          "color": "#447762"
+        }
+      ],
+      [
         "expo-local-authentication",
         {
           "faceIDPermission": "Permitir que o $(PRODUCT_NAME) use o Face ID para desbloquear o aplicativo."

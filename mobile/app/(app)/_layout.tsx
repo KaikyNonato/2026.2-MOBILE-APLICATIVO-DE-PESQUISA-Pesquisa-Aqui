@@ -5,11 +5,14 @@ import { AuthProvider } from '@/context/AuthContext';
 import { LowSpaceBanner } from '@/components/LowSpaceBanner';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { useAutoSync } from '@/hooks/useSyncQueue';
+import { useNotificationsAndBackgroundSync } from '@/hooks/useNotifications';
 import { Brand } from '@/constants/brand';
 
 export default function TabLayout() {
     // Envia a fila de coletas sozinho quando há rede, em qualquer tela do app
     useAutoSync();
+    // Avisos (pesquisa nova, meta perto do prazo, pesquisa encerrada) e sincronização com o app fechado
+    useNotificationsAndBackgroundSync();
 
     return (
         <AuthProvider>

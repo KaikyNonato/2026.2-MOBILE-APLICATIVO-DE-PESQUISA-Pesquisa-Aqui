@@ -4,6 +4,7 @@ import { clearResearchesCache } from './researchCache';
 import { returnAllCopies } from './researchReturn';
 import { filePart } from './collectionUpload';
 import { setBiometricEnabled } from './biometric';
+import { clearNotificationState } from './notifications';
 
 export interface CurrentUser {
     sub: string;
@@ -99,6 +100,7 @@ export async function logout(): Promise<void> {
     await clearToken();
     // A biometria é de quem estava logado: a próxima pessoa que entrar escolhe a dela.
     await setBiometricEnabled(false).catch(() => undefined);
+    await clearNotificationState();
     await clearResearchesCache();
 }
 

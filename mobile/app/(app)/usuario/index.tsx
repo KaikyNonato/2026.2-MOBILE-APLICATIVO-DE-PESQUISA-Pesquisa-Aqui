@@ -1,8 +1,8 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { AtSign, Building2, Fingerprint, IdCard, LogOut, Pencil, ShieldCheck, Smartphone } from 'lucide-react-native';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { AtSign, Bell, Building2, Fingerprint, IdCard, LogOut, Pencil, ShieldCheck, Smartphone } from 'lucide-react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import Animated, {
     Easing,
     FadeInDown,
@@ -18,6 +18,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useBiometricLock } from '@/context/BiometricLockContext';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { avatarSrc, logoSrc, useImageHeaders } from '@/lib/avatar';
+import { areNotificationsEnabled, setNotificationsEnabled } from '@/lib/notifications';
 import MenuCard from './_components/MenuCard';
 
 const APP_VERSION = '1.0.2';
@@ -63,6 +64,26 @@ function InfoRow({ icon, label, value, last = false }: { icon: ReactNode; label:
     );
 }
 
+/** Linha com interruptor: ícone, nome, uma frase de apoio e o botão de ligar/desligar. */
+function SwitchRow({ icon, label, hint, value, onValueChange }: { icon: ReactNode; label: string; hint: string; value: boolean; onValueChange: (value: boolean) => void }) {
+    return (
+        <View style={styles.switchCard}>
+            <View style={styles.infoIcon}>{icon}</View>
+            <View style={styles.infoText}>
+                <Text style={styles.switchLabel}>{label}</Text>
+                <Text style={styles.infoLabel}>{hint}</Text>
+            </View>
+            <Switch
+                value={value}
+                onValueChange={onValueChange}
+                trackColor={{ false: Brand.chipGray, true: Brand.green }}
+                thumbColor="#fff"
+                accessibilityLabel={label}
+            />
+        </View>
+    );
+}
+
 export default function Usuario() {
     const router = useRouter();
     const { user, logout } = useAuth();
@@ -71,6 +92,7 @@ export default function Usuario() {
     const [logoFailed, setLogoFailed] = useState(false);
     const isOnline = useNetworkStatus();
     const biometric = useBiometricLock();
+    const [notificationsOn, setNotificationsOn] = useState(false);
     const imageHeaders = useImageHeaders();
 
     // As curvas de nível "respiram" devagar, como na Home.
@@ -81,6 +103,26 @@ export default function Usuario() {
     const contourStyle = useAnimatedStyle(() => ({
         transform: [{ scale: 1 + breathe.value * 0.07 }, { translateX: breathe.value * -6 }],
     }));
+
+    useEffect(() => {
+        void areNotificationsEnabled().then(setNotificationsOn);
+    }, []);
+
+    const toggleNotifications = async (next: boolean) => {
+        const ok = await setNotificationsEnabled(next);
+        if (next && !ok) {
+            Alert.alert(
+                'Avisos bloqueados',
+                'O sistema não permitiu notificações para este aplicativo. Libere nas configurações do aparelho para receber os avisos.',
+                [
+                    { text: 'Agora não', style: 'cancel' },
+                    { text: 'Abrir configurações', onPress: () => void Linking.openSettings() },
+                ],
+            );
+            return;
+        }
+        setNotificationsOn(next && ok);
+    };
 
     const toggleBiometric = async (next: boolean) => {
         const ok = await biometric.setEnabled(next);
@@ -195,23 +237,21 @@ export default function Usuario() {
                         onPress={() => router.push('/editar-perfil')}
                         icon={<Pencil size={18} color={Brand.greenDeep} strokeWidth={1.8} />}
                     />
+                    <SwitchRow
+                        icon={<Bell size={18} color={Brand.greenDeep} strokeWidth={1.8} />}
+                        label="Avisos de pesquisas"
+                        hint="Pesquisa nova, meta perto do prazo e pesquisa encerrada"
+                        value={notificationsOn}
+                        onValueChange={(value) => void toggleNotifications(value)}
+                    />
                     {biometric.available ? (
-                        <View style={styles.switchCard}>
-                            <View style={styles.infoIcon}>
-                                <Fingerprint size={18} color={Brand.greenDeep} strokeWidth={1.8} />
-                            </View>
-                            <View style={styles.infoText}>
-                                <Text style={styles.switchLabel}>Desbloqueio por biometria</Text>
-                                <Text style={styles.infoLabel}>Pede digital ou rosto ao abrir o app</Text>
-                            </View>
-                            <Switch
-                                value={biometric.enabled}
-                                onValueChange={(value) => void toggleBiometric(value)}
-                                trackColor={{ false: Brand.chipGray, true: Brand.green }}
-                                thumbColor="#fff"
-                                accessibilityLabel="Desbloqueio por biometria"
-                            />
-                        </View>
+                        <SwitchRow
+                            icon={<Fingerprint size={18} color={Brand.greenDeep} strokeWidth={1.8} />}
+                            label="Desbloqueio por biometria"
+                            hint="Pede digital ou rosto ao abrir o app"
+                            value={biometric.enabled}
+                            onValueChange={(value) => void toggleBiometric(value)}
+                        />
                     ) : null}
                 </Animated.View>
 

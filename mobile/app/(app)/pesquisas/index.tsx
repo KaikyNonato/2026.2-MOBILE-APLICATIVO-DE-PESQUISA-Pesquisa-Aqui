@@ -24,6 +24,7 @@ import { useRemoveResearch } from '@/hooks/useRemoveResearch';
 import { listSent, type SentRecord } from '@/lib/sentHistory';
 import { computeProgress } from '@/lib/researchProgress';
 import { discardDraft } from '@/lib/collectionDiscard';
+import { reconcileNotifications } from '@/lib/notifications';
 import { formatRelativeTime, getDraftsProgress, type DraftProgress } from '@/lib/draftProgress';
 
 /** Entrada escalonada, igual à da Home: cada bloco sobe e aparece um pouco depois do anterior. */
@@ -74,6 +75,8 @@ export default function Pesquisas() {
     // (a cópia local já foi apagada pela sincronização).
     const syncAndWarn = useCallback(async () => {
         const revoked = await syncResearches();
+        // A pessoa está vendo a lista agora: o que aparece aqui não precisa virar aviso depois.
+        await reconcileNotifications({ silent: true });
         if (revoked.length > 0) {
             const nomes = revoked.map((r) => `"${r.title}"`).join(', ');
             Alert.alert(
