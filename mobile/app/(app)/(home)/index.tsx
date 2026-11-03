@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Check, CloudUpload, Download, FileText, PenLine } from 'lucide-react-native';
+import { Check, CloudUpload, Download, FileText, MapPinned, PenLine } from 'lucide-react-native';
 import Animated, {
     Easing,
     FadeInDown,
     useAnimatedStyle,
+    useReducedMotion,
     useSharedValue,
     withRepeat,
     withTiming,
@@ -24,6 +25,7 @@ import { listCollections, type LocalCollection } from '@/lib/collectionStore';
 import { formatApiDate } from '@/lib/formatDate';
 import { getCachedResearches, syncResearches, type Research } from '@/lib/researchCache';
 import { computeProgress } from '@/lib/researchProgress';
+import { t } from '@/i18n';
 import { listSent, type SentRecord } from '@/lib/sentHistory';
 import InfoCard from './_components/infoCards';
 
@@ -73,9 +75,12 @@ export default function Home() {
 
     // As curvas de nível "respiram" devagar: movimento ambiente, sem chamar atenção.
     const breathe = useSharedValue(0);
+    // Quem pediu menos movimento no aparelho não vê a animação.
+    const reduceMotion = useReducedMotion();
     useEffect(() => {
+        if (reduceMotion) return;
         breathe.value = withRepeat(withTiming(1, { duration: 9000, easing: Easing.inOut(Easing.sin) }), -1, true);
-    }, [breathe]);
+    }, [breathe, reduceMotion]);
     const contourStyle = useAnimatedStyle(() => ({
         transform: [{ scale: 1 + breathe.value * 0.07 }, { translateX: breathe.value * -6 }],
     }));
@@ -237,6 +242,17 @@ export default function Home() {
                             }
                             cta={drafts.length === 1 ? 'Continuar' : 'Ver rascunhos'}
                             onPress={resumeDraft}
+                        />
+                    ) : null}
+
+                    {hasDownloaded ? (
+                        <ActionCard
+                            tone="green"
+                            icon={<MapPinned size={22} color={Brand.greenDeep} strokeWidth={1.8} />}
+                            title={t('field.homeCardTitle')}
+                            text={t('field.homeCardText')}
+                            cta={t('field.homeCardCta')}
+                            onPress={() => router.push('/campo')}
                         />
                     ) : null}
 

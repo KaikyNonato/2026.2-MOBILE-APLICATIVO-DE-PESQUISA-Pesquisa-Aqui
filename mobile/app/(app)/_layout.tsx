@@ -7,6 +7,7 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { useAutoSync } from '@/hooks/useSyncQueue';
 import { useNotificationsAndBackgroundSync } from '@/hooks/useNotifications';
 import { Brand } from '@/constants/brand';
+import { t } from '@/i18n';
 
 export default function TabLayout() {
     // Envia a fila de coletas sozinho quando há rede, em qualquer tela do app
@@ -27,22 +28,22 @@ export default function TabLayout() {
                     >
                         <Tabs.Screen
                             name="(home)/index"
-                            options={{ title: 'Home', headerShown: false }}
+                            options={{ title: t('tabs.home'), headerShown: false }}
                         />
 
                         <Tabs.Screen
                             name="pesquisas/index"
-                            options={{ title: 'Pesquisas', headerShown: false }}
+                            options={{ title: t('tabs.surveys'), headerShown: false }}
                         />
 
                         <Tabs.Screen
                             name="sincronizacao/index"
-                            options={{ title: 'Sinc', headerShown: false }}
+                            options={{ title: t('tabs.sync'), headerShown: false }}
                         />
 
                         <Tabs.Screen
                             name="usuario/index"
-                            options={{ title: 'Perfil', headerShown: false }}
+                            options={{ title: t('tabs.profile'), headerShown: false }}
                         />
                     </Tabs>
                 </SafeAreaView>

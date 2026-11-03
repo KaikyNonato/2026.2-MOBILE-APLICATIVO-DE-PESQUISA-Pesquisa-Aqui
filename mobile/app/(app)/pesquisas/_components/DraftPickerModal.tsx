@@ -5,6 +5,7 @@ import type { LocalCollection } from '@/lib/collectionStore';
 import { isAnswerEmpty } from '@/lib/displayRules';
 import { formatRelativeTime, type DraftProgress } from '@/lib/draftProgress';
 import { Brand } from '@/constants/brand';
+import { t, tp } from '@/i18n';
 
 interface DraftPickerModalProps {
     visible: boolean;
@@ -22,10 +23,10 @@ interface DraftPickerModalProps {
 function formatDateTime(iso: string): string {
     const date = new Date(iso);
     if (Number.isNaN(date.getTime())) return '—';
-    return `${date.toLocaleDateString('pt-BR')} às ${date.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-    })}`;
+    return t('drafts.dateTime', {
+        date: date.toLocaleDateString('pt-BR'),
+        time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    });
 }
 
 const answeredCount = (draft: LocalCollection) =>
@@ -38,9 +39,9 @@ export default function DraftPickerModal({ visible, title, drafts, progress, onS
             <Pressable style={styles.backdrop} onPress={onClose}>
                 {/* Pressable interno: tocar dentro da folha não fecha o modal */}
                 <Pressable style={styles.sheet} onPress={() => undefined}>
-                    <Text style={styles.title}>Escolha o rascunho</Text>
+                    <Text style={styles.title}>{t('drafts.pickTitle')}</Text>
                     <Text style={styles.subtitle} numberOfLines={2}>
-                        {title}: {drafts.length} rascunhos
+                        {tp('drafts.pickSubtitle', drafts.length, { title })}
                     </Text>
 
                     <FlatList
@@ -60,16 +61,17 @@ export default function DraftPickerModal({ visible, title, drafts, progress, onS
                                         onPress={() => onSelect(item)}
                                         activeOpacity={0.7}
                                         accessibilityRole="button"
-                                        accessibilityLabel={`Continuar o rascunho iniciado em ${formatDateTime(item.startedAt)}. ${
-                                            info ? `${info.answered} de ${info.total} questões respondidas.` : `${count} questões respondidas.`
-                                        }`}
+                                        accessibilityLabel={t('drafts.continueA11y', {
+                                            date: formatDateTime(item.startedAt),
+                                            progress: info ? tp('drafts.progress', info.total, { answered: info.answered }) : tp('drafts.answered', count),
+                                        })}
                                     >
                                         <View style={styles.itemInfo}>
                                             <View style={styles.itemHead}>
-                                                <Text style={styles.itemTitle}>Editado {formatRelativeTime(item.updatedAt)}</Text>
-                                                {index === 0 ? <Text style={styles.itemRecent}>Último</Text> : null}
+                                                <Text style={styles.itemTitle}>{t('drafts.edited', { when: formatRelativeTime(item.updatedAt) })}</Text>
+                                                {index === 0 ? <Text style={styles.itemRecent}>{t('drafts.latest')}</Text> : null}
                                             </View>
-                                            <Text style={styles.itemText}>Iniciado em {formatDateTime(item.startedAt)}</Text>
+                                            <Text style={styles.itemText}>{t('drafts.started', { date: formatDateTime(item.startedAt) })}</Text>
 
                                             {ratio !== null && info ? (
                                                 <>
@@ -77,12 +79,12 @@ export default function DraftPickerModal({ visible, title, drafts, progress, onS
                                                         <View style={[styles.fill, { width: `${Math.round(ratio * 100)}%` }]} />
                                                     </View>
                                                     <Text style={styles.itemCount}>
-                                                        {info.answered} de {info.total} {info.total === 1 ? 'questão' : 'questões'}
+                                                        {tp('drafts.progress', info.total, { answered: info.answered })}
                                                     </Text>
                                                 </>
                                             ) : (
                                                 <Text style={styles.itemCount}>
-                                                    {count} {count === 1 ? 'questão respondida' : 'questões respondidas'}
+                                                    {tp('drafts.answered', count)}
                                                 </Text>
                                             )}
                                         </View>
@@ -95,7 +97,7 @@ export default function DraftPickerModal({ visible, title, drafts, progress, onS
                                             onPress={() => onDiscard(item)}
                                             hitSlop={8}
                                             accessibilityRole="button"
-                                            accessibilityLabel="Apagar este rascunho"
+                                            accessibilityLabel={t('drafts.discard')}
                                         >
                                             <Trash2 size={18} color={Brand.clayInk} strokeWidth={1.8} />
                                         </TouchableOpacity>
@@ -106,7 +108,7 @@ export default function DraftPickerModal({ visible, title, drafts, progress, onS
                     />
 
                     <TouchableOpacity style={styles.cancel} onPress={onClose}>
-                        <Text style={styles.cancelText}>Cancelar</Text>
+                        <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                     </TouchableOpacity>
                 </Pressable>
             </Pressable>
@@ -148,7 +150,7 @@ const styles = StyleSheet.create({
     cancel: {
         alignItems: 'center',
         justifyContent: 'center',
-        height: 46,
+        minHeight: 46,
         marginTop: 12,
         borderRadius: 999,
         borderWidth: 1,

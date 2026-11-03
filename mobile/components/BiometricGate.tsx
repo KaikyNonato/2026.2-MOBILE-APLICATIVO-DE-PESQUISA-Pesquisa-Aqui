@@ -5,6 +5,7 @@ import BrandMark from '@/components/BrandMark';
 import { Brand } from '@/constants/brand';
 import { useAuth } from '@/context/AuthContext';
 import { useBiometricLock } from '@/context/BiometricLockContext';
+import { t } from '@/i18n';
 
 /** Tela de bloqueio por cima de todo o app. Só aparece com a biometria ligada e a sessão aberta. */
 export default function BiometricGate() {
@@ -23,17 +24,17 @@ export default function BiometricGate() {
         <View style={styles.overlay} accessibilityViewIsModal importantForAccessibility="yes">
             <View style={styles.center}>
                 <BrandMark size={52} color={Brand.mint} />
-                <Text style={styles.title} accessibilityRole="header">Aplicativo bloqueado</Text>
-                <Text style={styles.text}>Confirme sua identidade para continuar de onde parou.</Text>
+                <Text style={styles.title} accessibilityRole="header">{t('biometric.lockedTitle')}</Text>
+                <Text style={styles.text}>{t('biometric.lockedText')}</Text>
 
                 <Pressable
                     onPress={() => void unlock()}
                     style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
                     accessibilityRole="button"
-                    accessibilityLabel="Desbloquear com biometria"
+                    accessibilityLabel={t('biometric.unlockA11y')}
                 >
                     <Fingerprint size={20} color={Brand.forest} strokeWidth={1.9} />
-                    <Text style={styles.primaryText}>Desbloquear</Text>
+                    <Text style={styles.primaryText}>{t('biometric.unlock')}</Text>
                 </Pressable>
             </View>
 
@@ -44,7 +45,7 @@ export default function BiometricGate() {
                 accessibilityLabel="Sair da conta"
             >
                 <LogOut size={16} color={Brand.mutedDark} strokeWidth={1.8} />
-                <Text style={styles.secondaryText}>Entrar com outra conta</Text>
+                <Text style={styles.secondaryText}>{t('biometric.otherAccount')}</Text>
             </Pressable>
         </View>
     );
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 10,
         minWidth: 220,
-        height: 52,
+        minHeight: 52,
         borderRadius: 999,
         backgroundColor: Brand.mint,
         marginTop: 18,

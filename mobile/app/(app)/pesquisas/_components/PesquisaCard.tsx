@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     tileValueClay: { color: Brand.clayInk },
     actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     button: {
-        height: 48,
+        minHeight: 48,
         borderRadius: 999,
         flexDirection: 'row',
         alignItems: 'center',

@@ -7,6 +7,7 @@ import {
     isBiometricEnabled,
     setBiometricEnabled,
 } from '@/lib/biometric';
+import { t } from '@/i18n';
 
 /** Tempo fora do aplicativo a partir do qual ele volta bloqueado. Trocar de app por um instante não pede biometria. */
 const LOCK_AFTER_MS = 30_000;
@@ -75,7 +76,7 @@ export function BiometricLockProvider({ children }: { children: ReactNode }) {
         if (prompting.current) return false;
         prompting.current = true;
         try {
-            const ok = await authenticateWithBiometrics('Confirme sua identidade para abrir o aplicativo');
+            const ok = await authenticateWithBiometrics(t('biometric.promptOpen'));
             if (ok) setLocked(false);
             return ok;
         } finally {
@@ -88,7 +89,7 @@ export function BiometricLockProvider({ children }: { children: ReactNode }) {
             if (prompting.current) return false;
             prompting.current = true;
             try {
-                const ok = await authenticateWithBiometrics('Confirme para ligar o desbloqueio por biometria');
+                const ok = await authenticateWithBiometrics(t('biometric.promptEnable'));
                 if (!ok) return false;
             } finally {
                 prompting.current = false;

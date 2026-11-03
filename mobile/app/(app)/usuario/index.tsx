@@ -7,6 +7,7 @@ import Animated, {
     Easing,
     FadeInDown,
     useAnimatedStyle,
+    useReducedMotion,
     useSharedValue,
     withRepeat,
     withTiming,
@@ -20,14 +21,15 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { avatarSrc, logoSrc, useImageHeaders } from '@/lib/avatar';
 import { areNotificationsEnabled, setNotificationsEnabled } from '@/lib/notifications';
 import MenuCard from './_components/MenuCard';
+import { t } from '@/i18n';
 
 const APP_VERSION = '1.0.2';
 
-const PROFILE_LABELS: Record<string, string> = {
-    SUPERADMINISTRATOR: 'Superadministrador',
-    ADMINISTRATOR: 'Administrador',
-    RESEARCHER: 'Pesquisador',
-};
+const PROFILE_KEYS = {
+    SUPERADMINISTRATOR: 'profile.roles.SUPERADMINISTRATOR',
+    ADMINISTRATOR: 'profile.roles.ADMINISTRATOR',
+    RESEARCHER: 'profile.roles.RESEARCHER',
+} as const;
 
 const initialsOf = (name?: string) =>
     (name ?? '')
@@ -97,9 +99,12 @@ export default function Usuario() {
 
     // As curvas de nível "respiram" devagar, como na Home.
     const breathe = useSharedValue(0);
+    // Quem pediu menos movimento no aparelho não vê a animação.
+    const reduceMotion = useReducedMotion();
     useEffect(() => {
+        if (reduceMotion) return;
         breathe.value = withRepeat(withTiming(1, { duration: 9000, easing: Easing.inOut(Easing.sin) }), -1, true);
-    }, [breathe]);
+    }, [breathe, reduceMotion]);
     const contourStyle = useAnimatedStyle(() => ({
         transform: [{ scale: 1 + breathe.value * 0.07 }, { translateX: breathe.value * -6 }],
     }));
@@ -112,11 +117,11 @@ export default function Usuario() {
         const ok = await setNotificationsEnabled(next);
         if (next && !ok) {
             Alert.alert(
-                'Avisos bloqueados',
-                'O sistema não permitiu notificações para este aplicativo. Libere nas configurações do aparelho para receber os avisos.',
+                t('profile.notificationsBlockedTitle'),
+                t('profile.notificationsBlockedText'),
                 [
-                    { text: 'Agora não', style: 'cancel' },
-                    { text: 'Abrir configurações', onPress: () => void Linking.openSettings() },
+                    { text: t('profile.notNow'), style: 'cancel' },
+                    { text: t('profile.openSettings'), onPress: () => void Linking.openSettings() },
                 ],
             );
             return;
@@ -126,17 +131,17 @@ export default function Usuario() {
 
     const toggleBiometric = async (next: boolean) => {
         const ok = await biometric.setEnabled(next);
-        if (next && !ok) Alert.alert('Biometria não confirmada', 'O desbloqueio por biometria continua desligado.');
+        if (next && !ok) Alert.alert(t('profile.biometricFailedTitle'), t('profile.biometricFailedText'));
     };
 
     const handleLogout = () => {
         Alert.alert(
-            'Sair da conta',
-            'Ao sair, os dados salvos neste aparelho serão apagados. Deseja continuar?',
+            t('profile.logout'),
+            t('profile.logoutConfirmText'),
             [
-                { text: 'Cancelar', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Sair',
+                    text: t('profile.logoutAction'),
                     style: 'destructive',
                     onPress: async () => {
                         await logout();
@@ -147,7 +152,7 @@ export default function Usuario() {
         );
     };
 
-    const profileLabel = user?.profile ? PROFILE_LABELS[user.profile] ?? user.profile : 'Sem perfil';
+    const profileLabel = user?.profile ? (user.profile in PROFILE_KEYS ? t(PROFILE_KEYS[user.profile as keyof typeof PROFILE_KEYS]) : user.profile) : t('profile.noRole');
     let sectionIndex = 0;
 
     return (
@@ -184,29 +189,29 @@ export default function Usuario() {
                         </View>
                     </Pressable>
 
-                    <Text style={styles.name} numberOfLines={2}>{user?.name ?? 'Usuário'}</Text>
+                    <Text style={styles.name} numberOfLines={2}>{user?.name ?? t('profile.defaultUserName')}</Text>
                     {user?.sub ? <Text style={styles.login} numberOfLines={1}>@{user.sub}</Text> : null}
 
                     <View style={styles.chips}>
                         <Chip label={profileLabel} tone="dark" />
-                        <Chip label={isOnline ? 'Online' : 'Offline'} tone={isOnline ? 'dark' : 'clay'} />
+                        <Chip label={isOnline ? t('common.online') : t('common.offline')} tone={isOnline ? 'dark' : 'clay'} />
                     </View>
                 </View>
             </View>
 
             <View style={styles.body}>
                 <Animated.View entering={enter(++sectionIndex)} style={styles.section}>
-                    <SectionHeader title="Dados da conta" />
+                    <SectionHeader title={t('profile.accountData')} />
                     <View style={styles.infoCard}>
-                        <InfoRow icon={<IdCard size={18} color={Brand.greenDeep} strokeWidth={1.8} />} label="Nome" value={user?.name ?? '—'} />
-                        <InfoRow icon={<AtSign size={18} color={Brand.greenDeep} strokeWidth={1.8} />} label="Usuário" value={user?.sub ? `@${user.sub}` : '—'} />
-                        <InfoRow icon={<ShieldCheck size={18} color={Brand.greenDeep} strokeWidth={1.8} />} label="Perfil de acesso" value={profileLabel} last />
+                        <InfoRow icon={<IdCard size={18} color={Brand.greenDeep} strokeWidth={1.8} />} label={t('profile.name')} value={user?.name ?? '—'} />
+                        <InfoRow icon={<AtSign size={18} color={Brand.greenDeep} strokeWidth={1.8} />} label={t('profile.username')} value={user?.sub ? `@${user.sub}` : '—'} />
+                        <InfoRow icon={<ShieldCheck size={18} color={Brand.greenDeep} strokeWidth={1.8} />} label={t('profile.accessProfile')} value={profileLabel} last />
                     </View>
                 </Animated.View>
 
                 {user?.companyName ? (
                     <Animated.View entering={enter(++sectionIndex)} style={styles.section}>
-                        <SectionHeader title="Empresa" />
+                        <SectionHeader title={t('profile.company')} />
                         <View style={styles.company}>
                             <View style={styles.companyLogo}>
                                 {user.companyLogoUrl && !logoFailed && imageHeaders ? (
@@ -215,7 +220,7 @@ export default function Usuario() {
                                         style={styles.companyLogoImage}
                                         contentFit="contain"
                                         transition={150}
-                                        accessibilityLabel="Logo da empresa"
+                                        accessibilityLabel={t('profile.companyLogoA11y')}
                                         onError={() => setLogoFailed(true)}
                                     />
                                 ) : (
@@ -223,7 +228,7 @@ export default function Usuario() {
                                 )}
                             </View>
                             <View style={styles.companyText}>
-                                <Text style={styles.companyCaption}>Você faz parte de</Text>
+                                <Text style={styles.companyCaption}>{t('profile.companyCaption')}</Text>
                                 <Text style={styles.companyName} numberOfLines={2}>{user.companyName}</Text>
                             </View>
                         </View>
@@ -231,24 +236,24 @@ export default function Usuario() {
                 ) : null}
 
                 <Animated.View entering={enter(++sectionIndex)} style={styles.section}>
-                    <SectionHeader title="Conta" />
+                    <SectionHeader title={t('profile.account')} />
                     <MenuCard
-                        label="Editar perfil"
+                        label={t('profile.editProfile')}
                         onPress={() => router.push('/editar-perfil')}
                         icon={<Pencil size={18} color={Brand.greenDeep} strokeWidth={1.8} />}
                     />
                     <SwitchRow
                         icon={<Bell size={18} color={Brand.greenDeep} strokeWidth={1.8} />}
-                        label="Avisos de pesquisas"
-                        hint="Pesquisa nova, meta perto do prazo e pesquisa encerrada"
+                        label={t('profile.notifications')}
+                        hint={t('profile.notificationsHint')}
                         value={notificationsOn}
                         onValueChange={(value) => void toggleNotifications(value)}
                     />
                     {biometric.available ? (
                         <SwitchRow
                             icon={<Fingerprint size={18} color={Brand.greenDeep} strokeWidth={1.8} />}
-                            label="Desbloqueio por biometria"
-                            hint="Pede digital ou rosto ao abrir o app"
+                            label={t('profile.biometric')}
+                            hint={t('profile.biometricHint')}
                             value={biometric.enabled}
                             onValueChange={(value) => void toggleBiometric(value)}
                         />
@@ -256,9 +261,9 @@ export default function Usuario() {
                 </Animated.View>
 
                 <Animated.View entering={enter(++sectionIndex)} style={styles.section}>
-                    <SectionHeader title="Aplicativo" />
+                    <SectionHeader title={t('profile.app')} />
                     <MenuCard
-                        label="Sobre o aplicativo"
+                        label={t('profile.about')}
                         value={`v${APP_VERSION}`}
                         icon={<Smartphone size={18} color={Brand.greenDeep} strokeWidth={1.8} />}
                     />
@@ -269,10 +274,10 @@ export default function Usuario() {
                         style={({ pressed }) => [styles.logout, pressed && styles.logoutPressed]}
                         onPress={handleLogout}
                         accessibilityRole="button"
-                        accessibilityLabel="Sair da conta"
+                        accessibilityLabel={t('profile.logout')}
                     >
                         <LogOut size={18} color={Brand.clayInk} strokeWidth={1.8} />
-                        <Text style={styles.logoutText}>Sair da conta</Text>
+                        <Text style={styles.logoutText}>{t('profile.logout')}</Text>
                     </Pressable>
                 </Animated.View>
             </View>
@@ -392,7 +397,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        height: 50,
+        minHeight: 50,
         borderRadius: 999,
         backgroundColor: Brand.clayLight,
     },

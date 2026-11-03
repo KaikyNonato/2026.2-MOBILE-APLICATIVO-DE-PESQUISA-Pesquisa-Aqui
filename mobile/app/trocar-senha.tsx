@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     sub: { color: Brand.muted, fontSize: 14, marginBottom: 14, lineHeight: 20 },
     label: { fontSize: 13, fontWeight: '500', color: Brand.ink, marginTop: 8, marginBottom: 4 },
     input: {
-        height: 48,
+        minHeight: 48,
         borderWidth: 1,
         borderColor: '#d3dad5',
         borderRadius: Radius.input,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
         color: Brand.ink,
         backgroundColor: '#fff',
     },
-    button: { height: 52, borderRadius: Radius.pill, backgroundColor: Brand.ink, alignItems: 'center', justifyContent: 'center', marginTop: 18 },
+    button: { minHeight: 52, borderRadius: Radius.pill, backgroundColor: Brand.ink, alignItems: 'center', justifyContent: 'center', marginTop: 18 },
     buttonDisabled: { opacity: 0.45 },
     buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
     error: { marginTop: 12, backgroundColor: Brand.clayLight, color: Brand.clayInk, fontSize: 13, fontWeight: '500', padding: 12, borderRadius: 12, overflow: 'hidden' },

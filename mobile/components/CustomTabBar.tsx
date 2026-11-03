@@ -57,7 +57,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
                             accessibilityState={{ selected: isFocused }}
                         >
                             <IconComponent color={color} size={20} strokeWidth={1.8} />
-                            <Text style={[styles.label, { color }]}>{label as string}</Text>
+                            <Text style={[styles.label, { color }]} maxFontSizeMultiplier={1.3} numberOfLines={1}>{label as string}</Text>
                         </TouchableOpacity>
                     );
                 })}
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 18,
     },
     bar: {
-        height: 62,
+        minHeight: 62,
         borderRadius: 999,
         backgroundColor: Brand.forest,
         flexDirection: 'row',
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     },
     tabButton: {
         flex: 1,
-        height: 48,
+        minHeight: 48,
         borderRadius: 999,
         alignItems: 'center',
         justifyContent: 'center',

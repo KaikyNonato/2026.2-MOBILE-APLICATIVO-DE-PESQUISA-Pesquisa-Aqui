@@ -7,6 +7,7 @@ import Animated, {
     Easing,
     FadeInDown,
     useAnimatedStyle,
+    useReducedMotion,
     useSharedValue,
     withRepeat,
     withTiming,
@@ -84,9 +85,12 @@ export default function Sincronizacao() {
 
     // As curvas de nível "respiram" devagar, como na Home.
     const breathe = useSharedValue(0);
+    // Quem pediu menos movimento no aparelho não vê a animação.
+    const reduceMotion = useReducedMotion();
     useEffect(() => {
+        if (reduceMotion) return;
         breathe.value = withRepeat(withTiming(1, { duration: 9000, easing: Easing.inOut(Easing.sin) }), -1, true);
-    }, [breathe]);
+    }, [breathe, reduceMotion]);
     const contourStyle = useAnimatedStyle(() => ({
         transform: [{ scale: 1 + breathe.value * 0.07 }, { translateX: breathe.value * -6 }],
     }));
@@ -492,7 +496,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        height: 54,
+        minHeight: 54,
         borderRadius: 999,
         backgroundColor: Brand.ink,
         paddingHorizontal: 20,
@@ -545,7 +549,7 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
         gap: 6,
         paddingHorizontal: 16,
-        height: 40,
+        minHeight: 40,
         borderRadius: 999,
         borderWidth: 1,
         borderColor: '#cdd5d0',
@@ -563,7 +567,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6,
-        height: 42,
+        minHeight: 42,
         borderRadius: 999,
         borderWidth: 1,
         borderColor: '#cdd5d0',

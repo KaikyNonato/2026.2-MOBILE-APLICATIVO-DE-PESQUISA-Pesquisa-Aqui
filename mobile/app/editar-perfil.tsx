@@ -12,7 +12,7 @@ import {
     Text,
     View,
 } from 'react-native';
-import Animated, { Easing, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Chip from '@/components/Chip';
 import Contour from '@/components/Contour';
@@ -96,9 +96,12 @@ export default function EditarPerfil() {
 
     // As curvas de nível "respiram" devagar, como na Home.
     const breathe = useSharedValue(0);
+    // Quem pediu menos movimento no aparelho não vê a animação.
+    const reduceMotion = useReducedMotion();
     useEffect(() => {
+        if (reduceMotion) return;
         breathe.value = withRepeat(withTiming(1, { duration: 9000, easing: Easing.inOut(Easing.sin) }), -1, true);
-    }, [breathe]);
+    }, [breathe, reduceMotion]);
     const contourStyle = useAnimatedStyle(() => ({
         transform: [{ scale: 1 + breathe.value * 0.07 }, { translateX: breathe.value * -6 }],
     }));

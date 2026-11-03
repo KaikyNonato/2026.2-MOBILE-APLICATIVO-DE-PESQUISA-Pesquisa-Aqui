@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     sub: { color: Brand.muted, fontSize: 14, marginBottom: 14, lineHeight: 20 },
     label: { fontSize: 13, fontWeight: '500', color: Brand.ink, marginTop: 8, marginBottom: 4 },
     input: {
-        height: 48,
+        minHeight: 48,
         borderWidth: 1,
         borderColor: '#d3dad5',
         borderRadius: Radius.input,
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     },
     inputFocused: { borderColor: Brand.green, borderWidth: 2 },
     button: {
-        height: 52,
+        minHeight: 52,
         borderRadius: Radius.pill,
         backgroundColor: Brand.ink,
         alignItems: 'center',

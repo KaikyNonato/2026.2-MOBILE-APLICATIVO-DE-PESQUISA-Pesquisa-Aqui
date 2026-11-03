@@ -27,6 +27,10 @@ export interface Research {
     // Identificadores (clientId) dessas coletas. Ausente em servidor antigo: aí vale o horário da atualização.
     collectedIds?: string[];
     progressSyncedAt?: string;
+    // Área-alvo da pesquisa (centro e raio), quando o administrador definiu uma.
+    areaLatitude?: number | null;
+    areaLongitude?: number | null;
+    areaRadiusKm?: number | null;
 }
 
 // Gera ou recupera um ID único do dispositivo para controle de download
