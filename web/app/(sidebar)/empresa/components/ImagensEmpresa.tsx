@@ -49,6 +49,7 @@ export function CoverBanner({ url }: { url?: string | null }) {
     );
 }
 
+/** Espaço de uma imagem da empresa (logo ou capa): mostra, troca e remove a imagem. */
 function ImageSlot({
     company,
     kind,
@@ -114,9 +115,8 @@ function ImageSlot({
                         size={80}
                         fit="contain"
                         ariaHidden
-                        className={`grid size-20 shrink-0 place-items-center rounded-2xl border border-border text-2xl font-semibold ${
-                            url ? 'bg-white p-1.5' : 'bg-[var(--mint)] text-[var(--forest)]'
-                        }`}
+                        className={`grid size-20 shrink-0 place-items-center rounded-2xl border border-border text-2xl font-semibold ${url ? 'bg-white p-1.5' : 'bg-[var(--mint)] text-[var(--forest)]'
+                            }`}
                     />
                 ) : null}
 

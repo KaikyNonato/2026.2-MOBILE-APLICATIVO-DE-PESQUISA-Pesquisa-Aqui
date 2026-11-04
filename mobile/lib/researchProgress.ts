@@ -29,8 +29,13 @@ export interface ResearchProgress {
     percent: number | null;
 }
 
+/** Padroniza o id da coleta em minúsculas. */
 const normalize = (clientId: string) => clientId.toLowerCase();
 
+/**
+ * Calcula o progresso da pesquisa no aparelho, a partir das coletas enviadas e das finalizadas que
+ * ainda estão guardadas.
+ */
 export function computeProgress(
     research: ProgressSource,
     sent: SentRecord[],

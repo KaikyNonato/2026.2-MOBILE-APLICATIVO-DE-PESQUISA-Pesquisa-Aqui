@@ -1,8 +1,12 @@
-'use client'
+'use client';
 
 import { AuthUser, getCurrentUser, USER_UPDATED_EVENT } from "@/lib/auth";
 import { useEffect, useState } from "react";
 
+/**
+ * Carrega o usuário logado (`/auth/me`) e o recarrega quando o perfil é editado. Devolve `{ user,
+ * loading }`.
+ */
 export function useCurrentUser() {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [loading, setLoading] = useState(true);

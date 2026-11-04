@@ -3,6 +3,7 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { WifiOff } from 'lucide-react-native';
 import { Brand } from '@/constants/brand';
 
+/** Aviso exibido quando o aparelho está sem internet. */
 export function OfflineBanner() {
     const isOnline = useNetworkStatus();
 

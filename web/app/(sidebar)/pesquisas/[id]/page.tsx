@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Contour } from "@/components/ui/contour";
 import { Button } from "@/components/ui/button";
@@ -32,16 +32,19 @@ const STEPS: { key: Research["status"]; label: string }[] = [
 
 const DAY = 24 * 60 * 60 * 1000;
 
+/** Converte uma data ISO em milissegundos (`null` se for inválida). */
 const parseDate = (iso?: string) => {
     const t = iso ? new Date(iso).getTime() : NaN;
     return Number.isNaN(t) ? null : t;
 };
 
+/** Formata a data como dd/mm/aaaa (`-` se for inválida). */
 const fmt = (iso?: string) => {
     const t = parseDate(iso);
     return t === null ? "-" : new Date(t).toLocaleDateString('pt-BR');
 };
 
+/** Formata a data com dia, mês abreviado e ano (`-` se for inválida). */
 const fmtLong = (iso?: string) => {
     const t = parseDate(iso);
     return t === null ? "-" : new Date(t).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -77,6 +80,10 @@ type PageState =
     | { status: 'error'; message: string }
     | { status: 'success'; research: Research };
 
+/**
+ * Página de uma pesquisa: dados, abas (coletas, resultados, questionário, pesquisadores e outras) e
+ * ações.
+ */
 export default function PesquisaDetalhePage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
@@ -300,22 +307,20 @@ export default function PesquisaDetalhePage() {
                                         />
                                     )}
                                     <span
-                                        className={`relative z-10 grid size-7 place-items-center rounded-full text-[11px] font-bold ${
-                                            done
+                                        className={`relative z-10 grid size-7 place-items-center rounded-full text-[11px] font-bold ${done
                                                 ? "bg-[var(--mint)] text-[var(--forest)]"
                                                 : current
                                                     ? clay
                                                         ? "bg-[#e0917a] text-[var(--forest)] ring-4 ring-[rgba(224,145,122,0.25)]"
                                                         : "bg-[var(--mint)] text-[var(--forest)] ring-4 ring-[rgba(191,227,208,0.25)]"
                                                     : "bg-white/10 text-[var(--muted-dark)]"
-                                        }`}
+                                            }`}
                                     >
                                         {done ? <Check className="size-3.5" /> : i + 1}
                                     </span>
                                     <span
-                                        className={`text-[13px] ${
-                                            current ? "font-semibold text-[var(--fg-dark)]" : "font-medium text-[var(--muted-dark)]"
-                                        }`}
+                                        className={`text-[13px] ${current ? "font-semibold text-[var(--fg-dark)]" : "font-medium text-[var(--muted-dark)]"
+                                            }`}
                                     >
                                         {st.label}
                                     </span>
@@ -501,9 +506,8 @@ export default function PesquisaDetalhePage() {
                         >
                             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
                                 <div
-                                    className={`grid size-14 shrink-0 place-items-center rounded-2xl ${
-                                        research.recordInterview ? "bg-[#f3e0d9] text-[var(--clay-ink)]" : "bg-[#e4ece7] text-muted-foreground"
-                                    }`}
+                                    className={`grid size-14 shrink-0 place-items-center rounded-2xl ${research.recordInterview ? "bg-[#f3e0d9] text-[var(--clay-ink)]" : "bg-[#e4ece7] text-muted-foreground"
+                                        }`}
                                 >
                                     {research.recordInterview ? <Mic className="size-6" /> : <MicOff className="size-6" />}
                                 </div>

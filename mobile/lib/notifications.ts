@@ -30,6 +30,7 @@ const isWeb = Platform.OS === 'web';
 
 /** O canal do Android foi criado? Em lugares sem suporte (Expo Go) a criação falha: aí os avisos usam o canal padrão. */
 let channelReady = false;
+/** Opções do canal de notificação (só no Android, depois de criado). */
 const channelOptions = () => (Platform.OS === 'android' && channelReady ? { channelId: CHANNEL_ID } : {});
 
 interface SeenState {
@@ -70,6 +71,7 @@ export async function configureNotifications(): Promise<void> {
     }
 }
 
+/** Diz se o usuário permitiu notificações. */
 async function hasPermission(): Promise<boolean> {
     try {
         return (await Notifications.getPermissionsAsync()).granted;
@@ -136,6 +138,7 @@ export async function clearNotificationState(): Promise<void> {
 
 // ---------- Envio dos avisos ----------
 
+/** Dispara uma notificação imediata que abre a tela de pesquisas. */
 async function notifyNow(title: string, body: string): Promise<void> {
     await Notifications.scheduleNotificationAsync({
         content: { title, body, data: { screen: 'pesquisas' } },
@@ -143,6 +146,7 @@ async function notifyNow(title: string, body: string): Promise<void> {
     });
 }
 
+/** Lê um JSON do armazenamento local, com valor de reserva se faltar ou estiver inválido. */
 async function readJson<T>(key: string, fallback: T): Promise<T> {
     try {
         const raw = await AsyncStorage.getItem(key);
@@ -152,8 +156,10 @@ async function readJson<T>(key: string, fallback: T): Promise<T> {
     }
 }
 
+/** Escreve o número com a palavra no singular ou no plural. */
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
+/** Texto do tempo restante em horas ("menos de 1 hora", "3 horas"). */
 function hoursLeftText(msLeft: number): string {
     if (msLeft < HOUR_MS) return 'menos de 1 hora';
     const hours = Math.floor(msLeft / HOUR_MS);

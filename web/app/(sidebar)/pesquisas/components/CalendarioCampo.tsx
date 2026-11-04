@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Contour } from "@/components/ui/contour";
 import { LoadingState } from "@/components/ui/loadingState";

@@ -78,18 +78,21 @@ export interface LocalCollection {
     updatedAt: string;
 }
 
+/** Erro ao tentar editar uma coleta que já foi finalizada. */
 export class CollectionClosedError extends Error {
     constructor() {
         super('Esta coleta já foi finalizada e não pode mais ser editada.');
     }
 }
 
+/** Chave da coleta no armazenamento local. */
 const keyOf = (clientId: string) => `${COLLECTION_PREFIX}${clientId}`;
 
 // ---------- Localização de início ----------
 
 const LOCATION_TIMEOUT_MS = 12000;
 
+/** Espera a promessa por até `ms` milissegundos. Passado o prazo, devolve `null`. */
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
     return new Promise((resolve) => {
         const timer = setTimeout(() => resolve(null), ms);
@@ -136,6 +139,7 @@ export async function captureStartLocation(): Promise<{ status: LocationStatus; 
 
 // ---------- Leitura e gravação ----------
 
+/** Lê uma coleta do armazenamento local (`null` se não existir). */
 async function readCollection(clientId: string): Promise<LocalCollection | null> {
     const json = await AsyncStorage.getItem(keyOf(clientId));
     return json ? (JSON.parse(json) as LocalCollection) : null;
@@ -153,10 +157,12 @@ export async function saveCollection(collection: LocalCollection): Promise<void>
     await AsyncStorage.setItem(keyOf(collection.clientId), JSON.stringify(next));
 }
 
+/** Busca uma coleta pelo id local. */
 export async function getCollection(clientId: string): Promise<LocalCollection | null> {
     return readCollection(clientId);
 }
 
+/** Lista as coletas guardadas no aparelho, opcionalmente só as de uma pesquisa. */
 export async function listCollections(researchId?: number): Promise<LocalCollection[]> {
     const keys = (await AsyncStorage.getAllKeys()).filter((key) => key.startsWith(COLLECTION_PREFIX));
     if (keys.length === 0) return [];
@@ -199,6 +205,7 @@ export async function recordSendFailure(clientId: string, failure: SendFailure):
     await AsyncStorage.setItem(keyOf(clientId), JSON.stringify(next));
 }
 
+/** Altera uma coleta já finalizada. Ignora se não existir ou se ainda for rascunho. */
 async function patchFinished(clientId: string, patch: (stored: LocalCollection) => LocalCollection): Promise<void> {
     const stored = await readCollection(clientId);
     if (!stored || stored.status !== 'FINISHED') return;
@@ -289,6 +296,7 @@ export async function finishCollection(
     return finished;
 }
 
+/** Duração da coleta em segundos (`null` se ainda não terminou). */
 export function getDurationSeconds(collection: Pick<LocalCollection, 'startedAt' | 'finishedAt'>): number | null {
     if (!collection.finishedAt) return null;
     const ms = new Date(collection.finishedAt).getTime() - new Date(collection.startedAt).getTime();
@@ -308,13 +316,19 @@ export function getBlockingMissing(
     );
 }
 
+/** Diz se a questão é de áudio. */
 const isAudioQuestion = (question: PackageQuestion) => question.type === 'AUDIO';
 
+/** Diz se a questão é de foto (uma ou várias). */
 const isPhotoQuestion = (question: PackageQuestion) => question.type === 'PHOTO' || question.type === 'MULTIPLE_PHOTOS';
 
 /** Nome do arquivo de uma foto guardada no aparelho (último trecho do endereço). */
 const photoFileName = (uri: string) => uri.split('/').pop() ?? uri;
 
+/**
+ * Converte a resposta no texto enviado ao servidor (`null` se vazia). Em foto, leva o nome do
+ * arquivo em vez do endereço local.
+ */
 function serializeAnswer(question: PackageQuestion, answer: AnswerValue): string | null {
     if (answer === null || answer === undefined) return null;
 
@@ -389,14 +403,14 @@ export async function buildCollectionInput(
         const audio = parseAudioAnswer(collection.answers[question.id]);
         return audio
             ? [
-                  {
-                      questionId: question.id,
-                      uri: audio.uri,
-                      name: photoFileName(audio.uri),
-                      mimeType: 'audio/mp4',
-                      durationSeconds: audio.durationSeconds,
-                  },
-              ]
+                {
+                    questionId: question.id,
+                    uri: audio.uri,
+                    name: photoFileName(audio.uri),
+                    mimeType: 'audio/mp4',
+                    durationSeconds: audio.durationSeconds,
+                },
+            ]
             : [];
     });
 
@@ -409,10 +423,10 @@ export async function buildCollectionInput(
         answers,
         startLocation: collection.startLocation
             ? {
-                  latitude: collection.startLocation.latitude,
-                  longitude: collection.startLocation.longitude,
-                  accuracy: collection.startLocation.accuracy,
-              }
+                latitude: collection.startLocation.latitude,
+                longitude: collection.startLocation.longitude,
+                accuracy: collection.startLocation.accuracy,
+            }
             : null,
         consent: collection.consent,
         audio: collection.audio,

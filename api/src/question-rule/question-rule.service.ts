@@ -55,6 +55,10 @@ export interface OrderOverrides {
   sectionOrders?: Map<number, number>;
 }
 
+/**
+ * Regras de exibição condicional: criação, listagem e exclusão, e proteção contra mudanças de ordem
+ * e de tipo que as quebrem.
+ */
 @Injectable()
 export class QuestionRuleService {
   constructor(
@@ -126,6 +130,7 @@ export class QuestionRuleService {
     return { questions, edges, rows, sectionInfo };
   }
 
+  /** Converte uma regra salva na versão devolvida pela API, com rótulos legíveis. */
   private toView(
     researchId: number,
     row: RuleRow,
@@ -158,12 +163,14 @@ export class QuestionRuleService {
     };
   }
 
+  /** Cria o erro 409 `RULES_CONFLICT`, junto das regras afetadas. */
   private conflict(message: string, views: RuleView[]) {
     return new ConflictException({ statusCode: 409, code: 'RULES_CONFLICT', message, rules: views });
   }
 
   // ---------- CRUD ----------
 
+  /** Cria uma regra de exibição. Aceita também o formato antigo, de uma única condição. */
   async create(dto: CreateQuestionRuleDto, currentUser: UserPayLoad) {
     // Formato antigo (uma condição "é igual a") vira uma lista de uma condição.
     const conditions =
@@ -236,6 +243,7 @@ export class QuestionRuleService {
     return { ...views[0], rules: views };
   }
 
+  /** Lista as regras de uma pesquisa. */
   async findAll(researchId: number, currentUser: UserPayLoad): Promise<RuleView[]> {
     await this.researchService.findOne(researchId, currentUser);
     const { questions, rows, sectionInfo } = await this.load(researchId);
@@ -265,6 +273,7 @@ export class QuestionRuleService {
     return data.rows.filter((r) => wanted.has(r.id)).map((r) => this.toView(researchId, r, data.questions, data.sectionInfo));
   }
 
+  /** Apaga as regras com os ids informados. */
   private async deleteRules(ids: Iterable<number>) {
     await Promise.all([...new Set(ids)].map((id) => this.orm.QuestionRule.where({ id }).delete()));
   }

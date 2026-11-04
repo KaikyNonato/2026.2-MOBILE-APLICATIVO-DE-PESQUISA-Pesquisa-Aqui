@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import BannerComponent from "@/components/ui/bannerComponent";
 import { Pin } from "@/components/ui/contour";
@@ -18,10 +18,14 @@ import InfoCard from "./infoCards";
 import StatusPanel from "./StatusPanel";
 import UltimasAtualizacoesList from "./UltimasAtualizacoesList";
 
+/**
+ * Painel inicial do superadministrador: totais, gráficos e atividades de empresas e
+ * administradores.
+ */
 export default function SuperAdmPage({ userName }: { userName?: string }) {
     // Totais, gráficos e atividades chegam prontos do servidor (nenhuma lista inteira é baixada).
-    const [stats, setStats] = useState<CompanyStats | null>(null)
-    const [loading, setLoading] = useState(true)
+    const [stats, setStats] = useState<CompanyStats | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
@@ -42,7 +46,7 @@ export default function SuperAdmPage({ userName }: { userName?: string }) {
         return () => {
             cancelled = true;
         };
-    }, [])
+    }, []);
 
     const [today] = useState(() => new Date());
     const month = today.getMonth();

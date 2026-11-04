@@ -1,8 +1,9 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { cn } from "cn"
+import * as React from "react";
+import { cn } from "cn";
 
+/** Rótulo de um campo de formulário. */
 function Label({ className, ...props }: React.ComponentProps<"label">) {
   return (
     <label
@@ -13,7 +14,7 @@ function Label({ className, ...props }: React.ComponentProps<"label">) {
       )}
       {...props}
     />
-  )
+  );
 }
 
-export { Label }
+export { Label };

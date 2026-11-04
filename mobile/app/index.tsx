@@ -9,6 +9,7 @@ import BrandMark from '@/components/BrandMark';
 import Contour from '@/components/Contour';
 import { Brand } from '@/constants/brand';
 
+/** Tela inicial: espera a sessão carregar e leva para o login ou para o app. */
 export default function Splash() {
     const router = useRouter();
     const { isAuthenticated, isLoading } = useAuth();

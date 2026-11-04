@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { CountUp } from "@/components/ui/count-up";
@@ -38,16 +38,18 @@ const TONES = [
     'bg-[#e6e0cc] text-[#5b4d1c]',
 ];
 
+/** Cor de avatar a partir do id do pesquisador. */
 const toneOf = (id: number) => TONES[Math.abs(id) % TONES.length];
 
 const MAX_TARGET = 1_000_000;
 
-// Meta válida: número inteiro entre 1 e 1.000.000.
+/** Meta válida: número inteiro entre 1 e 1.000.000. */
 const parseTarget = (raw: string): number | null => {
     const value = Number(raw.trim());
     return raw.trim() !== '' && Number.isInteger(value) && value >= 1 && value <= MAX_TARGET ? value : null;
 };
 
+/** Pesquisadores vinculados à pesquisa: vincular, desvincular e editar a meta de coletas. */
 export default function PesquisadoresVinculados({ researchId }: { researchId: number; companyId: number }) {
     // Meta digitada por pesquisador (ainda não salva)
     const [drafts, setDrafts] = useState<Record<number, string>>({});

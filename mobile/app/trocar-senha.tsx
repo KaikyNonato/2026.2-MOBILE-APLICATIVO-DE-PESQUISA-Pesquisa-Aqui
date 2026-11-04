@@ -19,8 +19,11 @@ import BrandMark from '@/components/BrandMark';
 import Contour from '@/components/Contour';
 import { Brand, Radius } from '@/constants/brand';
 
-// Aberta depois do login quando a senha é temporária (cadastro novo ou redefinição feita pelo administrador).
-// Enquanto a senha não for trocada, a API recusa todo o resto (ver AuthGuard).
+/**
+ * Aberta depois do login quando a senha é temporária (cadastro novo ou redefinição feita pelo
+ * administrador).
+ * Enquanto a senha não for trocada, a API recusa todo o resto (ver AuthGuard).
+ */
 export default function TrocarSenha() {
     const router = useRouter();
     const { logout, refreshUser } = useAuth();

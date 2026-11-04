@@ -22,9 +22,9 @@ export function useRemoveResearch(isOnline: boolean, onRemoved: () => void | Pro
                 Alert.alert(
                     'Remoção bloqueada',
                     `"${title}" ainda tem ${describePending(pending)} neste aparelho. ` +
-                        'Envie tudo (ou conclua os rascunhos e envie) antes de remover a pesquisa. ' +
-                        'Assim nenhuma coleta é perdida. ' +
-                        'Coleta que o servidor recusou de vez pode ser descartada na aba Falhas do histórico de envio.',
+                    'Envie tudo (ou conclua os rascunhos e envie) antes de remover a pesquisa. ' +
+                    'Assim nenhuma coleta é perdida. ' +
+                    'Coleta que o servidor recusou de vez pode ser descartada na aba Falhas do histórico de envio.',
                 );
                 return;
             }
@@ -37,8 +37,8 @@ export function useRemoveResearch(isOnline: boolean, onRemoved: () => void | Pro
             Alert.alert(
                 'Remover pesquisa do aparelho?',
                 `Os dados locais de "${title}" serão apagados deste aparelho: o questionário baixado deixa de existir aqui. ` +
-                    'O servidor será avisado e esta cópia deixa de contar como ativa, o que ajuda a liberar o questionário para o administrador. ' +
-                    'As coletas já enviadas continuam salvas no servidor. Para coletar de novo, será preciso baixar a pesquisa outra vez.',
+                'O servidor será avisado e esta cópia deixa de contar como ativa, o que ajuda a liberar o questionário para o administrador. ' +
+                'As coletas já enviadas continuam salvas no servidor. Para coletar de novo, será preciso baixar a pesquisa outra vez.',
                 [
                     { text: 'Cancelar', style: 'cancel' },
                     {

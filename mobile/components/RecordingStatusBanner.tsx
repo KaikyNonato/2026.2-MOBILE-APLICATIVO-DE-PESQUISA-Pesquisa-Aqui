@@ -16,8 +16,10 @@ interface RecordingStatusBannerProps {
     onResume: () => void;
 }
 
-// Faixa fixa da tela de coleta: mostra que a entrevista está sendo gravada e, principalmente,
-// avisa na hora quando a gravação parou — o app nunca finge que está gravando.
+/**
+ * Faixa fixa da tela de coleta: mostra que a entrevista está sendo gravada e, principalmente,
+ * avisa na hora quando a gravação parou — o app nunca finge que está gravando.
+ */
 export default function RecordingStatusBanner({
     isRecording,
     seconds,

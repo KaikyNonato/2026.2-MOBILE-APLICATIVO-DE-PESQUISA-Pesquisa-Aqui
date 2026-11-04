@@ -14,6 +14,10 @@ export interface AuthUser {
 /** Disparado quando o usuário altera o próprio perfil: quem mostra o nome dele (menu lateral) busca de novo. */
 export const USER_UPDATED_EVENT = 'pa:user-updated';
 
+/**
+ * Avisa as telas de que os dados do usuário mudaram (nome, foto...), para quem os mostra
+ * recarregar.
+ */
 export const notifyUserUpdated = () => {
     if (typeof window !== 'undefined') window.dispatchEvent(new Event(USER_UPDATED_EVENT));
 };
@@ -25,13 +29,17 @@ export class LoginError extends Error {
     }
 }
 
+/**
+ * Faz login na API. Lança `LoginError` se os dados estiverem errados ou a conta bloqueada; devolve
+ * se a senha temporária precisa ser trocada.
+ */
 export const login = async (username: string, password: string): Promise<{ mustChangePassword: boolean }> => {
     const response = await apiFetch(`/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ username, password })
-    })
+    });
 
     if (response.status === 429) {
         const body = await response.json().catch(() => null);
@@ -47,7 +55,7 @@ export const login = async (username: string, password: string): Promise<{ mustC
     const body = await response.json();
 
     return { mustChangePassword: body?.mustChangePassword === true };
-}
+};
 
 export const PASSWORD_RULES = 'A senha deve ter de 8 a 64 caracteres, com pelo menos uma letra e um número.';
 
@@ -55,6 +63,7 @@ export const PASSWORD_RULES = 'A senha deve ter de 8 a 64 caracteres, com pelo m
 export const passwordProblem = (password: string): string | null =>
     password.length >= 8 && password.length <= 64 && /\p{L}/u.test(password) && /\d/.test(password) ? null : PASSWORD_RULES;
 
+/** Troca a senha do usuário logado. */
 export const changePassword = async (currentPassword: string, newPassword: string) => {
     const response = await apiFetch(`/auth/change-password`, {
         method: 'POST',
@@ -72,8 +81,9 @@ export const changePassword = async (currentPassword: string, newPassword: strin
 
         throw new Error(known[message] ?? (response.status === 400 ? PASSWORD_RULES : 'Não foi possível trocar a senha.'));
     }
-}
+};
 
+/** Encerra a sessão na API. Se a chamada falhar, só registra o erro: o painel sai de qualquer jeito. */
 export const logout = async () => {
     try {
         await apiFetch(`/auth/logout`, {
@@ -85,8 +95,9 @@ export const logout = async () => {
     }
 
     window.location.href = '/login';
-}
+};
 
+/** Busca o usuário logado (`/auth/me`). Devolve `null` quando não há sessão. */
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
     try {
         const response = await apiFetch(`/auth/me`, {

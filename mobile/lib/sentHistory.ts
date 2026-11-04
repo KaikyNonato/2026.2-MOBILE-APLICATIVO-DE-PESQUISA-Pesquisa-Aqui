@@ -14,6 +14,7 @@ export interface SentRecord {
     sentAt: string; // ISO 8601: quando o servidor confirmou
 }
 
+/** Lê o histórico de coletas enviadas (lista vazia se faltar ou for inválido). */
 async function read(): Promise<SentRecord[]> {
     const json = await AsyncStorage.getItem(SENT_HISTORY_KEY);
     if (!json) return [];

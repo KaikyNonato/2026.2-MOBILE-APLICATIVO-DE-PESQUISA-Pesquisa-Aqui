@@ -18,10 +18,12 @@ type Locale = keyof typeof locales;
 
 let current: Locale = 'pt-BR';
 
+/** Define o idioma ativo. */
 export function setLocale(locale: Locale) {
     current = locale;
 }
 
+/** Busca, no idioma ativo, o texto de uma chave com pontos (`a.b.c`). */
 function lookup(key: string): string {
     let node: unknown = locales[current];
     for (const part of key.split('.')) {
@@ -31,11 +33,13 @@ function lookup(key: string): string {
     return typeof node === 'string' ? node : key;
 }
 
+/** Troca `{nome}` pelos valores informados. */
 function fill(text: string, params?: Record<string, string | number>): string {
     if (!params) return text;
     return text.replace(/\{(\w+)\}/g, (match, name: string) => (name in params ? String(params[name]) : match));
 }
 
+/** Traduz uma chave, preenchendo os `{parâmetros}`. */
 export function t(key: TKey, params?: Record<string, string | number>): string {
     return fill(lookup(key), params);
 }

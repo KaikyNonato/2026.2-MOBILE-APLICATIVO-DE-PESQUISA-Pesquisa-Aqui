@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import BannerComponent from "@/components/ui/bannerComponent";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ const FILTERS: { value: Filter; label: string; kind: LegendItem["kind"] }[] = [
 
 const PAGE_SIZES = [12, 24, 48, 96];
 
+/** Lista de pesquisas para administradores: resumo, filtro, ordenação, cadastro e tabela. */
 function PesquisasAdmin() {
     const [summary, setSummary] = useState<ResearchSummary | null>(null);
     const [filter, setFilter] = useState<Filter>("ALL");

@@ -42,13 +42,13 @@ export function buildSpaceWarning(level: SpaceLevel, freeText: string, releasabl
 
     return level === 'critical'
         ? {
-              level,
-              title: 'Espaço acabando',
-              text: `Só ${freeText} livres. Novas fotos e gravações podem falhar. ${how}`,
-          }
+            level,
+            title: 'Espaço acabando',
+            text: `Só ${freeText} livres. Novas fotos e gravações podem falhar. ${how}`,
+        }
         : {
-              level,
-              title: 'Aparelho ficando cheio',
-              text: `${freeText} livres. ${how}`,
-          };
+            level,
+            title: 'Aparelho ficando cheio',
+            text: `${freeText} livres. ${how}`,
+        };
 }

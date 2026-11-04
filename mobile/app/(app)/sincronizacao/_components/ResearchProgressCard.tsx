@@ -18,6 +18,7 @@ interface ResearchProgressCardProps {
     removeBlocked?: boolean;
 }
 
+/** Escreve o número com a palavra no singular ou no plural. */
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 /** Progresso do pesquisador frente à meta de uma pesquisa, com a remoção dela do aparelho. */

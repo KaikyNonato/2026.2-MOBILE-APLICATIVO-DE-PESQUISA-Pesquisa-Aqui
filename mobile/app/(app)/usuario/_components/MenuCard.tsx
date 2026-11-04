@@ -11,6 +11,7 @@ interface MenuCardProps {
     value?: string;
 }
 
+/** Item de menu da tela de usuário (ícone, rótulo e valor). */
 export default function MenuCard({ label, icon, onPress, value }: MenuCardProps) {
     return (
         <Pressable

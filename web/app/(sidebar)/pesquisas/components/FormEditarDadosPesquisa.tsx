@@ -13,6 +13,7 @@ interface FormEditarDadosPesquisaProps {
     onSuccess: (updated: Research) => void;
 }
 
+/** Formulário de edição dos dados gerais da pesquisa. */
 export default function FormEditarDadosPesquisa({ research, onSuccess }: FormEditarDadosPesquisaProps) {
     const [title, setTitle] = useState(research.title || '');
     const [description, setDescription] = useState(research.description || '');
@@ -69,10 +70,10 @@ export default function FormEditarDadosPesquisa({ research, onSuccess }: FormEdi
 
             const savedItem = await response.json();
             onSuccess(savedItem);
-            toast.success("Pesquisa Editada Com Sucesso!")
+            toast.success("Pesquisa Editada Com Sucesso!");
         } catch (err) {
             setSubmitError(err instanceof Error ? err.message : 'Erro ao salvar alterações.');
-            toast.error(err instanceof Error ? err.message : 'Erro ao salvar alterações.')
+            toast.error(err instanceof Error ? err.message : 'Erro ao salvar alterações.');
         } finally {
             setIsLoading(false);
         }

@@ -31,9 +31,10 @@ export interface Research {
     createdAt?: string;
     updatedAt?: string;
 }
-//Pesquisas que vão aparecer no grafico de "Pesquisas Ativas" na pagina HOME 
+//Pesquisas que vão aparecer no grafico de "Pesquisas Ativas" na pagina HOME
 const ACTIVE_STATUSES: Research["status"][] = ["PUBLISHED", "IN_FIELD"];
 
+/** Cria uma pesquisa. */
 export const createResearch = async (title: string, description: string, objective: string, startDate: string, endDate: string, targetAudience: string, recordInterview = false) => {
     const response = await apiFetch(
         `/research`,
@@ -59,8 +60,9 @@ export const createResearch = async (title: string, description: string, objecti
     }
 
     return response.json();
-}
+};
 
+/** Lista as pesquisas. */
 export const getResearches = async (): Promise<Research[]> => {
     const response = await apiFetch('/research', {
         method: 'GET',
@@ -74,7 +76,7 @@ export const getResearches = async (): Promise<Research[]> => {
     }
 
     return response.json();
-}
+};
 
 /** Pesquisa da lista paginada: já traz as coletas recebidas e a equipe (só desta página). */
 export type ResearchListItem = Research & {
@@ -92,7 +94,7 @@ export const getResearchesPage = async (params: PageParams & { status?: Research
     }
 
     return asPage<ResearchListItem>(await response.json(), params);
-}
+};
 
 export interface ResearchSummary {
     total: number;
@@ -106,8 +108,9 @@ export const getResearchSummary = async (): Promise<ResearchSummary> => {
     const response = await apiFetch('/research/summary', { method: 'GET', credentials: 'include' });
     if (!response.ok) throw new Error('Falha ao carregar o resumo das pesquisas');
     return response.json();
-}
+};
 
+/** Filtra as pesquisas ativas em um mês e ano. */
 export function getActiveResearchesInMonth(
     researches: Research[],
     month: number,
@@ -126,6 +129,7 @@ export function getActiveResearchesInMonth(
     });
 }
 
+/** Conta as pesquisas ativas em cada mês do ano, para o gráfico. */
 export function getResearchesByMonth(
     researches: Research[],
     year: number
@@ -136,6 +140,7 @@ export function getResearchesByMonth(
     });
 }
 
+/** Busca uma pesquisa pelo id. */
 export const getResearchById = async (id: string): Promise<Research> => {
     const response = await apiFetch(`/research/${id}`, {
         method: 'GET',
@@ -152,6 +157,7 @@ export const getResearchById = async (id: string): Promise<Research> => {
     return response.json();
 };
 
+/** Exclui uma pesquisa. */
 export const deleteResearch = async (id: number): Promise<void> => {
     const response = await apiFetch(`/research/${id}`, {
         method: 'DELETE',
@@ -162,8 +168,9 @@ export const deleteResearch = async (id: number): Promise<void> => {
         const errorBody = await response.json().catch(() => null);
         throw new Error(errorBody?.message || 'Failed to delete research');
     }
-}
+};
 
+/** Publica uma pesquisa. */
 export const publishResearch = async (id: number): Promise<Research> => {
     const response = await apiFetch(`/research/${id}/publish`, {
         method: 'POST',
@@ -209,12 +216,14 @@ export interface ResearchResearcherLink {
     progress?: number | null;
 }
 
+/** Converte a resposta de erro da API em um `Error` com a mensagem. */
 const readError = async (response: Response, fallback: string) => {
     const errorBody = await response.json().catch(() => null);
     const message = Array.isArray(errorBody?.message) ? errorBody.message.join(', ') : errorBody?.message;
     return new Error(message || fallback);
 };
 
+/** Lista os pesquisadores vinculados a uma pesquisa. */
 export const getResearchLinkedResearchers = async (researchId: number): Promise<ResearchResearcherLink[]> => {
     const response = await apiFetch(`/research/${researchId}/researchers`, { method: 'GET', credentials: 'include' });
     if (!response.ok) throw await readError(response, 'Falha ao carregar pesquisadores vinculados');
@@ -245,6 +254,7 @@ export const getResearchTeamPage = async (
     return response.json();
 };
 
+/** Vincula um pesquisador à pesquisa, com meta de coletas opcional. */
 export const linkResearcher = async (researchId: number, userId: number, targetCount?: number): Promise<void> => {
     const response = await apiFetch(`/research/${researchId}/researchers/${userId}`, {
         method: 'POST',
@@ -264,6 +274,7 @@ export const updateResearcherTarget = async (researchId: number, userId: number,
     if (!response.ok) throw await readError(response, 'Falha ao alterar a meta');
 };
 
+/** Remove o vínculo de um pesquisador com a pesquisa. */
 export const unlinkResearcher = async (researchId: number, userId: number): Promise<void> => {
     const response = await apiFetch(`/research/${researchId}/researchers/${userId}`, { method: 'DELETE', credentials: 'include' });
     if (!response.ok) throw await readError(response, 'Falha ao desvincular pesquisador');
@@ -340,6 +351,7 @@ export interface ResearchCopiesOverview {
     history: Page<ResearchCopyHistoryItem>;
 }
 
+/** Busca uma página do histórico de cópias baixadas da pesquisa. */
 export const getResearchCopiesPage = async (
     researchId: number,
     params: PageParams & { status?: "ALL" | "RETURNED" | "REVOKED" },
@@ -369,7 +381,6 @@ export const unblockResearchDevice = async (researchId: number, copyId: number):
     if (!response.ok) throw await readError(response, 'Falha ao desbloquear o aparelho');
 };
 
-
 // ---------- duplicar e modelos prontos ----------
 
 export interface ResearchTemplate {
@@ -386,12 +397,14 @@ export interface ResearchTemplate {
     sections: { title: string; questions: { statement: string; type: string }[] }[];
 }
 
+/** Converte a resposta de erro da API em um `Error` com a mensagem. */
 const errorFrom = async (response: Response, fallback: string) => {
     const body = await response.json().catch(() => null);
     const message = Array.isArray(body?.message) ? body.message.join(" ") : body?.message;
     return new Error(message || fallback);
 };
 
+/** Lista os modelos prontos de pesquisa. */
 export const getResearchTemplates = async (): Promise<ResearchTemplate[]> => {
     const response = await apiFetch('/research/templates', { method: 'GET', credentials: 'include' });
     if (!response.ok) throw await errorFrom(response, 'Falha ao carregar os modelos');
@@ -427,12 +440,13 @@ export interface SavedTemplate {
     objective: string;
     targetAudience: string;
     recordInterview: boolean;
-    sections: { title: string; questions: { key: string; statement: string; type: string; [extra: string]: unknown }[] }[];
+    sections: { title: string; questions: { key: string; statement: string; type: string;[extra: string]: unknown }[] }[];
     rules: unknown[];
 }
 
 export type TemplateDraft = Omit<SavedTemplate, 'id'>;
 
+/** Lista os modelos salvos da empresa. */
 export const getSavedTemplates = async (): Promise<SavedTemplate[]> => {
     const response = await apiFetch('/research/saved-templates', { method: 'GET', credentials: 'include' });
     if (!response.ok) throw await errorFrom(response, 'Falha ao carregar os modelos salvos');
@@ -454,6 +468,7 @@ export const saveResearchAsTemplate = async (id: number): Promise<SavedTemplate>
     return response.json();
 };
 
+/** Exclui um modelo salvo. */
 export const deleteSavedTemplate = async (id: number): Promise<void> => {
     const response = await apiFetch(`/research/saved-templates/${id}`, { method: 'DELETE', credentials: 'include' });
     if (!response.ok) throw await errorFrom(response, 'Falha ao remover o modelo');
@@ -466,6 +481,7 @@ export const createResearchFromSaved = async (id: number, title?: string): Promi
     return response.json();
 };
 
+/** Devolve o valor se for texto; senão, o valor padrão. */
 const asText = (v: unknown, fallback = '') => (typeof v === 'string' ? v : fallback);
 
 /** Lê o conteúdo de um arquivo JSON de modelo. Verificação leve: o servidor valida tudo de novo ao salvar. */

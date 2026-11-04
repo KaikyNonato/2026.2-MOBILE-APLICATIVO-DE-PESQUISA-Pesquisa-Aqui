@@ -7,6 +7,7 @@ import { CollectionService } from './collection.service.js';
 import { PartialUploadStore } from './partial-upload.store.js';
 import { StorageModule } from './storage.module.js';
 
+/** Módulo de coletas: recebimento, sincronização, arquivos e listagens. */
 @Module({
   imports: [PrismaModule, StorageModule],
   controllers: [CollectionController],

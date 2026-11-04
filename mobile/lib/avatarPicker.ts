@@ -28,6 +28,7 @@ async function shrinkAvatar(uri: string, width: number, height: number): Promise
     }
 }
 
+/** Apaga o arquivo sem lançar erro (ignora se não existir ou se falhar). */
 function deleteQuietly(uri: string): void {
     try {
         const file = new File(uri);

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loadingState";
@@ -7,6 +7,7 @@ import { updateResearchArea } from "@/lib/research";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
+/** Auditoria de qualidade das coletas: alertas por coleta e ajuste da área de atuação. */
 export default function QualidadeColetas({ researchId, onAreaChanged }: { researchId: number; onAreaChanged?: () => void }) {
     const [data, setData] = useState<ResearchQuality | null>(null);
     const [loading, setLoading] = useState(true);

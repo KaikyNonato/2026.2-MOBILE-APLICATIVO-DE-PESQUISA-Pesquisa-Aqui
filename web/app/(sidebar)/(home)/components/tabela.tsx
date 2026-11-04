@@ -5,20 +5,21 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 
 type Column<T> = {
     key: keyof T;
     label: string;
     className?: string;
-}
+};
 
 type TabelaProps<T> = {
     columns: readonly Column<T>[];
     data: T[];
     caption?: string;
-}
+};
 
+/** Tabela genérica do painel, com colunas, dados e legenda. */
 export default function Tabela<T>({
     columns,
     data,
@@ -62,5 +63,5 @@ export default function Tabela<T>({
                 </TableBody>
             </Table>
         </div>
-    )
+    );
 }

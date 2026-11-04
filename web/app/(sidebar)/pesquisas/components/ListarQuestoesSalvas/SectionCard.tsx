@@ -22,6 +22,7 @@ interface SectionCardProps {
     onToggleQuestion: (questionId: string) => void;
 }
 
+/** Botão redondo, com ícone, usado nas ações da seção. */
 function RoundButton({
     label, onClick, disabled, danger, children,
 }: { label: string; onClick: () => void; disabled?: boolean; danger?: boolean; children: React.ReactNode }) {
@@ -44,6 +45,7 @@ function RoundButton({
     );
 }
 
+/** Card de uma seção: título, ações e as questões dela. */
 export function SectionCard({
     section, sIndex, totalSections, onBlurTitle, onMove, onDelete, onAddQuestion,
     qActions, optActions, rulesCtx, openQuestionIds, onToggleQuestion,
@@ -127,14 +129,14 @@ export function SectionCard({
                     )}
 
                     {!readOnly && (
-                    <button
-                        type="button"
-                        onClick={() => onAddQuestion(section.id)}
-                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#b9c9bf] bg-[#f4f8f5] px-4 py-3.5 text-sm font-semibold text-[var(--green-deep)] transition-all hover:border-[var(--green)] hover:bg-[#e4ece7] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
-                    >
-                        <span className="grid size-6 place-items-center rounded-full bg-[var(--green-deep)] text-white"><Plus className="size-3.5" /></span>
-                        Adicionar questão nesta seção
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() => onAddQuestion(section.id)}
+                            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#b9c9bf] bg-[#f4f8f5] px-4 py-3.5 text-sm font-semibold text-[var(--green-deep)] transition-all hover:border-[var(--green)] hover:bg-[#e4ece7] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
+                        >
+                            <span className="grid size-6 place-items-center rounded-full bg-[var(--green-deep)] text-white"><Plus className="size-3.5" /></span>
+                            Adicionar questão nesta seção
+                        </button>
                     )}
                 </div>
             )}

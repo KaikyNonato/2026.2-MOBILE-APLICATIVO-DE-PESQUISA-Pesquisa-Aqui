@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +26,7 @@ const QUESTION_TYPES_LABEL: { type: FrontendQuestionType; label: string }[] = [
     { type: "location", label: "Localização" }, { type: "audio", label: "Áudio" },
 ];
 
+/** Montagem do questionário: seções, questões e alternativas, com salvamento na API. */
 export default function MontarPesquisaForm({ researchId, onSuccess }: MontarPesquisaFormProps) {
     const createNewQuestion = (order: number): FormQuestion => ({
         id: crypto.randomUUID(), title: "", type: "text", helpText: "",
@@ -97,11 +98,11 @@ export default function MontarPesquisaForm({ researchId, onSuccess }: MontarPesq
             if (s.id !== sectionId) return s;
             const targetIndex = direction === "up" ? qIndex - 1 : qIndex + 1;
             if (targetIndex < 0 || targetIndex >= s.questions.length) return s;
-            
+
             const updatedQuestions = [...s.questions];
             const [moved] = updatedQuestions.splice(qIndex, 1);
             updatedQuestions.splice(targetIndex, 0, moved);
-            
+
             return {
                 ...s,
                 questions: updatedQuestions.map((q, i) => ({ ...q, order: i + 1 }))
@@ -131,7 +132,7 @@ export default function MontarPesquisaForm({ researchId, onSuccess }: MontarPesq
 
     return (
         <form onSubmit={handleSubmit} className="mx-auto space-y-6 max-h-[75vh]  px-2 pb-6">
-            
+
             {sections.map((section, sIndex) => (
                 <div key={section.id} className="border-2 border-primary/20 bg-muted/30 p-4 rounded-xl space-y-4 shadow-sm">
                     {/* Cabeçalho da Seção com controles de Reordenação */}
@@ -140,11 +141,11 @@ export default function MontarPesquisaForm({ researchId, onSuccess }: MontarPesq
                             <span className="bg-primary text-primary-foreground font-bold px-2.5 py-1 rounded-md text-xs">
                                 Seção {sIndex + 1}
                             </span>
-                            <Input 
-                                placeholder="Nome da Seção (Ex: Dados Pessoais)" 
-                                value={section.title} 
-                                onChange={(e) => updateSectionTitle(section.id, e.target.value)} 
-                                required 
+                            <Input
+                                placeholder="Nome da Seção (Ex: Dados Pessoais)"
+                                value={section.title}
+                                onChange={(e) => updateSectionTitle(section.id, e.target.value)}
+                                required
                                 className="bg-background font-semibold"
                             />
                         </div>

@@ -7,6 +7,7 @@ import { ResearchService } from '../research/research.service.js';
 import { QuestionRuleService } from '../question-rule/question-rule.service.js';
 import { ReorderSectionsDto } from './dto/reorder-sections.dto.js';
 
+/** Regras das seções do questionário: criação, listagem, edição, exclusão e reordenação. */
 @Injectable()
 export class SectionService {
   constructor(
@@ -15,6 +16,7 @@ export class SectionService {
     private readonly ruleService: QuestionRuleService,
   ) { }
 
+  /** Cria uma seção, se a pesquisa ainda puder ser editada. */
   async create(createSectionDto: CreateSectionDto, currentUser: UserPayLoad) {
     await this.researchService.assertEditable(createSectionDto.researchId, currentUser);
 
@@ -25,8 +27,9 @@ export class SectionService {
     });
   }
 
+  /** Lista as seções de uma pesquisa que o usuário pode ver. */
   async findAll(researchId: number, currentUser: UserPayLoad) {
-    await this.researchService.findOne(researchId, currentUser)
+    await this.researchService.findOne(researchId, currentUser);
     return await this.prisma.client.orm.public.Section.where({ researchId }).all();
   }
 
@@ -65,16 +68,21 @@ export class SectionService {
     return sections.map((section) => ({ ...section, questions: questionsOf.get(section.id) ?? [] }));
   }
 
+  /** Busca uma seção, conferindo se o usuário pode ver a pesquisa dela. Lança 404 se não existir. */
   async findOne(id: number, currentUser: UserPayLoad) {
-    const section = await this.prisma.client.orm.public.Section.where({ id }).first()
+    const section = await this.prisma.client.orm.public.Section.where({ id }).first();
 
-    if (!section) throw new NotFoundException('Section not found')
+    if (!section) throw new NotFoundException('Section not found');
 
-    await this.researchService.findOne(section.researchId, currentUser)
+    await this.researchService.findOne(section.researchId, currentUser);
 
     return section;
   }
 
+  /**
+   * Edita uma seção. Mudar a ordem confere as regras de exibição; `force` confirma mesmo quando
+   * elas são afetadas.
+   */
   async update(id: number, updateSectionDto: UpdateSectionDto, currentUser: UserPayLoad, force = false) {
     const section = await this.findOne(id, currentUser);
     await this.researchService.assertEditable(section.researchId, currentUser);
@@ -91,7 +99,7 @@ export class SectionService {
     return await this.prisma.client.orm.public.Section.where({ id }).update(updateSectionDto);
   }
 
-  // Reordena todas as seções da pesquisa de uma vez, validando as regras no resultado final.
+  /** Reordena todas as seções da pesquisa de uma vez, validando as regras no resultado final. */
   async reorder(dto: ReorderSectionsDto, currentUser: UserPayLoad) {
     await this.researchService.assertEditable(dto.researchId, currentUser);
     const sections = await this.prisma.client.orm.public.Section.where({ researchId: dto.researchId }).all();
@@ -114,6 +122,10 @@ export class SectionService {
     return { ok: true };
   }
 
+  /**
+   * Exclui uma seção e as questões dela. Se alguma participa de regras de exibição, só segue com
+   * `force`.
+   */
   async delete(id: number, currentUser: UserPayLoad, force = false) {
     const section = await this.findOne(id, currentUser);
     await this.researchService.assertEditable(section.researchId, currentUser);

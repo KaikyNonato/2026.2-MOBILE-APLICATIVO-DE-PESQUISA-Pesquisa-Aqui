@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import BannerComponent from "@/components/ui/bannerComponent";
 import DialogLayout from "@/components/ui/dialogLayout";
@@ -16,6 +16,7 @@ import { Spinner } from "@/components/ui/spinner";
 
 const WEEKS = 8;
 
+/** Página de pesquisadores: cadastro e lista. */
 export default function PesquisadoresPage() {
     const { user } = useCurrentUser();
     const isSuperAdmin = user?.profile === 'SUPERADMINISTRATOR';
@@ -114,9 +115,8 @@ export default function PesquisadoresPage() {
                                             <div
                                                 key={i}
                                                 title={`${n} ${n === 1 ? "cadastro" : "cadastros"}`}
-                                                className={`flex-1 rounded-t-md rounded-b-sm transition-all duration-700 ${
-                                                    isCurrent ? "bg-[var(--mint)]" : "bg-[rgba(191,227,208,0.28)]"
-                                                }`}
+                                                className={`flex-1 rounded-t-md rounded-b-sm transition-all duration-700 ${isCurrent ? "bg-[var(--mint)]" : "bg-[rgba(191,227,208,0.28)]"
+                                                    }`}
                                                 style={{ height: `${Math.max(n > 0 ? 14 : 5, (n / maxWeek) * 100)}%` }}
                                             />
                                         );

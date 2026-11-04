@@ -35,6 +35,7 @@ const CACHE_TTL_MS = 30_000;
 let cached: AdminDashboard | null = null;
 let inFlight: Promise<AdminDashboard> | null = null;
 
+/** Busca o painel do administrador na API, informando o fuso horário do navegador. */
 async function fetchDashboard(): Promise<AdminDashboard> {
     const response = await apiFetch(`/dashboard/admin?tzOffset=${new Date().getTimezoneOffset()}`, { method: "GET", credentials: "include" });
     if (!response.ok) {
@@ -119,6 +120,7 @@ export function parseCalendarDate(raw?: string): Date | null {
     return Number.isNaN(date.getTime()) ? null : date;
 }
 
+/** Completa o número com zero à esquerda (2 dígitos). */
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /** "01/10 a 30/11" (com o ano quando as datas não são do ano atual). */
@@ -156,6 +158,7 @@ export function periodProgress(research: Pick<Research, "status" | "startDate" |
    Apresentação de pessoas
    ------------------------------------------------------------------ */
 
+/** Iniciais (até duas letras) de um nome. */
 export const initialsOf = (name?: string) =>
     (name ?? "")
         .split(" ")

@@ -1,8 +1,11 @@
 import { ForbiddenException } from '@nestjs/common';
 import { ResearchService } from './research.service';
 
-// W11: a trava vem das cópias ativas (pesquisa baixada em algum aparelho), não do status.
-// Só a estrutura do questionário trava; a gravação da entrevista é estrutura, o resto dos dados da pesquisa não.
+/**
+ * W11: a trava vem das cópias ativas (pesquisa baixada em algum aparelho), não do status.
+ * Só a estrutura do questionário trava; a gravação da entrevista é estrutura, o resto dos dados da
+ * pesquisa não.
+ */
 function setup(status: string, recordInterview: boolean, downloads: any[] = []) {
   const research = { id: 1, companyId: 10, status, recordInterview };
   const update = jest.fn(async (data: any) => ({ ...research, ...data }));

@@ -22,8 +22,10 @@ export interface ConfirmedFile {
     kind: 'photo' | 'audio';
 }
 
+/** Aceita só nomes de arquivo simples (sem `/`, `\\` nem `..`). */
 const safeName = (name: string) => name.length > 0 && !name.includes('/') && !name.includes('\\') && name !== '..';
 
+/** Tamanho do arquivo em bytes, ou `null` se não existir. */
 function sizeIfExists(uri: string): number | null {
     try {
         const file = new File(uri);
@@ -33,7 +35,10 @@ function sizeIfExists(uri: string): number | null {
     }
 }
 
-// As chaves vêm de listUploadFiles: `interview`, `photo:<questão>:<nome>` e `audio:<questão>:<nome>`.
+/**
+ * As chaves vêm de listUploadFiles: `interview`, `photo:<questão>:<nome>` e
+ * `audio:<questão>:<nome>`.
+ */
 function uriOfKey(collection: ConfirmableCollection, key: string): { uri: string; kind: 'photo' | 'audio' } | null {
     if (key === 'interview') return collection.audio?.uri ? { uri: collection.audio.uri, kind: 'audio' } : null;
 

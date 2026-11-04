@@ -31,6 +31,7 @@ import InfoCard from './_components/infoCards';
 
 const MAX_ROWS = 4;
 
+/** Primeiro nome com a inicial maiúscula (padrão: "Pesquisador"). */
 const firstName = (name?: string) => {
     const first = name?.trim().split(' ')[0] || 'Pesquisador';
     return first.charAt(0).toUpperCase() + first.slice(1);
@@ -42,6 +43,7 @@ const enter = (index: number) =>
         .duration(480)
         .easing(Easing.out(Easing.cubic));
 
+/** Título de uma seção da tela, com ação opcional à direita. */
 function SectionHeader({ title, right, onRight }: { title: string; right?: string; onRight?: () => void }) {
     return (
         <View style={styles.sectionHeader}>
@@ -55,6 +57,7 @@ function SectionHeader({ title, right, onRight }: { title: string; right?: strin
     );
 }
 
+/** Número em destaque no topo da tela, com o rótulo. */
 function HeroStat({ value, label }: { value: number; label: string }) {
     return (
         <View style={styles.stat}>
@@ -64,6 +67,7 @@ function HeroStat({ value, label }: { value: number; label: string }) {
     );
 }
 
+/** Tela inicial do pesquisador: saudação, números do dia, atividade da semana e pesquisas. */
 export default function Home() {
     const router = useRouter();
     const { user } = useAuth();

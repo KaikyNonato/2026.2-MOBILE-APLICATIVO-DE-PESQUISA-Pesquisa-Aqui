@@ -8,6 +8,7 @@ import { QuestionRuleService } from '../question-rule/question-rule.service.js';
 import { ResearchService } from '../research/research.service.js';
 import { ReorderQuestionsDto } from './dto/reorder-questions.dto.js';
 
+/** Regras das questões do questionário e das alternativas de resposta. */
 @Injectable()
 export class QuestionService {
   constructor(
@@ -17,6 +18,7 @@ export class QuestionService {
     private readonly researchService: ResearchService,
   ) { }
 
+  /** Cria uma questão na seção, se a pesquisa ainda puder ser editada. */
   async create(createQuestionDto: CreateQuestionDto, currentUser: UserPayLoad) {
     const section = await this.sectionService.findOne(createQuestionDto.sectionId, currentUser);
     await this.researchService.assertEditable(section.researchId, currentUser);
@@ -42,23 +44,30 @@ export class QuestionService {
     });
   }
 
+  /** Lista as questões de uma seção que o usuário pode ver. */
   async findAll(sectionId: number, currentUser: UserPayLoad) {
-    await this.sectionService.findOne(sectionId, currentUser)
+    await this.sectionService.findOne(sectionId, currentUser);
     return await this.prisma.client.orm.public.Question.where({ sectionId }).all();
   }
 
+  /** Busca uma questão, conferindo a permissão do usuário. Lança 404 se não existir. */
   async findOne(id: number, currentUser: UserPayLoad) {
     const { question } = await this.findWithSection(id, currentUser);
     return question;
   }
 
+  /** Busca a questão e a seção dela, conferindo a permissão do usuário. */
   private async findWithSection(id: number, currentUser: UserPayLoad) {
-    const question = await this.prisma.client.orm.public.Question.where({ id }).first()
-    if (!question) throw new NotFoundException('Question not found')
-    const section = await this.sectionService.findOne(question.sectionId, currentUser)
+    const question = await this.prisma.client.orm.public.Question.where({ id }).first();
+    if (!question) throw new NotFoundException('Question not found');
+    const section = await this.sectionService.findOne(question.sectionId, currentUser);
     return { question, section };
   }
 
+  /**
+   * Edita uma questão. Trocar o tipo confere as regras de exibição; `force` confirma mesmo quando
+   * elas são afetadas.
+   */
   async update(id: number, updateQuestionDto: UpdateQuestionDto, currentUser: UserPayLoad, force = false) {
     const { question, section } = await this.findWithSection(id, currentUser);
     await this.researchService.assertEditable(section.researchId, currentUser);
@@ -91,7 +100,7 @@ export class QuestionService {
     return await this.prisma.client.orm.public.Question.where({ id }).update(updateQuestionDto);
   }
 
-  // Reordena todas as questões de uma seção de uma vez, validando as regras no resultado final.
+  /** Reordena todas as questões de uma seção de uma vez, validando as regras no resultado final. */
   async reorder(dto: ReorderQuestionsDto, currentUser: UserPayLoad) {
     const section = await this.sectionService.findOne(dto.sectionId, currentUser);
     await this.researchService.assertEditable(section.researchId, currentUser);
@@ -115,6 +124,10 @@ export class QuestionService {
     return { ok: true };
   }
 
+  /**
+   * Exclui uma questão. Se ela participa de regras de exibição, só segue com `force` (as regras
+   * saem junto).
+   */
   async delete(id: number, currentUser: UserPayLoad, force = false) {
     const { section } = await this.findWithSection(id, currentUser);
     await this.researchService.assertEditable(section.researchId, currentUser);
@@ -132,7 +145,7 @@ export class QuestionService {
     }
   }
 
-  // --- GERENCIAMENTO DE OPÇÕES DE RESPOSTA ---
+  /** --- GERENCIAMENTO DE OPÇÕES DE RESPOSTA --- */
   async createOption(questionId: number, text: string, order: number, currentUser: UserPayLoad) {
     await this.assertQuestionEditable(questionId, currentUser);
     return await this.prisma.client.orm.public.QuestionOption.create({
@@ -142,17 +155,19 @@ export class QuestionService {
     });
   }
 
-  // Resolve questão -> seção -> pesquisa e confere acesso + trava.
+  /** Resolve questão -> seção -> pesquisa e confere acesso + trava. */
   private async assertQuestionEditable(questionId: number, currentUser: UserPayLoad) {
     const { section } = await this.findWithSection(questionId, currentUser);
     await this.researchService.assertEditable(section.researchId, currentUser);
     return section;
   }
 
+  /** Lista as alternativas de resposta de uma questão. */
   async getOptions(questionId: number) {
     return await this.prisma.client.orm.public.QuestionOption.where({ questionId }).all();
   }
 
+  /** Edita o texto e/ou a ordem de uma alternativa, se a pesquisa ainda puder ser editada. */
   async updateOption(id: number, currentUser: UserPayLoad, text?: string, order?: number) {
     const current = await this.prisma.client.orm.public.QuestionOption.where({ id }).first();
     if (!current) throw new NotFoundException('Option not found');
@@ -163,6 +178,10 @@ export class QuestionService {
     return await this.prisma.client.orm.public.QuestionOption.where({ id }).update(data);
   }
 
+  /**
+   * Exclui uma alternativa, conferindo antes as regras de exibição que dependem dela (`force`
+   * confirma).
+   */
   async deleteOption(id: number, currentUser: UserPayLoad, force = false) {
     const option = await this.prisma.client.orm.public.QuestionOption.where({ id }).first();
     if (option) {

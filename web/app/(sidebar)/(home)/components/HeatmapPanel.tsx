@@ -15,6 +15,7 @@ type HeatmapPanelProps = {
     cardClassName?: string;
 };
 
+/** Escreve o número com a palavra no singular ou no plural. */
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /** Mapa de calor: em que dia da semana e horário as coletas acontecem (últimas 4 semanas). */

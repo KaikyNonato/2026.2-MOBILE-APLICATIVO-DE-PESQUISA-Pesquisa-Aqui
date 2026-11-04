@@ -6,6 +6,7 @@ import type { DayStat } from './homeStats';
 
 const CHART_HEIGHT = 140;
 
+/** Barra de um dia no gráfico da semana, animada ao aparecer. */
 function Bar({ day, ratio, index }: { day: DayStat; ratio: number; index: number }) {
     const grow = useSharedValue(0);
 

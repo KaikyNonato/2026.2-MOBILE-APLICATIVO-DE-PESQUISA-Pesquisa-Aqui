@@ -23,6 +23,7 @@ import { removeAvatar, uploadAvatar } from '@/lib/auth';
 import { avatarSrc, useImageHeaders } from '@/lib/avatar';
 import { discardAvatarFile, pickAvatar } from '@/lib/avatarPicker';
 
+/** Iniciais (até duas letras) de um nome. */
 const initialsOf = (name?: string) =>
     (name ?? '')
         .split(' ')
@@ -31,6 +32,7 @@ const initialsOf = (name?: string) =>
         .map((part) => part[0]?.toUpperCase())
         .join('') || '?';
 
+/** Animação de entrada (surge e desliza), escalonada pela posição do item. */
 const enter = (index: number) =>
     FadeInDown.delay(120 + index * 80)
         .duration(480)
@@ -45,6 +47,7 @@ interface ActionRowProps {
     danger?: boolean;
 }
 
+/** Linha de ação da tela (rótulo, dica e ícone). */
 function ActionRow({ label, hint, icon, onPress, disabled, danger }: ActionRowProps) {
     return (
         <Pressable
@@ -69,6 +72,7 @@ function ActionRow({ label, hint, icon, onPress, disabled, danger }: ActionRowPr
     );
 }
 
+/** Linha de informação (ícone, rótulo e valor). */
 function InfoLine({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
     return (
         <View style={styles.infoLine}>
@@ -81,6 +85,7 @@ function InfoLine({ icon, label, value }: { icon: ReactNode; label: string; valu
     );
 }
 
+/** Tela de edição do perfil: foto e dados do usuário. */
 export default function EditarPerfil() {
     const router = useRouter();
     const { user, refreshUser } = useAuth();
@@ -129,9 +134,9 @@ export default function EditarPerfil() {
                     result.canAskAgain
                         ? [{ text: 'OK' }]
                         : [
-                              { text: 'Agora não', style: 'cancel' },
-                              { text: 'Abrir configurações', onPress: () => Linking.openSettings().catch(() => undefined) },
-                          ],
+                            { text: 'Agora não', style: 'cancel' },
+                            { text: 'Abrir configurações', onPress: () => Linking.openSettings().catch(() => undefined) },
+                        ],
                 );
                 return;
             }

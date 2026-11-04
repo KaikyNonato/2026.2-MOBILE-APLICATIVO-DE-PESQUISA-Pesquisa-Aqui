@@ -2,8 +2,12 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { resetUserPassword } from "@/lib/user";
 import toast from "react-hot-toast";
 
-// Fluxo "esqueci a senha" assistido: quem gerencia a conta confirma, a API gera uma senha temporária aleatória e ela
-// aparece UMA vez para ser repassada à pessoa, que precisa trocá-la no primeiro acesso. Devolve true se redefiniu.
+/**
+ * Fluxo "esqueci a senha" assistido: quem gerencia a conta confirma, a API gera uma senha
+ * temporária aleatória e ela
+ * aparece UMA vez para ser repassada à pessoa, que precisa trocá-la no primeiro acesso. Devolve
+ * true se redefiniu.
+ */
 export async function confirmAndResetPassword(user: { name: string; username: string }): Promise<boolean> {
     const confirmed = await confirmDialog({
         title: "Redefinir senha",

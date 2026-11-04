@@ -25,8 +25,10 @@ import type { SendOutcome } from './syncEngine';
 const SYNC_TIMEOUT_MS = 30_000;
 const CHUNK_TIMEOUT_MS = 60_000; // um pedaço de 1 MB: se não passa em 1 minuto, a rede não está servindo
 
-class Unreachable extends Error {}
+/** Erro interno que indica que o servidor não foi alcançado (sem rede ou tempo esgotado). */
+class Unreachable extends Error { }
 
+/** Faz a requisição à API com tempo limite: passado `timeoutMs`, ela é cancelada. */
 async function request(method: 'GET' | 'POST', path: string, body: BodyInit | undefined, timeoutMs: number): Promise<Response> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -46,9 +48,13 @@ async function request(method: 'GET' | 'POST', path: string, body: BodyInit | un
     }
 }
 
+/** Atalho de `request` com o método POST. */
 const post = (path: string, body: BodyInit, timeoutMs: number) => request('POST', path, body, timeoutMs);
 
-// Resposta de erro do servidor (400, 403, 404, 5xx...). Falha temporária é a que vale tentar de novo sozinho.
+/**
+ * Resposta de erro do servidor (400, 403, 404, 5xx...). Falha temporária é a que vale tentar de
+ * novo sozinho.
+ */
 async function failureFromHttp(response: Response): Promise<SendOutcome> {
     const body = await response.json().catch(() => null);
     const message: string | undefined = Array.isArray(body?.message) ? body.message.join(' ') : body?.message;
@@ -78,6 +84,7 @@ interface SyncResult {
     retryable?: boolean;
 }
 
+/** Envia a coleta pela rota de sincronização, que aceita lote (aqui, uma coleta por vez). */
 async function sendViaSync(input: CollectionInput): Promise<SendOutcome> {
     const body = JSON.stringify({
         deviceId: input.deviceId ?? 'desconhecido',
@@ -117,6 +124,7 @@ async function sendViaSync(input: CollectionInput): Promise<SendOutcome> {
 
 // ---------- Arquivos: POST /collection/:clientId/files (um por requisição) ----------
 
+/** Diz se o arquivo existe no aparelho (`false` se der erro). */
 function fileExists(uri: string): boolean {
     try {
         return new File(uri).exists;
@@ -125,6 +133,7 @@ function fileExists(uri: string): boolean {
     }
 }
 
+/** Apaga o arquivo sem lançar erro (ignora se não existir ou se falhar). */
 function removeFileQuietly(uri: string): void {
     try {
         const file = new File(uri);

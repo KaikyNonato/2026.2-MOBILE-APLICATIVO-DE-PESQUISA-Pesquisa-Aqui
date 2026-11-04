@@ -1,6 +1,7 @@
 import { apiFetch } from "./apiFetcher";
 import { asPage, pageQuery, type Page, type PageParams } from "./pagination";
 
+/** Cadastra um usuário. */
 export const createUser = async (
     name: string,
     username: string,
@@ -32,8 +33,9 @@ export const createUser = async (
     }
 
     return response.json();
-}
+};
 
+/** Lista os administradores. */
 export const getUsersAdmin = async () => {
     const response = await apiFetch('/user/admins', {
         method: 'GET',
@@ -43,7 +45,7 @@ export const getUsersAdmin = async () => {
     if (!response.ok) throw new Error('Failed to get admins');
 
     return response.json();
-}
+};
 
 const USER_ERRORS: Record<string, string> = {
     'Researchers cannot manage users': 'Pesquisadores não podem gerenciar usuários.',
@@ -61,12 +63,14 @@ const USER_ERRORS: Record<string, string> = {
     'User not found': 'Usuário não encontrado. Atualize a lista e tente novamente.',
 };
 
+/** Converte o erro da API de usuários em um `Error` com texto em português. */
 const userError = async (response: Response, fallback: string) => {
     const errorBody = await response.json().catch(() => null);
     const message = typeof errorBody?.message === 'string' ? errorBody.message : '';
     return new Error(USER_ERRORS[message] ?? fallback);
 };
 
+/** Exclui um usuário. */
 export const deleteUser = async (username: string) => {
     const response = await apiFetch(`/user/${encodeURIComponent(username)}`, {
         method: 'DELETE',
@@ -76,8 +80,9 @@ export const deleteUser = async (username: string) => {
     if (!response.ok) throw await userError(response, 'Falha ao excluir usuário');
 
     return response.json();
-}
+};
 
+/** Ativa ou desativa um usuário. */
 export const setUserSituation = async (username: string, situation: UserSituation): Promise<UserItem> => {
     const response = await apiFetch(`/user/${encodeURIComponent(username)}/situation`, {
         method: 'PATCH',
@@ -91,7 +96,7 @@ export const setUserSituation = async (username: string, situation: UserSituatio
     if (!response.ok) throw await userError(response, 'Falha ao alterar a situação do usuário');
 
     return response.json();
-}
+};
 
 export interface ResearchersAccessResult {
     total: number;
@@ -113,7 +118,7 @@ export const setAllResearchersSituation = async (situation: UserSituation): Prom
     if (!response.ok) throw await userError(response, 'Falha ao alterar o acesso dos pesquisadores');
 
     return response.json();
-}
+};
 
 export interface UpdateUserInput {
     name?: string;
@@ -122,6 +127,7 @@ export interface UpdateUserInput {
     password?: string;
 }
 
+/** Edita os dados de um usuário. */
 export const updateUser = async (username: string, input: UpdateUserInput): Promise<UserItem> => {
     const response = await apiFetch(`/user/${encodeURIComponent(username)}`, {
         method: 'PATCH',
@@ -135,7 +141,7 @@ export const updateUser = async (username: string, input: UpdateUserInput): Prom
     if (!response.ok) throw await userError(response, 'Falha ao atualizar usuário');
 
     return response.json();
-}
+};
 
 export type UserSituation = 'ACTIVE' | 'INACTIVE';
 
@@ -155,6 +161,7 @@ export interface UserItem {
     updatedAt?: string;
 }
 
+/** Lista os usuários que o usuário logado pode ver. */
 export const getUsers = async (): Promise<UserItem[]> => {
     const response = await apiFetch('/user', {
         method: 'GET',
@@ -164,12 +171,13 @@ export const getUsers = async (): Promise<UserItem[]> => {
     if (!response.ok) throw new Error('Falha ao carregar usuários');
 
     return response.json();
-}
+};
 
+/** Lista só os pesquisadores. */
 export const getResearchers = async (): Promise<UserItem[]> => {
     const users = await getUsers();
     return users.filter((u) => u.profile === 'RESEARCHER');
-}
+};
 
 export type UserPageParams = PageParams & { situation?: UserSituation };
 
@@ -178,14 +186,14 @@ export const getResearchersPage = async (params: UserPageParams): Promise<Page<U
     const response = await apiFetch(`/user${pageQuery(params, { profile: 'RESEARCHER' })}`, { method: 'GET', credentials: 'include' });
     if (!response.ok) throw new Error('Falha ao carregar pesquisadores');
     return asPage<UserItem>(await response.json(), params);
-}
+};
 
 /** Uma página de administradores (só o superadministrador). */
 export const getAdminsPage = async (params: UserPageParams): Promise<Page<UserItem>> => {
     const response = await apiFetch(`/user/admins${pageQuery(params)}`, { method: 'GET', credentials: 'include' });
     if (!response.ok) throw new Error('Failed to get admins');
     return asPage<UserItem>(await response.json(), params);
-}
+};
 
 export interface ResearcherStats {
     total: number;
@@ -205,8 +213,9 @@ export const getResearcherStats = async (): Promise<ResearcherStats> => {
     const response = await apiFetch('/user/researchers/stats', { method: 'GET', credentials: 'include' });
     if (!response.ok) throw new Error('Falha ao carregar os números de pesquisadores');
     return response.json();
-}
+};
 
+/** Gera uma senha temporária para um usuário e a devolve. */
 export const resetUserPassword = async (username: string): Promise<{ username: string; temporaryPassword: string }> => {
     const response = await apiFetch(`/user/${encodeURIComponent(username)}/reset-password`, {
         method: 'POST',
@@ -216,4 +225,4 @@ export const resetUserPassword = async (username: string): Promise<{ username: s
     if (!response.ok) throw await userError(response, 'Falha ao redefinir a senha');
 
     return response.json();
-}
+};

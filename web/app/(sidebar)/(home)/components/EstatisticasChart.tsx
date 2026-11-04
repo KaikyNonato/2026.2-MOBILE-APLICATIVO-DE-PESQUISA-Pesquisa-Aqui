@@ -8,6 +8,7 @@ type EstatisticasChartProps = {
     seriesLabel?: string;
 };
 
+/** Gráfico de estatísticas, com o valor total ao lado. */
 export default function EstatisticasChart({ valor, chartData, variant, seriesKey, seriesLabel }: EstatisticasChartProps) {
     return (
         <div className="grid w-full grid-cols-3 gap-2 max-lg:flex max-lg:flex-col max-lg:gap-3">

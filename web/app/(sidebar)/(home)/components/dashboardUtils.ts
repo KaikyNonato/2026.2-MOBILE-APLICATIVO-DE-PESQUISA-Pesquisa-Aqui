@@ -8,6 +8,7 @@ export function greetingFor(date = new Date()): string {
     return "Boa noite";
 }
 
+/** Primeiro nome de uma pessoa. */
 export function firstName(name?: string): string {
     return (name ?? "").trim().split(/\s+/)[0] ?? "";
 }
@@ -18,6 +19,7 @@ export function todayLabel(date = new Date()): string {
     return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/** Nome do mês em minúsculas, a partir do índice (aceita valores fora de 0 a 11). */
 export const monthName = (monthIndex: number) => MONTH_NAMES[((monthIndex % 12) + 12) % 12].toLowerCase();
 
 /** Posições fixas dos pontos de campo sobre as curvas de nível do hero. */

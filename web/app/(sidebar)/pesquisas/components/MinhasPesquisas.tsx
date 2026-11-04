@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import BannerComponent from "@/components/ui/bannerComponent";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ const FILTERS: { value: Filter; label: string }[] = [
     { value: "CLOSED", label: "Encerradas" },
 ];
 
+/** Texto sem acento e em minúsculas, para a busca. */
 const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 const STATUS_STYLE: Record<MyResearch["status"], string> = {
@@ -37,10 +38,11 @@ const STATUS_STYLE: Record<MyResearch["status"], string> = {
     DRAFT: "bg-[#ebeeeb] text-[#5d6a63]",
 };
 
+/** Card de uma pesquisa do pesquisador, com prazo, progresso e se a coleta está aberta. */
 function ResearchCard({ research, now, delay }: { research: MyResearch; now: number; delay: number }) {
-    const open = isOpenForCollection(research)
-    const days = daysUntil(research.endDate, now)
-    const percent = progressPercent(research)
+    const open = isOpenForCollection(research);
+    const days = daysUntil(research.endDate, now);
+    const percent = progressPercent(research);
 
     return (
         <article style={{ animationDelay: `${delay * 60}ms` }} className="pa-card introduction-card flex flex-col gap-4 !p-5">
@@ -109,45 +111,45 @@ function ResearchCard({ research, now, delay }: { research: MyResearch; now: num
                 </details>
             )}
         </article>
-    )
+    );
 }
 
 /** Pesquisas do pesquisador: só leitura. Baixar a pesquisa e coletar é no aplicativo. */
 export default function MinhasPesquisas() {
-    const [researches, setResearches] = useState<MyResearch[] | null>(null)
-    const [error, setError] = useState<string | null>(null)
-    const [filter, setFilter] = useState<Filter>("ALL")
-    const [query, setQuery] = useState("")
-    const [now] = useState(() => Date.now())
+    const [researches, setResearches] = useState<MyResearch[] | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [filter, setFilter] = useState<Filter>("ALL");
+    const [query, setQuery] = useState("");
+    const [now] = useState(() => Date.now());
 
     useEffect(() => {
-        let cancelled = false
+        let cancelled = false;
         getMyResearches()
-            .then((list) => { if (!cancelled) setResearches(sortMyResearches(list)) })
+            .then((list) => { if (!cancelled) setResearches(sortMyResearches(list)); })
             .catch((err) => {
-                if (cancelled || isSessionExpiredError(err)) return
-                setError(err instanceof Error ? err.message : "Erro ao carregar as suas pesquisas")
-            })
-        return () => { cancelled = true }
-    }, [])
+                if (cancelled || isSessionExpiredError(err)) return;
+                setError(err instanceof Error ? err.message : "Erro ao carregar as suas pesquisas");
+            });
+        return () => { cancelled = true; };
+    }, []);
 
     const visible = useMemo(() => {
-        const term = normalize(query.trim())
+        const term = normalize(query.trim());
 
         return (researches ?? []).filter((r) => {
-            if (filter === "OPEN" && !isOpenForCollection(r)) return false
-            if (filter === "CLOSED" && r.status !== "CLOSED") return false
-            if (!term) return true
-            return normalize(`${r.title} ${r.description} ${r.objective} ${r.targetAudience}`).includes(term)
-        })
-    }, [researches, filter, query])
+            if (filter === "OPEN" && !isOpenForCollection(r)) return false;
+            if (filter === "CLOSED" && r.status !== "CLOSED") return false;
+            if (!term) return true;
+            return normalize(`${r.title} ${r.description} ${r.objective} ${r.targetAudience}`).includes(term);
+        });
+    }, [researches, filter, query]);
 
     const countOf = (value: Filter) =>
         (researches ?? []).filter((r) =>
             value === "ALL" ? true : value === "OPEN" ? isOpenForCollection(r) : r.status === "CLOSED",
-        ).length
+        ).length;
 
-    if (!researches && !error) return <LoadingState label="Carregando suas pesquisas..." shape="research-cards" />
+    if (!researches && !error) return <LoadingState label="Carregando suas pesquisas..." shape="research-cards" />;
 
     return (
         <section className="flex flex-col gap-6">
@@ -172,11 +174,10 @@ export default function MinhasPesquisas() {
                             type="button"
                             aria-pressed={filter === value}
                             onClick={() => setFilter(value)}
-                            className={`inline-flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors ${
-                                filter === value
+                            className={`inline-flex h-9 items-center gap-2 rounded-full border px-4 text-[13px] font-medium transition-colors ${filter === value
                                     ? "border-[var(--forest)] bg-[var(--forest)] text-[var(--mint)]"
                                     : "border-[#cdd5d0] bg-white hover:bg-[#e9ede9]"
-                            }`}
+                                }`}
                         >
                             {label}
                             <span className="opacity-70">{countOf(value)}</span>
@@ -200,7 +201,7 @@ export default function MinhasPesquisas() {
                             <b>Nada encontrado</b>
                             Nenhuma pesquisa combina com a busca e a situação escolhidas.
                             <div className="pq-empty-act">
-                                <Button variant="outline" size="sm" onClick={() => { setQuery(""); setFilter("ALL") }}>
+                                <Button variant="outline" size="sm" onClick={() => { setQuery(""); setFilter("ALL"); }}>
                                     Limpar filtros
                                 </Button>
                             </div>
@@ -215,5 +216,5 @@ export default function MinhasPesquisas() {
                 </div>
             )}
         </section>
-    )
+    );
 }

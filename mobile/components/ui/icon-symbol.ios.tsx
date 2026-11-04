@@ -1,6 +1,7 @@
 import { SymbolView, SymbolViewProps, SymbolWeight } from 'expo-symbols';
 import { StyleProp, ViewStyle } from 'react-native';
 
+/** Ícone nativo do iOS (SF Symbols). */
 export function IconSymbol({
   name,
   size = 24,

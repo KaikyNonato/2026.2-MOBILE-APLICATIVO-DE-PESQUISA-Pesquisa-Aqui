@@ -54,6 +54,7 @@ type Blocked = { kind: 'mic'; canAskAgain: boolean } | { kind: 'space' };
 
 const SAVE_DELAY_MS = 400;
 
+/** Formata a duração em horas, minutos e segundos. */
 function formatDuration(totalSeconds: number): string {
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
@@ -63,6 +64,7 @@ function formatDuration(totalSeconds: number): string {
     return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
+/** Volta para a tela anterior ou, se não houver, para a lista de pesquisas. */
 function leaveScreen() {
     if (router.canGoBack()) router.back();
     else router.replace('/pesquisas');
@@ -84,6 +86,7 @@ function findRemovedFiles(pkg: ResearchPackage, before: Answers, after: Answers)
         });
 }
 
+/** Apaga do aparelho os arquivos de áudio e foto removidos. */
 function deleteFiles(files: RemovedFile[]) {
     files.forEach(({ uri, isAudio }) => (isAudio ? deleteAudio(uri) : deletePhoto(uri)));
 }
@@ -98,6 +101,10 @@ function countDiscarded(before: Answers, after: Answers, exceptQuestionId: numbe
     ).length;
 }
 
+/**
+ * Tela de coleta: mostra o questionário, valida as respostas, guarda o rascunho e finaliza a
+ * coleta.
+ */
 export default function ColetaScreen() {
     const params = useLocalSearchParams<{ researchId: string; clientId?: string }>();
     const researchId = Number(params.researchId);
@@ -546,8 +553,8 @@ export default function ColetaScreen() {
                     {!mic
                         ? 'Esta pesquisa grava a entrevista e o aparelho está sem espaço livre suficiente. Apague fotos, vídeos ou apps que não usa e tente de novo.'
                         : blocked.canAskAgain
-                          ? 'Esta pesquisa grava a entrevista e precisa do microfone. Toque em "Tentar novamente" e permita o acesso quando o aparelho perguntar. A coleta só começa com a gravação liberada.'
-                          : 'Esta pesquisa grava a entrevista e o acesso ao microfone está desligado para o aplicativo. Abra as configurações, ative o microfone, volte ao app e toque em "Tentar novamente".'}
+                            ? 'Esta pesquisa grava a entrevista e precisa do microfone. Toque em "Tentar novamente" e permita o acesso quando o aparelho perguntar. A coleta só começa com a gravação liberada.'
+                            : 'Esta pesquisa grava a entrevista e o acesso ao microfone está desligado para o aplicativo. Abra as configurações, ative o microfone, volte ao app e toque em "Tentar novamente".'}
                 </Text>
                 {mic && !blocked.canAskAgain ? (
                     <TouchableOpacity
@@ -609,8 +616,8 @@ export default function ColetaScreen() {
                             {!collection.audio
                                 ? 'Gravação da entrevista: NÃO foi gravada. A coleta segue sem áudio.'
                                 : collection.audio.hasGaps
-                                  ? `Gravação da entrevista: incompleta (${formatClock(collection.audio.durationSeconds)} gravados, com interrupções).`
-                                  : `Gravação da entrevista: salva (${formatClock(collection.audio.durationSeconds)}).`}
+                                    ? `Gravação da entrevista: incompleta (${formatClock(collection.audio.durationSeconds)} gravados, com interrupções).`
+                                    : `Gravação da entrevista: salva (${formatClock(collection.audio.durationSeconds)}).`}
                         </Text>
                     </View>
                 ) : null}
@@ -683,8 +690,8 @@ export default function ColetaScreen() {
                             {collection.locationStatus === 'OK'
                                 ? 'Localização de início registrada'
                                 : collection.locationStatus === 'DENIED'
-                                  ? 'Localização não registrada: permissão negada'
-                                  : 'Localização não registrada: GPS indisponível'}
+                                    ? 'Localização não registrada: permissão negada'
+                                    : 'Localização não registrada: GPS indisponível'}
                         </Text>
                     </View>
                 </View>

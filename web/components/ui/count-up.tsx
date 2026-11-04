@@ -11,6 +11,7 @@ type CountUpProps = {
   format?: (n: number) => string;
 };
 
+/** Curva de animação que começa rápida e desacelera no fim. */
 const easeOutExpo = (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
 
 /**

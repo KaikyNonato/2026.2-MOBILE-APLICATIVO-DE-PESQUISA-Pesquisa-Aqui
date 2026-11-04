@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Button } from "@/components/ui/button";
 import { RemoteComboBox } from "@/components/ui/remoteCombobox";
@@ -14,13 +14,14 @@ interface CadastrarAdministradorFormProps {
     onSuccess?: () => void;
 }
 
+/** Formulário de cadastro de administrador de empresa (nome, usuário e senha). */
 export default function CadastrarAdministradorForm({ onSuccess }: CadastrarAdministradorFormProps) {
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    const [companyId, setCompanyId] = useState<string>('')
+    const [companyId, setCompanyId] = useState<string>('');
 
     const [isSubmitLoading, setIsSubmitLoading] = useState(false);
     const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
@@ -35,10 +36,10 @@ export default function CadastrarAdministradorForm({ onSuccess }: CadastrarAdmin
             toast.error("As senhas não coincidem");
             return;
         }
-        setIsSubmitLoading(true)
+        setIsSubmitLoading(true);
         try {
-            await createUser(name, username, password, 'ADMINISTRATOR', Number(companyId))
-            toast.success("Administrador cadastrado com sucesso!")
+            await createUser(name, username, password, 'ADMINISTRATOR', Number(companyId));
+            toast.success("Administrador cadastrado com sucesso!");
 
             setName('');
             setUsername('');
@@ -48,7 +49,7 @@ export default function CadastrarAdministradorForm({ onSuccess }: CadastrarAdmin
             onSuccess?.();
         } catch (error) {
             console.error(error);
-            toast.error(error instanceof Error ? error.message : "Erro ao cadastrar administrador")
+            toast.error(error instanceof Error ? error.message : "Erro ao cadastrar administrador");
         } finally {
             setIsSubmitLoading(false);
         }

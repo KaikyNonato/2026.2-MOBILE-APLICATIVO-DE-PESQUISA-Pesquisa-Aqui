@@ -4,7 +4,7 @@ import { CollectionService } from './collection.service';
 
 type Row = Record<string, any>;
 
-// Banco em memória, só o suficiente para o fluxo de coleta.
+/** Banco em memória, só o suficiente para o fluxo de coleta. */
 function makeDb(seed: { research: Row; links?: Row[]; questions?: Row[]; options?: Row[] }) {
   const tables: Record<string, Row[]> = {
     User: [
@@ -278,7 +278,7 @@ describe('CollectionService.findOne — respostas da coleta', () => {
   });
 });
 
-// Armazenamento em memória: guarda os arquivos por caminho relativo, como o disco faria.
+/** Armazenamento em memória: guarda os arquivos por caminho relativo, como o disco faria. */
 class FakeStorage {
   files = new Map<string, Buffer>();
   failOnSaveAt = false;

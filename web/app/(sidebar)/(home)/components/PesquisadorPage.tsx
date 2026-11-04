@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import BannerComponent from "@/components/ui/bannerComponent";
 import { buttonVariants } from "@/components/ui/button";
@@ -26,11 +26,11 @@ const STEPS = [
     { icon: <Download />, title: "Baixe a pesquisa", text: "Depois de baixada, ela funciona mesmo sem internet." },
     { icon: <MapPinned />, title: "Colete em campo", text: "Registre as respostas, fotos e áudios de cada entrevista." },
     { icon: <CloudUpload />, title: "Envie as coletas", text: "Com internet, as coletas sobem e o progresso aparece aqui." },
-]
+];
 
 /** Barra de progresso da meta (ou só a contagem, quando a pesquisa não tem meta). */
 function Progress({ research }: { research: MyResearch }) {
-    const percent = progressPercent(research)
+    const percent = progressPercent(research);
 
     return (
         <div>
@@ -49,32 +49,32 @@ function Progress({ research }: { research: MyResearch }) {
                 />
             </div>
         </div>
-    )
+    );
 }
 
 /** Início do pesquisador: o que ele tem para coletar e quanto já enviou. A coleta em si é feita no aplicativo. */
 export default function PesquisadorPage({ userName }: { userName?: string }) {
-    const [researches, setResearches] = useState<MyResearch[] | null>(null)
-    const [error, setError] = useState<string | null>(null)
-    const [today] = useState(() => new Date())
+    const [researches, setResearches] = useState<MyResearch[] | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [today] = useState(() => new Date());
 
     useEffect(() => {
-        let cancelled = false
+        let cancelled = false;
         getMyResearches()
-            .then((list) => { if (!cancelled) setResearches(sortMyResearches(list)) })
+            .then((list) => { if (!cancelled) setResearches(sortMyResearches(list)); })
             .catch((err) => {
-                if (cancelled || isSessionExpiredError(err)) return
-                setError(err instanceof Error ? err.message : "Erro ao carregar as suas pesquisas")
-            })
-        return () => { cancelled = true }
-    }, [])
+                if (cancelled || isSessionExpiredError(err)) return;
+                setError(err instanceof Error ? err.message : "Erro ao carregar as suas pesquisas");
+            });
+        return () => { cancelled = true; };
+    }, []);
 
-    const open = useMemo(() => (researches ?? []).filter(isOpenForCollection), [researches])
-    const collected = useMemo(() => (researches ?? []).reduce((sum, r) => sum + r.collected, 0), [researches])
+    const open = useMemo(() => (researches ?? []).filter(isOpenForCollection), [researches]);
+    const collected = useMemo(() => (researches ?? []).reduce((sum, r) => sum + r.collected, 0), [researches]);
     const goalDone = useMemo(
         () => (researches ?? []).filter((r) => r.targetCount && r.collected >= r.targetCount).length,
         [researches],
-    )
+    );
     const pins = useMemo(
         () =>
             open.slice(0, PIN_SLOTS.length).map((r, i) => ({
@@ -84,12 +84,12 @@ export default function PesquisadorPage({ userName }: { userName?: string }) {
                 slot: PIN_SLOTS[i],
             })),
         [open, today],
-    )
+    );
 
-    if (!researches && !error) return <LoadingState label="Abrindo as suas pesquisas..." shape="page" />
+    if (!researches && !error) return <LoadingState label="Abrindo as suas pesquisas..." shape="page" />;
 
-    const loading = !researches
-    const dash = loading ? "–" : undefined
+    const loading = !researches;
+    const dash = loading ? "–" : undefined;
 
     return (
         <>
@@ -154,7 +154,7 @@ export default function PesquisadorPage({ userName }: { userName?: string }) {
                         ) : (
                             <ul className="flex flex-col gap-3">
                                 {open.map((research) => {
-                                    const days = daysUntil(research.endDate, today.getTime())
+                                    const days = daysUntil(research.endDate, today.getTime());
                                     return (
                                         <li key={research.id} className="rounded-2xl border border-border bg-white p-4">
                                             <div className="mb-3 flex items-start justify-between gap-3">
@@ -172,7 +172,7 @@ export default function PesquisadorPage({ userName }: { userName?: string }) {
                                             </div>
                                             <Progress research={research} />
                                         </li>
-                                    )
+                                    );
                                 })}
                             </ul>
                         )}
@@ -204,5 +204,5 @@ export default function PesquisadorPage({ userName }: { userName?: string }) {
                 </article>
             </section>
         </>
-    )
+    );
 }

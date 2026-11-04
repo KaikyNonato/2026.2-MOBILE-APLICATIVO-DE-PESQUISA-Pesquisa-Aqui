@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { BrandMark, Contour } from "@/components/ui/contour";
 import { Input } from "@/components/ui/input";
@@ -6,14 +6,17 @@ import { Spinner } from "@/components/ui/spinner";
 import { changePassword, logout, passwordProblem, PASSWORD_RULES } from "@/lib/auth";
 import { SubmitEventHandler, useState } from "react";
 
-// Tela exibida depois do login quando a senha é temporária (cadastro novo ou redefinição feita pelo administrador).
-// O servidor só libera o painel depois que a senha for trocada (ver AuthGuard, na API).
+/**
+ * Tela exibida depois do login quando a senha é temporária (cadastro novo ou redefinição feita pelo
+ * administrador).
+ * O servidor só libera o painel depois que a senha for trocada (ver AuthGuard, na API).
+ */
 export default function TrocarSenha() {
-    const [currentPassword, setCurrentPassword] = useState('')
-    const [newPassword, setNewPassword] = useState('')
-    const [confirmation, setConfirmation] = useState('')
-    const [error, setError] = useState<string | null>(null)
-    const [saving, setSaving] = useState(false)
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmation, setConfirmation] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
 
     const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
         e.preventDefault();
@@ -38,7 +41,7 @@ export default function TrocarSenha() {
 
         // Navegação completa, como no login: o cookie novo já está no navegador.
         window.location.replace('/');
-    }
+    };
 
     return (
         <main className="pa-login">

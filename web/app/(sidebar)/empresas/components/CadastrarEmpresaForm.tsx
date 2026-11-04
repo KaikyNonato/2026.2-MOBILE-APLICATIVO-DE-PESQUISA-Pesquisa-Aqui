@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Button } from "@/components/ui/button";
 import { ComboBoxLayout } from "@/components/ui/comboboxLayout";
@@ -22,6 +22,7 @@ interface CadastrarEmpresaFormProps {
     onSuccess?: () => void;
 }
 
+/** Formulário de cadastro de empresa (razão social, contato e situação). */
 export default function CadastrarEmpresaForm({ onSuccess }: CadastrarEmpresaFormProps) {
     const [legalName, setLegalName] = useState('');
     const [contact, setContact] = useState('');

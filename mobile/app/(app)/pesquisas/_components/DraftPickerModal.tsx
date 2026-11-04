@@ -20,6 +20,7 @@ interface DraftPickerModalProps {
     onClose: () => void;
 }
 
+/** Formata data e hora do rascunho (`—` se for inválida). */
 function formatDateTime(iso: string): string {
     const date = new Date(iso);
     if (Number.isNaN(date.getTime())) return '—';
@@ -29,6 +30,7 @@ function formatDateTime(iso: string): string {
     });
 }
 
+/** Quantas questões do rascunho já foram respondidas. */
 const answeredCount = (draft: LocalCollection) =>
     Object.values(draft.answers).filter((value) => !isAnswerEmpty(value)).length;
 

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { CountUp } from "@/components/ui/count-up";
@@ -32,6 +32,7 @@ const REFRESH_MS = 30_000;
 
 const COLORS = ["#447762", "#e0917a", "#6b8fb5", "#c9a94b", "#8d6bb5", "#5aa5a5", "#b5666b", "#7a8a52"];
 
+/** Formata data e hora (dd/mm/aaaa hh:mm); devolve o texto de reserva se a data for inválida. */
 const fmtDateTime = (iso?: string | null) => {
     const t = iso ? new Date(iso) : null;
     return t && !Number.isNaN(t.getTime())
@@ -39,6 +40,7 @@ const fmtDateTime = (iso?: string | null) => {
         : 'Nunca sincronizou';
 };
 
+/** Formata a hora com segundos. */
 const fmtTime = (d: Date) => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
 interface PainelResultadosProps {
@@ -48,6 +50,10 @@ interface PainelResultadosProps {
     onClosed?: () => void;
 }
 
+/**
+ * Aba de resultados: totais, gráficos por questão e desempenho por pesquisador, com filtro de
+ * período.
+ */
 export default function PainelResultados({ researchId, status, onClosed }: PainelResultadosProps) {
     const [from, setFrom] = useState('');
     const [to, setTo] = useState('');
@@ -313,68 +319,70 @@ export default function PainelResultados({ researchId, status, onClosed }: Paine
     );
 }
 
+/** Tabela de desempenho por pesquisador, paginada. */
 function ResearcherTable({ researchers }: { researchers: ResearchPanel["researchers"] }) {
     const pager = usePagination(researchers, { resetKey: researchers.length > 0 ? researchers[0].userId : null });
 
     return (
         <div className="mt-5">
-        <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
-                <thead className="text-xs uppercase tracking-wide text-muted-foreground">
-                    <tr>
-                        <th className="pb-2 font-medium">Pesquisador</th>
-                        <th className="pb-2 font-medium">Coletas</th>
-                        <th className="pb-2 font-medium">Meta</th>
-                        <th className="pb-2 font-medium">Última sincronização</th>
-                        <th className="pb-2 font-medium">Tempo médio</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {researchers.length === 0 && (
-                        <tr><td colSpan={5} className="py-6 text-center text-muted-foreground">Nenhum pesquisador vinculado.</td></tr>
-                    )}
-                    {pager.items.map((r) => (
-                        <tr key={r.userId} className="border-t border-border">
-                            <td className="py-3 font-medium">
-                                <UserAvatar
-                                    inline
-                                    ariaHidden
-                                    name={r.name}
-                                    src={r.avatarUrl}
-                                    size={28}
-                                    className="mr-2 inline-grid size-7 place-items-center rounded-full bg-[var(--mint)] align-middle text-[11px] font-semibold text-[var(--forest)]"
-                                />
-                                {r.name}
-                                {!r.linked && <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">desvinculado</span>}
-                            </td>
-                            <td className="py-3 tabular-nums"><CountUp value={r.collected} />{r.targetCount ? ` / ${r.targetCount}` : ''}</td>
-                            <td className="py-3">
-                                {r.progress === null ? <span className="text-muted-foreground">Sem meta</span> : (
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-2 w-24 rounded-full bg-muted"><div className="h-full rounded-full bg-[var(--green-deep)]" style={{ width: `${r.progress}%` }} /></div>
-                                        <span className="tabular-nums"><CountUp value={r.progress} />%</span>
-                                    </div>
-                                )}
-                            </td>
-                            <td className="py-3">{fmtDateTime(r.lastSyncAt)}</td>
-                            <td className="py-3 tabular-nums">
-                                {formatSeconds(r.averageSeconds)}
-                                {r.suspiciouslyFast && (
-                                    <span title="Média bem abaixo da dos colegas: vale conferir essas coletas" className="ml-2 inline-flex items-center gap-1 rounded-full bg-[#f3e0d9] px-2 py-0.5 text-[11px] font-semibold text-[#8a432f]">
-                                        <TriangleAlert className="size-3" />rápido demais
-                                    </span>
-                                )}
-                            </td>
+            <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] text-left text-sm">
+                    <thead className="text-xs uppercase tracking-wide text-muted-foreground">
+                        <tr>
+                            <th className="pb-2 font-medium">Pesquisador</th>
+                            <th className="pb-2 font-medium">Coletas</th>
+                            <th className="pb-2 font-medium">Meta</th>
+                            <th className="pb-2 font-medium">Última sincronização</th>
+                            <th className="pb-2 font-medium">Tempo médio</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {researchers.length === 0 && (
+                            <tr><td colSpan={5} className="py-6 text-center text-muted-foreground">Nenhum pesquisador vinculado.</td></tr>
+                        )}
+                        {pager.items.map((r) => (
+                            <tr key={r.userId} className="border-t border-border">
+                                <td className="py-3 font-medium">
+                                    <UserAvatar
+                                        inline
+                                        ariaHidden
+                                        name={r.name}
+                                        src={r.avatarUrl}
+                                        size={28}
+                                        className="mr-2 inline-grid size-7 place-items-center rounded-full bg-[var(--mint)] align-middle text-[11px] font-semibold text-[var(--forest)]"
+                                    />
+                                    {r.name}
+                                    {!r.linked && <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">desvinculado</span>}
+                                </td>
+                                <td className="py-3 tabular-nums"><CountUp value={r.collected} />{r.targetCount ? ` / ${r.targetCount}` : ''}</td>
+                                <td className="py-3">
+                                    {r.progress === null ? <span className="text-muted-foreground">Sem meta</span> : (
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-2 w-24 rounded-full bg-muted"><div className="h-full rounded-full bg-[var(--green-deep)]" style={{ width: `${r.progress}%` }} /></div>
+                                            <span className="tabular-nums"><CountUp value={r.progress} />%</span>
+                                        </div>
+                                    )}
+                                </td>
+                                <td className="py-3">{fmtDateTime(r.lastSyncAt)}</td>
+                                <td className="py-3 tabular-nums">
+                                    {formatSeconds(r.averageSeconds)}
+                                    {r.suspiciouslyFast && (
+                                        <span title="Média bem abaixo da dos colegas: vale conferir essas coletas" className="ml-2 inline-flex items-center gap-1 rounded-full bg-[#f3e0d9] px-2 py-0.5 text-[11px] font-semibold text-[#8a432f]">
+                                            <TriangleAlert className="size-3" />rápido demais
+                                        </span>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            {pager.visible && <Pagination {...pager.pagerProps} label="Pesquisadores da pesquisa" />}
         </div>
-        {pager.visible && <Pagination {...pager.pagerProps} label="Pesquisadores da pesquisa" />}
-    </div>
     );
 }
 
+/** Card de um número do painel (ícone, valor, dica e barra de progresso). */
 function Stat({ icon, label, value, hint, progress, small }: { icon: React.ReactNode; label: string; value: React.ReactNode; hint?: string; progress?: number | null; small?: boolean }) {
     return (
         <article className="pa-card">
@@ -391,6 +399,7 @@ function Stat({ icon, label, value, hint, progress, small }: { icon: React.React
     );
 }
 
+/** Gráfico de uma questão, em barras ou pizza. */
 function QuestionCard({ question }: { question: QuestionChart }) {
     // Barras por padrão (contagem); pizza mostra a proporção.
     const [mode, setMode] = useState<'bar' | 'pie'>('bar');

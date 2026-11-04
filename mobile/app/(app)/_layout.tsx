@@ -9,6 +9,7 @@ import { useNotificationsAndBackgroundSync } from '@/hooks/useNotifications';
 import { Brand } from '@/constants/brand';
 import { t } from '@/i18n';
 
+/** Layout das abas do app: liga o envio automático de coletas, as notificações e a barra de abas. */
 export default function TabLayout() {
     // Envia a fila de coletas sozinho quando há rede, em qualquer tela do app
     useAutoSync();

@@ -25,8 +25,10 @@ export interface HomeStats {
     days: DayStat[];
 }
 
+/** Chave do dia (ano-mês-dia), para comparar datas. */
 const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
+/** Saudação conforme a hora do dia (bom dia, boa tarde...). */
 export function greeting(now = new Date()): string {
     const h = now.getHours();
     if (h < 5) return 'Boa madrugada';
@@ -35,6 +37,7 @@ export function greeting(now = new Date()): string {
     return 'Boa noite';
 }
 
+/** Data por extenso (dia da semana, dia e mês), com a inicial maiúscula. */
 export function formatLongDate(now = new Date()): string {
     const text = `${DIAS[now.getDay()]}, ${now.getDate()} de ${MESES[now.getMonth()]}`;
     return text.charAt(0).toUpperCase() + text.slice(1);

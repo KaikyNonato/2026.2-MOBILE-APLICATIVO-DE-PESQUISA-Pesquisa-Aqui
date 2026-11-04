@@ -9,6 +9,7 @@ export interface Coordinate {
 }
 
 const EARTH_RADIUS_M = 6_371_000;
+/** Converte graus em radianos. */
 const toRad = (deg: number) => (deg * Math.PI) / 180;
 
 /** Distância em metros entre duas coordenadas (fórmula de Haversine). */
@@ -50,6 +51,7 @@ export function distanceOutsideArea(position: Coordinate, area: TargetArea): num
     return Math.max(0, distanceMeters(position, area.center) - area.radiusMeters);
 }
 
+/** Diz se a data ISO cai no mesmo dia local de `now`. */
 export const isSameLocalDay = (iso: string, now: Date): boolean => {
     const date = new Date(iso);
     return (
@@ -71,6 +73,7 @@ export interface DayEntry {
     position: Coordinate | null;
 }
 
+/** Minutos entre dois instantes (no mínimo 1). Devolve `null` se faltar o fim ou se for negativo. */
 const minutesBetween = (start: string, end?: string): number | null => {
     if (!end) return null;
     const diff = new Date(end).getTime() - new Date(start).getTime();

@@ -36,6 +36,7 @@ interface ColumnItem {
     disabled?: boolean;
 }
 
+/** Coluna rolável de opções do seletor. */
 function Column({
     items,
     selected,
@@ -92,6 +93,7 @@ function Column({
     );
 }
 
+/** Dia, mês e ano de hoje. */
 function todayParts(): DateParts {
     const now = new Date();
     return { day: now.getDate(), month: now.getMonth() + 1, year: now.getFullYear() };
@@ -103,6 +105,7 @@ export default function DateTimePickerModal(props: DateTimePickerModalProps) {
     return <PickerSheet {...props} />;
 }
 
+/** Painel do seletor de data ou de hora, conforme `mode`. */
 function PickerSheet({
     mode,
     title,

@@ -83,6 +83,10 @@ export interface SyncState {
 
 const IDLE: Omit<SyncState, 'version' | 'lastRun'> = { running: false, trigger: null, total: 0, done: 0, items: {} };
 
+/**
+ * Cria o motor de sincronização: roda a fila de envio de coletas (automática ou manual), guarda o
+ * estado e avisa quem assina.
+ */
 export function createSyncEngine(deps: SyncDeps) {
     const now = deps.now ?? Date.now;
     const listeners = new Set<() => void>();
@@ -104,6 +108,7 @@ export function createSyncEngine(deps: SyncDeps) {
         return now() - Date.parse(failure.at) >= AUTO_RETRY_AFTER_MS;
     };
 
+    /** Executa uma rodada de envio (da fila toda ou de uma coleta só) e devolve o resumo. */
     async function execute(trigger: Trigger, only?: string): Promise<RunSummary> {
         const summary: RunSummary = {
             finishedAt: new Date(now()).toISOString(),
@@ -264,6 +269,7 @@ export function createSyncEngine(deps: SyncDeps) {
             return current;
         },
         getState: (): SyncState => state,
+        /** Registra um ouvinte do estado. Devolve a função que cancela o registro. */
         subscribe(listener: () => void): () => void {
             listeners.add(listener);
             return () => listeners.delete(listener);

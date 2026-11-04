@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { isSessionExpiredError } from "@/lib/apiFetcher";
 import { loadAdminDashboard, type AdminDashboard } from "@/lib/fieldData";

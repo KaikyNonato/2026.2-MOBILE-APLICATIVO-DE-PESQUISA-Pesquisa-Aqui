@@ -275,7 +275,7 @@ export default function AudioAnswer({ question, value, onChange, error, collecti
     );
 }
 
-// Ouvir a resposta gravada. Separado e com `key` no endereço: ao regravar, nasce um player novo.
+/** Ouvir a resposta gravada. Separado e com `key` no endereço: ao regravar, nasce um player novo. */
 function Playback({ uri, fallbackSeconds }: { uri: string; fallbackSeconds: number }) {
     const player = useAudioPlayer(uri);
     const status = useAudioPlayerStatus(player);

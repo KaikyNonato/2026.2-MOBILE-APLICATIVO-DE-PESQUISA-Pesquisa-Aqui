@@ -34,6 +34,7 @@ export type CapturePhotoResult =
     | { status: 'denied'; canAskAgain: boolean }
     | { status: 'error'; message: string };
 
+/** Pasta das fotos de uma coleta no aparelho. */
 const collectionPhotosDir = (collectionId: string) => new Directory(Paths.document, PHOTOS_ROOT, collectionId);
 
 /** Endereço no aparelho da foto de uma coleta, a partir do nome guardado na resposta. */
@@ -52,6 +53,10 @@ export function deleteCollectionPhotos(collectionId: string): void {
 
 // ---------- Permissão ----------
 
+/**
+ * Garante a permissão da câmera: pede se ainda for possível e informa se foi concedida e se dá para
+ * pedir de novo.
+ */
 async function ensureCameraPermission(): Promise<{ granted: boolean; canAskAgain: boolean }> {
     let permission = await ImagePicker.getCameraPermissionsAsync();
     if (!permission.granted && permission.canAskAgain) {
@@ -94,6 +99,7 @@ async function shrinkPhoto(uri: string, width: number, height: number): Promise<
     return best as string;
 }
 
+/** Apaga o arquivo sem lançar erro (ignora se não existir ou se falhar). */
 function deleteQuietly(uri: string): void {
     try {
         const file = new File(uri);
@@ -151,6 +157,7 @@ export interface StorageUsage {
     freeBytes: number | null;
 }
 
+/** Tamanho do arquivo em bytes (0 se não existir). */
 function fileBytes(uri: string): number {
     try {
         const file = new File(uri);
@@ -160,6 +167,7 @@ function fileBytes(uri: string): number {
     }
 }
 
+/** Espaço ocupado pelas fotos de uma coleta (0 se não houver). */
 function photosBytes(collectionId: string): number {
     try {
         const directory = collectionPhotosDir(collectionId);

@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/ui/app-sidebar";
 import { BfcacheGuard } from "@/components/ui/BfcacheGuard";
 import { Toaster } from 'react-hot-toast';
 
+/** Layout das telas com menu lateral. */
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="pa-app">
@@ -24,5 +25,5 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
     </div>
-  )
+  );
 }

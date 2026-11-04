@@ -1,9 +1,10 @@
-"use client"
+"use client";
 
-import { Tabs as TabsPrimitive } from "@base-ui/react/tabs"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
+import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "cn";
 
+/** Abas que trocam o conteúdo exibido. */
 function Tabs({
   className,
   orientation = "horizontal",
@@ -19,9 +20,10 @@ function Tabs({
       )}
       {...props}
     />
-  )
+  );
 }
 
+/** Variações de estilo da barra de abas. */
 const tabsListVariants = cva(
   "group/tabs-list inline-flex w-fit items-center justify-center rounded-full p-[3px] text-muted-foreground group-data-horizontal/tabs:h-10 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none",
   {
@@ -35,8 +37,9 @@ const tabsListVariants = cva(
       variant: "default",
     },
   }
-)
+);
 
+/** Barra com os botões das abas. */
 function TabsList({
   className,
   variant = "default",
@@ -49,9 +52,10 @@ function TabsList({
       className={cn(tabsListVariants({ variant }), className)}
       {...props}
     />
-  )
+  );
 }
 
+/** Botão de uma aba. */
 function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
   return (
     <TabsPrimitive.Tab
@@ -65,9 +69,10 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
       )}
       {...props}
     />
-  )
+  );
 }
 
+/** Conteúdo de uma aba. */
 function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   return (
     <TabsPrimitive.Panel
@@ -75,7 +80,7 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
       className={cn("flex-1 text-sm outline-none", className)}
       {...props}
     />
-  )
+  );
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants }
+export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants };

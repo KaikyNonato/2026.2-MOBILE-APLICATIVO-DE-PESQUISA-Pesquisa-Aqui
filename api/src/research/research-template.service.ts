@@ -17,343 +17,356 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  */
 @Injectable()
 export class ResearchTemplateService {
-    constructor(private prisma: PrismaService, private researchService: ResearchService) { }
+  constructor(private prisma: PrismaService, private researchService: ResearchService) { }
 
-    private get orm() {
-        return this.prisma.client.orm.public;
+  private get orm() {
+    return this.prisma.client.orm.public;
+  }
+
+  /** Lista os modelos prontos (um resumo de cada um). */
+  listTemplates() {
+    return TEMPLATES.map(templateSummary);
+  }
+
+  /**
+   * Decide a empresa dona da pesquisa nova: pesquisador não cria; o superadministrador informa a
+   * empresa e o administrador usa a própria.
+   */
+  private companyFor(currentUser: UserPayLoad, requested?: number): number {
+    if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot create research');
+    const companyId = currentUser.profile === 'SUPERADMINISTRATOR' ? requested : currentUser.companyId;
+    if (!companyId) {
+      throw currentUser.profile === 'SUPERADMINISTRATOR'
+        ? new BadRequestException('The company ID is required for super administrators')
+        : new ForbiddenException('User is not associated with a company');
     }
+    return companyId;
+  }
 
-    listTemplates() {
-        return TEMPLATES.map(templateSummary);
-    }
+  // ---------- duplicar ----------
 
-    private companyFor(currentUser: UserPayLoad, requested?: number): number {
-        if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot create research');
-        const companyId = currentUser.profile === 'SUPERADMINISTRATOR' ? requested : currentUser.companyId;
-        if (!companyId) {
-            throw currentUser.profile === 'SUPERADMINISTRATOR'
-                ? new BadRequestException('The company ID is required for super administrators')
-                : new ForbiddenException('User is not associated with a company');
-        }
-        return companyId;
-    }
+  /**
+   * Duplica uma pesquisa (com o questionário) como um novo rascunho, mantendo a duração da original
+   * e começando agora.
+   */
+  async duplicate(id: number, dto: DuplicateResearchDto, currentUser: UserPayLoad) {
+    const original = await this.researchService.findOne(id, currentUser);
+    const companyId = this.companyFor(currentUser, original.companyId);
+    const spec = await this.exportSpec(original.id);
 
-    // ---------- duplicar ----------
+    // Mantém a duração da pesquisa original, começando agora.
+    const length = Math.max(DAY_MS, new Date(original.endDate).getTime() - new Date(original.startDate).getTime());
+    const now = Date.now();
 
-    async duplicate(id: number, dto: DuplicateResearchDto, currentUser: UserPayLoad) {
-        const original = await this.researchService.findOne(id, currentUser);
-        const companyId = this.companyFor(currentUser, original.companyId);
-        const spec = await this.exportSpec(original.id);
+    const research = await this.prisma.client.transaction(async (tx) => {
+      const created = await tx.orm.public.Research.create({
+        title: dto.title?.trim() || `${original.title} (cópia)`,
+        description: original.description,
+        objective: original.objective,
+        targetAudience: original.targetAudience,
+        startDate: new Date(now).toISOString(),
+        endDate: new Date(now + length).toISOString(),
+        status: 'DRAFT',
+        recordInterview: original.recordInterview,
+        areaLatitude: original.areaLatitude ?? null,
+        areaLongitude: original.areaLongitude ?? null,
+        areaRadiusKm: original.areaRadiusKm ?? null,
+        companyId,
+      });
+      await this.writeSpec(tx.orm.public, created.id, spec);
+      return created;
+    });
 
-        // Mantém a duração da pesquisa original, começando agora.
-        const length = Math.max(DAY_MS, new Date(original.endDate).getTime() - new Date(original.startDate).getTime());
-        const now = Date.now();
+    return { ...research, copiedFrom: original.id };
+  }
 
-        const research = await this.prisma.client.transaction(async (tx) => {
-            const created = await tx.orm.public.Research.create({
-                title: dto.title?.trim() || `${original.title} (cópia)`,
-                description: original.description,
-                objective: original.objective,
-                targetAudience: original.targetAudience,
-                startDate: new Date(now).toISOString(),
-                endDate: new Date(now + length).toISOString(),
-                status: 'DRAFT',
-                recordInterview: original.recordInterview,
-                areaLatitude: original.areaLatitude ?? null,
-                areaLongitude: original.areaLongitude ?? null,
-                areaRadiusKm: original.areaRadiusKm ?? null,
-                companyId,
-            });
-            await this.writeSpec(tx.orm.public, created.id, spec);
-            return created;
+  // ---------- modelos ----------
+
+  /** Cria um rascunho de pesquisa a partir de um modelo pronto. */
+  async fromTemplate(dto: CreateFromTemplateDto, currentUser: UserPayLoad) {
+    const template = TEMPLATES.find((t) => t.id === dto.templateId);
+    if (!template) throw new NotFoundException('Template not found');
+    const companyId = this.companyFor(currentUser, dto.companyId);
+
+    const start = dto.startDate ? new Date(dto.startDate) : new Date();
+    const end = dto.endDate ? new Date(dto.endDate) : new Date(start.getTime() + 30 * DAY_MS);
+    if (end < start) throw new BadRequestException('The end date cannot be earlier than the start date');
+
+    return await this.prisma.client.transaction(async (tx) => {
+      const created = await tx.orm.public.Research.create({
+        title: dto.title?.trim() || template.name,
+        description: dto.description?.trim() || template.description,
+        objective: dto.objective?.trim() || template.objective,
+        targetAudience: dto.targetAudience?.trim() || template.targetAudience,
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
+        status: 'DRAFT',
+        recordInterview: template.recordInterview ?? false,
+        companyId,
+      });
+      await this.writeSpec(tx.orm.public, created.id, template);
+      return { ...created, templateId: template.id };
+    });
+  }
+
+  // ---------- modelos salvos pela empresa (ficam no banco) ----------
+
+  /** Converte uma linha de modelo salvo no formato devolvido pela API. */
+  private toSaved(row: { id: number; name: string; category: string; description: string; objective: string; targetAudience: string; recordInterview: boolean; spec: string; companyId: number }) {
+    const spec = JSON.parse(row.spec) as QuestionnaireSpec;
+    return {
+      id: row.id,
+      name: row.name,
+      category: row.category,
+      description: row.description,
+      objective: row.objective,
+      targetAudience: row.targetAudience,
+      recordInterview: row.recordInterview,
+      companyId: row.companyId,
+      sections: spec.sections,
+      rules: spec.rules,
+    };
+  }
+
+  /** Modelos da empresa do usuário (o superadministrador vê todos), do mais novo para o mais antigo. */
+  async listSaved(currentUser: UserPayLoad) {
+    if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot use templates');
+    const rows = currentUser.profile === 'SUPERADMINISTRATOR'
+      ? await this.orm.SavedTemplate.all()
+      : await this.orm.SavedTemplate.where({ companyId: currentUser.companyId as number }).all();
+    return [...rows].sort((a, b) => b.id - a.id).map((row) => this.toSaved(row));
+  }
+
+  /** Guarda um modelo (arquivo JSON importado). A estrutura é validada e normalizada antes de gravar. */
+  async saveTemplate(dto: SaveTemplateDto, currentUser: UserPayLoad) {
+    const companyId = this.companyFor(currentUser, dto.companyId);
+    const spec = sanitizeSpec(dto.spec);
+    const row = await this.orm.SavedTemplate.create({
+      name: dto.name.trim(),
+      category: dto.category?.trim() || 'Personalizado',
+      description: dto.description?.trim() ?? '',
+      objective: dto.objective?.trim() ?? '',
+      targetAudience: dto.targetAudience?.trim() ?? '',
+      recordInterview: dto.recordInterview ?? false,
+      spec: JSON.stringify(spec),
+      companyId,
+    });
+    return this.toSaved(row);
+  }
+
+  /** Guarda a estrutura de uma pesquisa existente como modelo da empresa dela. */
+  async saveResearchAsTemplate(id: number, currentUser: UserPayLoad) {
+    if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot save templates');
+    const research = await this.researchService.findOne(id, currentUser);
+    const spec = await this.exportSpec(research.id);
+    const row = await this.orm.SavedTemplate.create({
+      name: research.title.slice(0, 150),
+      category: 'Personalizado',
+      description: research.description ?? '',
+      objective: research.objective ?? '',
+      targetAudience: research.targetAudience ?? '',
+      recordInterview: research.recordInterview ?? false,
+      spec: JSON.stringify(sanitizeSpec(spec)),
+      companyId: research.companyId,
+    });
+    return this.toSaved(row);
+  }
+
+  /** Busca um modelo salvo. Modelo de outra empresa se comporta como inexistente (404). */
+  private async findSaved(id: number, currentUser: UserPayLoad) {
+    if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot use templates');
+    const row = await this.orm.SavedTemplate.where({ id }).first();
+    // Modelo de outra empresa se comporta como inexistente.
+    if (!row || (currentUser.profile !== 'SUPERADMINISTRATOR' && row.companyId !== currentUser.companyId)) throw new NotFoundException('Template not found');
+    return row;
+  }
+
+  /** Exclui um modelo salvo da empresa. */
+  async deleteSaved(id: number, currentUser: UserPayLoad) {
+    const row = await this.findSaved(id, currentUser);
+    await this.orm.SavedTemplate.where({ id: row.id }).delete();
+    return { id: row.id };
+  }
+
+  /** Rascunho a partir de um modelo salvo (a estrutura é revalidada). */
+  async fromSaved(id: number, dto: CreateFromSavedDto, currentUser: UserPayLoad) {
+    const row = await this.findSaved(id, currentUser);
+    const spec = sanitizeSpec(JSON.parse(row.spec));
+    const start = new Date();
+
+    return await this.prisma.client.transaction(async (tx) => {
+      const created = await tx.orm.public.Research.create({
+        title: dto.title?.trim() || row.name,
+        description: row.description || 'Pesquisa criada a partir de um modelo.',
+        objective: row.objective || 'Definir o objetivo da pesquisa.',
+        targetAudience: row.targetAudience || 'Definir o público-alvo.',
+        startDate: start.toISOString(),
+        endDate: new Date(start.getTime() + 30 * DAY_MS).toISOString(),
+        status: 'DRAFT',
+        recordInterview: row.recordInterview,
+        companyId: row.companyId,
+      });
+      await this.writeSpec(tx.orm.public, created.id, spec);
+      return created;
+    });
+  }
+
+  // ---------- estrutura <-> banco ----------
+
+  /** Grava seções, questões, opções e regras de `spec` na pesquisa (dentro da transação de quem chama). */
+  async writeSpec(orm: ReturnType<ResearchTemplateService['ormOf']>, researchId: number, spec: QuestionnaireSpec) {
+    const questionIds = new Map<string, number>();
+    const optionIds = new Map<string, number[]>();
+    const sectionIds: number[] = [];
+    const typeOf = new Map<string, string>();
+
+    for (const [sectionIndex, section] of spec.sections.entries()) {
+      const createdSection = await orm.Section.create({ title: section.title, order: sectionIndex + 1, researchId });
+      sectionIds.push(createdSection.id);
+
+      for (const [questionIndex, question] of section.questions.entries()) {
+        const row = await orm.Question.create({
+          statement: question.statement,
+          type: question.type as any,
+          helpText: question.helpText ?? null,
+          isRequired: question.isRequired ?? false,
+          order: questionIndex + 1,
+          sectionId: createdSection.id,
+          minSelections: question.minSelections ?? null,
+          maxSelections: question.maxSelections ?? null,
+          minValue: question.minValue ?? null,
+          maxValue: question.maxValue ?? null,
+          minDate: question.minDate ?? null,
+          maxDate: question.maxDate ?? null,
+          maxLength: question.maxLength ?? null,
+          scaleLeftLabel: question.scaleLeftLabel ?? null,
+          scaleRightLabel: question.scaleRightLabel ?? null,
+          maxFiles: question.maxFiles ?? null,
+          maxDuration: question.maxDuration ?? null,
         });
+        questionIds.set(question.key, row.id);
+        typeOf.set(question.key, question.type);
 
-        return { ...research, copiedFrom: original.id };
-    }
-
-    // ---------- modelos ----------
-
-    async fromTemplate(dto: CreateFromTemplateDto, currentUser: UserPayLoad) {
-        const template = TEMPLATES.find((t) => t.id === dto.templateId);
-        if (!template) throw new NotFoundException('Template not found');
-        const companyId = this.companyFor(currentUser, dto.companyId);
-
-        const start = dto.startDate ? new Date(dto.startDate) : new Date();
-        const end = dto.endDate ? new Date(dto.endDate) : new Date(start.getTime() + 30 * DAY_MS);
-        if (end < start) throw new BadRequestException('The end date cannot be earlier than the start date');
-
-        return await this.prisma.client.transaction(async (tx) => {
-            const created = await tx.orm.public.Research.create({
-                title: dto.title?.trim() || template.name,
-                description: dto.description?.trim() || template.description,
-                objective: dto.objective?.trim() || template.objective,
-                targetAudience: dto.targetAudience?.trim() || template.targetAudience,
-                startDate: start.toISOString(),
-                endDate: end.toISOString(),
-                status: 'DRAFT',
-                recordInterview: template.recordInterview ?? false,
-                companyId,
-            });
-            await this.writeSpec(tx.orm.public, created.id, template);
-            return { ...created, templateId: template.id };
-        });
-    }
-
-    // ---------- modelos salvos pela empresa (ficam no banco) ----------
-
-    private toSaved(row: { id: number; name: string; category: string; description: string; objective: string; targetAudience: string; recordInterview: boolean; spec: string; companyId: number }) {
-        const spec = JSON.parse(row.spec) as QuestionnaireSpec;
-        return {
-            id: row.id,
-            name: row.name,
-            category: row.category,
-            description: row.description,
-            objective: row.objective,
-            targetAudience: row.targetAudience,
-            recordInterview: row.recordInterview,
-            companyId: row.companyId,
-            sections: spec.sections,
-            rules: spec.rules,
-        };
-    }
-
-    /** Modelos da empresa do usuário (o superadministrador vê todos), do mais novo para o mais antigo. */
-    async listSaved(currentUser: UserPayLoad) {
-        if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot use templates');
-        const rows = currentUser.profile === 'SUPERADMINISTRATOR'
-            ? await this.orm.SavedTemplate.all()
-            : await this.orm.SavedTemplate.where({ companyId: currentUser.companyId as number }).all();
-        return [...rows].sort((a, b) => b.id - a.id).map((row) => this.toSaved(row));
-    }
-
-    /** Guarda um modelo (arquivo JSON importado). A estrutura é validada e normalizada antes de gravar. */
-    async saveTemplate(dto: SaveTemplateDto, currentUser: UserPayLoad) {
-        const companyId = this.companyFor(currentUser, dto.companyId);
-        const spec = sanitizeSpec(dto.spec);
-        const row = await this.orm.SavedTemplate.create({
-            name: dto.name.trim(),
-            category: dto.category?.trim() || 'Personalizado',
-            description: dto.description?.trim() ?? '',
-            objective: dto.objective?.trim() ?? '',
-            targetAudience: dto.targetAudience?.trim() ?? '',
-            recordInterview: dto.recordInterview ?? false,
-            spec: JSON.stringify(spec),
-            companyId,
-        });
-        return this.toSaved(row);
-    }
-
-    /** Guarda a estrutura de uma pesquisa existente como modelo da empresa dela. */
-    async saveResearchAsTemplate(id: number, currentUser: UserPayLoad) {
-        if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot save templates');
-        const research = await this.researchService.findOne(id, currentUser);
-        const spec = await this.exportSpec(research.id);
-        const row = await this.orm.SavedTemplate.create({
-            name: research.title.slice(0, 150),
-            category: 'Personalizado',
-            description: research.description ?? '',
-            objective: research.objective ?? '',
-            targetAudience: research.targetAudience ?? '',
-            recordInterview: research.recordInterview ?? false,
-            spec: JSON.stringify(sanitizeSpec(spec)),
-            companyId: research.companyId,
-        });
-        return this.toSaved(row);
-    }
-
-    private async findSaved(id: number, currentUser: UserPayLoad) {
-        if (currentUser.profile === 'RESEARCHER') throw new ForbiddenException('Researchers cannot use templates');
-        const row = await this.orm.SavedTemplate.where({ id }).first();
-        // Modelo de outra empresa se comporta como inexistente.
-        if (!row || (currentUser.profile !== 'SUPERADMINISTRATOR' && row.companyId !== currentUser.companyId)) throw new NotFoundException('Template not found');
-        return row;
-    }
-
-    async deleteSaved(id: number, currentUser: UserPayLoad) {
-        const row = await this.findSaved(id, currentUser);
-        await this.orm.SavedTemplate.where({ id: row.id }).delete();
-        return { id: row.id };
-    }
-
-    /** Rascunho a partir de um modelo salvo (a estrutura é revalidada). */
-    async fromSaved(id: number, dto: CreateFromSavedDto, currentUser: UserPayLoad) {
-        const row = await this.findSaved(id, currentUser);
-        const spec = sanitizeSpec(JSON.parse(row.spec));
-        const start = new Date();
-
-        return await this.prisma.client.transaction(async (tx) => {
-            const created = await tx.orm.public.Research.create({
-                title: dto.title?.trim() || row.name,
-                description: row.description || 'Pesquisa criada a partir de um modelo.',
-                objective: row.objective || 'Definir o objetivo da pesquisa.',
-                targetAudience: row.targetAudience || 'Definir o público-alvo.',
-                startDate: start.toISOString(),
-                endDate: new Date(start.getTime() + 30 * DAY_MS).toISOString(),
-                status: 'DRAFT',
-                recordInterview: row.recordInterview,
-                companyId: row.companyId,
-            });
-            await this.writeSpec(tx.orm.public, created.id, spec);
-            return created;
-        });
-    }
-
-    // ---------- estrutura <-> banco ----------
-
-    /** Grava seções, questões, opções e regras de `spec` na pesquisa (dentro da transação de quem chama). */
-    async writeSpec(orm: ReturnType<ResearchTemplateService['ormOf']>, researchId: number, spec: QuestionnaireSpec) {
-        const questionIds = new Map<string, number>();
-        const optionIds = new Map<string, number[]>();
-        const sectionIds: number[] = [];
-        const typeOf = new Map<string, string>();
-
-        for (const [sectionIndex, section] of spec.sections.entries()) {
-            const createdSection = await orm.Section.create({ title: section.title, order: sectionIndex + 1, researchId });
-            sectionIds.push(createdSection.id);
-
-            for (const [questionIndex, question] of section.questions.entries()) {
-                const row = await orm.Question.create({
-                    statement: question.statement,
-                    type: question.type as any,
-                    helpText: question.helpText ?? null,
-                    isRequired: question.isRequired ?? false,
-                    order: questionIndex + 1,
-                    sectionId: createdSection.id,
-                    minSelections: question.minSelections ?? null,
-                    maxSelections: question.maxSelections ?? null,
-                    minValue: question.minValue ?? null,
-                    maxValue: question.maxValue ?? null,
-                    minDate: question.minDate ?? null,
-                    maxDate: question.maxDate ?? null,
-                    maxLength: question.maxLength ?? null,
-                    scaleLeftLabel: question.scaleLeftLabel ?? null,
-                    scaleRightLabel: question.scaleRightLabel ?? null,
-                    maxFiles: question.maxFiles ?? null,
-                    maxDuration: question.maxDuration ?? null,
-                });
-                questionIds.set(question.key, row.id);
-                typeOf.set(question.key, question.type);
-
-                const ids: number[] = [];
-                if (CHOICE.includes(question.type)) {
-                    for (const [optionIndex, text] of (question.options ?? []).entries()) {
-                        ids.push((await orm.QuestionOption.create({ text, order: optionIndex + 1, questionId: row.id })).id);
-                    }
-                }
-                optionIds.set(question.key, ids);
-            }
+        const ids: number[] = [];
+        if (CHOICE.includes(question.type)) {
+          for (const [optionIndex, text] of (question.options ?? []).entries()) {
+            ids.push((await orm.QuestionOption.create({ text, order: optionIndex + 1, questionId: row.id })).id);
+          }
         }
-
-        for (const rule of spec.rules) {
-            const groupKey = rule.conditions.length > 1 ? randomUUID() : null;
-            const targetQuestionId = rule.targetKey !== undefined ? questionIds.get(rule.targetKey) : undefined;
-            const targetSectionId = rule.targetSectionIndex !== undefined ? sectionIds[rule.targetSectionIndex] : undefined;
-            if ((targetQuestionId === undefined) === (targetSectionId === undefined)) throw new BadRequestException('Regra do modelo sem alvo válido');
-
-            for (const condition of rule.conditions) {
-                const sourceId = questionIds.get(condition.sourceKey);
-                if (sourceId === undefined) throw new BadRequestException(`Regra do modelo aponta para uma questão que não existe: ${condition.sourceKey}`);
-                const isChoice = CHOICE.includes(typeOf.get(condition.sourceKey) ?? '');
-                const optionId = condition.optionIndex !== undefined ? optionIds.get(condition.sourceKey)?.[condition.optionIndex] : undefined;
-                if (isChoice && condition.optionIndex !== undefined && optionId === undefined) throw new BadRequestException('Regra do modelo aponta para uma opção que não existe');
-
-                await orm.QuestionRule.create({
-                    researchId,
-                    sourceQuestionId: sourceId,
-                    operator: condition.operator ?? 'EQ',
-                    triggerValue: optionId !== undefined ? String(optionId) : (condition.value ?? ''),
-                    targetQuestionId: targetQuestionId ?? null,
-                    targetSectionId: targetSectionId ?? null,
-                    action: rule.action ?? 'SHOW',
-                    groupKey,
-                });
-            }
-        }
+        optionIds.set(question.key, ids);
+      }
     }
 
-    // Só para dar nome ao tipo do cliente de banco (transação ou não).
-    private ormOf() {
-        return this.orm;
+    for (const rule of spec.rules) {
+      const groupKey = rule.conditions.length > 1 ? randomUUID() : null;
+      const targetQuestionId = rule.targetKey !== undefined ? questionIds.get(rule.targetKey) : undefined;
+      const targetSectionId = rule.targetSectionIndex !== undefined ? sectionIds[rule.targetSectionIndex] : undefined;
+      if ((targetQuestionId === undefined) === (targetSectionId === undefined)) throw new BadRequestException('Regra do modelo sem alvo válido');
+
+      for (const condition of rule.conditions) {
+        const sourceId = questionIds.get(condition.sourceKey);
+        if (sourceId === undefined) throw new BadRequestException(`Regra do modelo aponta para uma questão que não existe: ${condition.sourceKey}`);
+        const isChoice = CHOICE.includes(typeOf.get(condition.sourceKey) ?? '');
+        const optionId = condition.optionIndex !== undefined ? optionIds.get(condition.sourceKey)?.[condition.optionIndex] : undefined;
+        if (isChoice && condition.optionIndex !== undefined && optionId === undefined) throw new BadRequestException('Regra do modelo aponta para uma opção que não existe');
+
+        await orm.QuestionRule.create({
+          researchId,
+          sourceQuestionId: sourceId,
+          operator: condition.operator ?? 'EQ',
+          triggerValue: optionId !== undefined ? String(optionId) : (condition.value ?? ''),
+          targetQuestionId: targetQuestionId ?? null,
+          targetSectionId: targetSectionId ?? null,
+          action: rule.action ?? 'SHOW',
+          groupKey,
+        });
+      }
+    }
+  }
+
+  /** Só para dar nome ao tipo do cliente de banco (transação ou não). */
+  private ormOf() {
+    return this.orm;
+  }
+
+  /** Lê a estrutura de uma pesquisa existente no mesmo formato dos modelos. */
+  async exportSpec(researchId: number): Promise<QuestionnaireSpec> {
+    const sections = [...(await this.orm.Section.where({ researchId }).all())].sort((a, b) => a.order - b.order || a.id - b.id);
+    const sectionIndex = new Map(sections.map((s, i) => [s.id, i]));
+    const keyOf = (id: number) => `q${id}`;
+
+    const specSections: SpecSection[] = [];
+    const optionIndexOf = new Map<string, number>(); // `${questionId}:${optionId}` -> posição
+
+    for (const section of sections) {
+      const rows = [...(await this.orm.Question.where({ sectionId: section.id }).all())].sort((a, b) => a.order - b.order || a.id - b.id);
+      const questions: SpecQuestion[] = [];
+      for (const row of rows) {
+        let options: string[] | undefined;
+        if (CHOICE.includes(row.type)) {
+          const list = [...(await this.orm.QuestionOption.where({ questionId: row.id }).all())].sort((a, b) => a.order - b.order || a.id - b.id);
+          options = list.map((o) => o.text);
+          list.forEach((o, i) => optionIndexOf.set(`${row.id}:${o.id}`, i));
+        }
+        questions.push({
+          key: keyOf(row.id),
+          statement: row.statement,
+          type: row.type,
+          helpText: row.helpText,
+          isRequired: row.isRequired,
+          options,
+          minSelections: row.minSelections,
+          maxSelections: row.maxSelections,
+          minValue: row.minValue,
+          maxValue: row.maxValue,
+          minDate: row.minDate,
+          maxDate: row.maxDate,
+          maxLength: row.maxLength,
+          scaleLeftLabel: row.scaleLeftLabel,
+          scaleRightLabel: row.scaleRightLabel,
+          maxFiles: row.maxFiles,
+          maxDuration: row.maxDuration,
+        });
+      }
+      specSections.push({ title: section.title, questions });
     }
 
-    /** Lê a estrutura de uma pesquisa existente no mesmo formato dos modelos. */
-    async exportSpec(researchId: number): Promise<QuestionnaireSpec> {
-        const sections = [...(await this.orm.Section.where({ researchId }).all())].sort((a, b) => a.order - b.order || a.id - b.id);
-        const sectionIndex = new Map(sections.map((s, i) => [s.id, i]));
-        const keyOf = (id: number) => `q${id}`;
+    const typeById = new Map<string, string>(specSections.flatMap((s) => s.questions.map((x) => [x.key, x.type] as [string, string])));
+    const rows = await this.orm.QuestionRule.where({ researchId }).all();
+    const rules: SpecRule[] = [];
+    const grouped = new Map<string, SpecRule>();
 
-        const specSections: SpecSection[] = [];
-        const optionIndexOf = new Map<string, number>(); // `${questionId}:${optionId}` -> posição
+    for (const row of rows) {
+      const sourceKey = keyOf(row.sourceQuestionId);
+      const isChoice = CHOICE.includes(typeById.get(sourceKey) ?? '');
+      const index = isChoice ? optionIndexOf.get(`${row.sourceQuestionId}:${row.triggerValue}`) : undefined;
+      const condition = isChoice && index !== undefined
+        ? { sourceKey, operator: row.operator, optionIndex: index }
+        : { sourceKey, operator: row.operator, value: row.triggerValue };
+      // Regra apontando para uma opção que já não existe é descartada (já era inválida).
+      if (isChoice && row.operator !== 'ANSWERED' && row.operator !== 'NOT_ANSWERED' && index === undefined) continue;
 
-        for (const section of sections) {
-            const rows = [...(await this.orm.Question.where({ sectionId: section.id }).all())].sort((a, b) => a.order - b.order || a.id - b.id);
-            const questions: SpecQuestion[] = [];
-            for (const row of rows) {
-                let options: string[] | undefined;
-                if (CHOICE.includes(row.type)) {
-                    const list = [...(await this.orm.QuestionOption.where({ questionId: row.id }).all())].sort((a, b) => a.order - b.order || a.id - b.id);
-                    options = list.map((o) => o.text);
-                    list.forEach((o, i) => optionIndexOf.set(`${row.id}:${o.id}`, i));
-                }
-                questions.push({
-                    key: keyOf(row.id),
-                    statement: row.statement,
-                    type: row.type,
-                    helpText: row.helpText,
-                    isRequired: row.isRequired,
-                    options,
-                    minSelections: row.minSelections,
-                    maxSelections: row.maxSelections,
-                    minValue: row.minValue,
-                    maxValue: row.maxValue,
-                    minDate: row.minDate,
-                    maxDate: row.maxDate,
-                    maxLength: row.maxLength,
-                    scaleLeftLabel: row.scaleLeftLabel,
-                    scaleRightLabel: row.scaleRightLabel,
-                    maxFiles: row.maxFiles,
-                    maxDuration: row.maxDuration,
-                });
-            }
-            specSections.push({ title: section.title, questions });
+      const targetSectionIdx = row.targetSectionId !== null && row.targetSectionId !== undefined ? sectionIndex.get(row.targetSectionId) : undefined;
+      const base = {
+        targetKey: row.targetQuestionId !== null && row.targetQuestionId !== undefined ? keyOf(row.targetQuestionId) : undefined,
+        targetSectionIndex: targetSectionIdx,
+        action: (row.action === 'HIDE' ? 'HIDE' : 'SHOW') as 'SHOW' | 'HIDE',
+      };
+      if (base.targetKey === undefined && base.targetSectionIndex === undefined) continue;
+
+      if (row.groupKey) {
+        let rule = grouped.get(row.groupKey);
+        if (!rule) {
+          rule = { ...base, conditions: [] };
+          grouped.set(row.groupKey, rule);
+          rules.push(rule);
         }
-
-        const typeById = new Map<string, string>(specSections.flatMap((s) => s.questions.map((x) => [x.key, x.type] as [string, string])));
-        const rows = await this.orm.QuestionRule.where({ researchId }).all();
-        const rules: SpecRule[] = [];
-        const grouped = new Map<string, SpecRule>();
-
-        for (const row of rows) {
-            const sourceKey = keyOf(row.sourceQuestionId);
-            const isChoice = CHOICE.includes(typeById.get(sourceKey) ?? '');
-            const index = isChoice ? optionIndexOf.get(`${row.sourceQuestionId}:${row.triggerValue}`) : undefined;
-            const condition = isChoice && index !== undefined
-                ? { sourceKey, operator: row.operator, optionIndex: index }
-                : { sourceKey, operator: row.operator, value: row.triggerValue };
-            // Regra apontando para uma opção que já não existe é descartada (já era inválida).
-            if (isChoice && row.operator !== 'ANSWERED' && row.operator !== 'NOT_ANSWERED' && index === undefined) continue;
-
-            const targetSectionIdx = row.targetSectionId !== null && row.targetSectionId !== undefined ? sectionIndex.get(row.targetSectionId) : undefined;
-            const base = {
-                targetKey: row.targetQuestionId !== null && row.targetQuestionId !== undefined ? keyOf(row.targetQuestionId) : undefined,
-                targetSectionIndex: targetSectionIdx,
-                action: (row.action === 'HIDE' ? 'HIDE' : 'SHOW') as 'SHOW' | 'HIDE',
-            };
-            if (base.targetKey === undefined && base.targetSectionIndex === undefined) continue;
-
-            if (row.groupKey) {
-                let rule = grouped.get(row.groupKey);
-                if (!rule) {
-                    rule = { ...base, conditions: [] };
-                    grouped.set(row.groupKey, rule);
-                    rules.push(rule);
-                }
-                rule.conditions.push(condition);
-            } else {
-                rules.push({ ...base, conditions: [condition] });
-            }
-        }
-
-        return { sections: specSections, rules };
+        rule.conditions.push(condition);
+      } else {
+        rules.push({ ...base, conditions: [condition] });
+      }
     }
+
+    return { sections: specSections, rules };
+  }
 }

@@ -41,6 +41,7 @@ export interface Company {
     updatedAt?: string;
 }
 
+/** Formata uma data ISO por extenso (dia, mês e ano); `—` se for vazia ou inválida. */
 const formatLong = (iso?: string) => {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -51,6 +52,10 @@ const formatLong = (iso?: string) => {
 
 type ContactKind = 'email' | 'phone' | 'text';
 
+/**
+ * Classifica uma linha de contato (e-mail, telefone ou texto) e monta o link correspondente, quando
+ * existe.
+ */
 const classifyContact = (line: string): { kind: ContactKind; href?: string } => {
     const value = line.trim();
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return { kind: 'email', href: `mailto:${value}` };
@@ -65,6 +70,7 @@ const CONTACT_ICON: Record<ContactKind, ReactNode> = {
     text: <AtSign />,
 };
 
+/** Botão que copia o valor para a área de transferência e mostra a confirmação por instantes. */
 function CopyButton({ value }: { value: string }) {
     const [copied, setCopied] = useState(false);
 
@@ -83,9 +89,8 @@ function CopyButton({ value }: { value: string }) {
             type="button"
             onClick={copy}
             aria-label="Copiar código da empresa"
-            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium transition-all ${
-                copied ? 'bg-[var(--green-deep)] text-white' : 'bg-ink text-white hover:bg-[#26332c]'
-            }`}
+            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium transition-all ${copied ? 'bg-[var(--green-deep)] text-white' : 'bg-ink text-white hover:bg-[#26332c]'
+                }`}
         >
             {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
             {copied ? 'Copiado' : 'Copiar'}
@@ -126,6 +131,7 @@ function Panel({
     );
 }
 
+/** Página da empresa do usuário logado: dados, contatos e imagens. */
 export default function EmpresaPage() {
     const [company, setCompany] = useState<Company | null>(null);
     const [loading, setLoading] = useState(true);
@@ -168,6 +174,7 @@ export default function EmpresaPage() {
     };
 
     useEffect(() => {
+        /** Carrega a empresa do usuário e controla os estados de carregando e erro. */
         async function loadData() {
             try {
                 setLoading(true);
@@ -215,11 +222,11 @@ export default function EmpresaPage() {
         setCompany((current) =>
             current
                 ? {
-                      ...current,
-                      logoUrl: updated.logoUrl ?? null,
-                      coverUrl: updated.coverUrl ?? null,
-                      updatedAt: updated.updatedAt ?? current.updatedAt,
-                  }
+                    ...current,
+                    logoUrl: updated.logoUrl ?? null,
+                    coverUrl: updated.coverUrl ?? null,
+                    updatedAt: updated.updatedAt ?? current.updatedAt,
+                }
                 : current,
         );
 
@@ -231,73 +238,70 @@ export default function EmpresaPage() {
                 <CoverBanner url={company.coverUrl} />
 
                 <div className="relative">
-                <Contour seed={7} rings={14} cx={0.88} cy={0.45} size={1.25} width={900} height={320} />
-                <div className="pointer-events-none !absolute inset-0 hidden md:block" aria-hidden="true">
-                    <Pin
-                        label={isActive ? "Coleta liberada" : "Coleta bloqueada"}
-                        tone={isActive ? "mint" : "clay"}
-                        left="82%"
-                        top="34%"
-                    />
-                </div>
+                    <Contour seed={7} rings={14} cx={0.88} cy={0.45} size={1.25} width={900} height={320} />
+                    <div className="pointer-events-none !absolute inset-0 hidden md:block" aria-hidden="true">
+                        <Pin
+                            label={isActive ? "Coleta liberada" : "Coleta bloqueada"}
+                            tone={isActive ? "mint" : "clay"}
+                            left="82%"
+                            top="34%"
+                        />
+                    </div>
 
-                <div className="relative flex flex-col gap-6 p-7 sm:flex-row sm:items-center sm:p-9">
-                    <UserAvatar
-                        name={company.legalName}
-                        src={company.logoUrl}
-                        size={96}
-                        fit="contain"
-                        className={`grid size-24 shrink-0 place-items-center rounded-[28px] text-[34px] font-semibold tracking-tight shadow-[0_18px_40px_-18px_rgba(191,227,208,0.7)] ring-8 ring-[rgba(191,227,208,0.12)] ${
-                            company.logoUrl ? 'bg-white p-2.5' : 'bg-[var(--mint)] text-[var(--forest)]'
-                        }`}
-                    />
-
-                    <div className="min-w-0">
-                        <p className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--muted-dark)]">
-                            <MapPinned className="size-3.5" /> Empresa
-                        </p>
-                        <h1 className="truncate text-[34px] font-semibold leading-[1.05] tracking-[-0.04em] text-[var(--fg-dark)] sm:text-[40px]">
-                            {company.legalName}
-                        </h1>
-                        <div className="mt-4 flex flex-wrap items-center gap-2.5">
-                            <span
-                                className={`inline-flex h-7 items-center gap-2 rounded-full px-3 text-[13px] font-medium ${
-                                    companyActive
-                                        ? 'bg-[rgba(191,227,208,0.16)] text-[var(--mint)]'
-                                        : 'bg-[rgba(224,145,122,0.18)] text-[#f0b09c]'
+                    <div className="relative flex flex-col gap-6 p-7 sm:flex-row sm:items-center sm:p-9">
+                        <UserAvatar
+                            name={company.legalName}
+                            src={company.logoUrl}
+                            size={96}
+                            fit="contain"
+                            className={`grid size-24 shrink-0 place-items-center rounded-[28px] text-[34px] font-semibold tracking-tight shadow-[0_18px_40px_-18px_rgba(191,227,208,0.7)] ring-8 ring-[rgba(191,227,208,0.12)] ${company.logoUrl ? 'bg-white p-2.5' : 'bg-[var(--mint)] text-[var(--forest)]'
                                 }`}
-                            >
-                                <span className="relative flex size-2">
-                                    {companyActive && (
-                                        <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--mint)] opacity-60" />
-                                    )}
-                                    <span
-                                        className={`relative inline-flex size-2 rounded-full ${
-                                            companyActive ? 'bg-[var(--mint)]' : 'bg-[#e0917a]'
+                        />
+
+                        <div className="min-w-0">
+                            <p className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--muted-dark)]">
+                                <MapPinned className="size-3.5" /> Empresa
+                            </p>
+                            <h1 className="truncate text-[34px] font-semibold leading-[1.05] tracking-[-0.04em] text-[var(--fg-dark)] sm:text-[40px]">
+                                {company.legalName}
+                            </h1>
+                            <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                                <span
+                                    className={`inline-flex h-7 items-center gap-2 rounded-full px-3 text-[13px] font-medium ${companyActive
+                                            ? 'bg-[rgba(191,227,208,0.16)] text-[var(--mint)]'
+                                            : 'bg-[rgba(224,145,122,0.18)] text-[#f0b09c]'
                                         }`}
-                                    />
+                                >
+                                    <span className="relative flex size-2">
+                                        {companyActive && (
+                                            <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--mint)] opacity-60" />
+                                        )}
+                                        <span
+                                            className={`relative inline-flex size-2 rounded-full ${companyActive ? 'bg-[var(--mint)]' : 'bg-[#e0917a]'
+                                                }`}
+                                        />
+                                    </span>
+                                    {companyActive ? 'Cadastro ativo' : 'Cadastro inativo'}
                                 </span>
-                                {companyActive ? 'Cadastro ativo' : 'Cadastro inativo'}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 text-[13px] text-[var(--muted-dark)]">
-                                <CalendarDays className="size-3.5" />
-                                No Pesquisa Aqui desde {formatLong(company.createdAt)}
-                            </span>
-                            {isCompanyAdmin && (
-                                <EditarImagensEmpresa
-                                    company={{
-                                        id: Number(company.id),
-                                        legalName: company.legalName,
-                                        logoUrl: company.logoUrl,
-                                        coverUrl: company.coverUrl,
-                                    }}
-                                    onChanged={handleImagesChanged}
-                                    className="sm:absolute sm:bottom-7 sm:right-7"
-                                />
-                            )}
+                                <span className="inline-flex items-center gap-1.5 text-[13px] text-[var(--muted-dark)]">
+                                    <CalendarDays className="size-3.5" />
+                                    No Pesquisa Aqui desde {formatLong(company.createdAt)}
+                                </span>
+                                {isCompanyAdmin && (
+                                    <EditarImagensEmpresa
+                                        company={{
+                                            id: Number(company.id),
+                                            legalName: company.legalName,
+                                            logoUrl: company.logoUrl,
+                                            coverUrl: company.coverUrl,
+                                        }}
+                                        onChanged={handleImagesChanged}
+                                        className="sm:absolute sm:bottom-7 sm:right-7"
+                                    />
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
                 </div>
             </article>
 
@@ -315,9 +319,8 @@ export default function EmpresaPage() {
                         <div className="relative mx-auto h-[132px] w-[78px] shrink-0 rounded-[20px] border-[3px] border-[var(--forest)] bg-white p-1.5 shadow-[0_16px_30px_-18px_rgba(10,20,16,0.6)] sm:mx-0">
                             <div className="mx-auto mb-1.5 h-1 w-6 rounded-full bg-[var(--forest)]/80" />
                             <div
-                                className={`grid h-[96px] place-items-center rounded-xl ${
-                                    isActive ? 'bg-[var(--mint)]' : 'bg-[#e9b9a9]'
-                                }`}
+                                className={`grid h-[96px] place-items-center rounded-xl ${isActive ? 'bg-[var(--mint)]' : 'bg-[#e9b9a9]'
+                                    }`}
                             >
                                 {isActive ? (
                                     <Smartphone className="size-7 text-[var(--green-deep)]" />

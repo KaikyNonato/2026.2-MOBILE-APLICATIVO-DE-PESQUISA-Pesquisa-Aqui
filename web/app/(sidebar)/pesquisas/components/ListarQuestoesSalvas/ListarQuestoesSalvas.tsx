@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { CountUp } from "@/components/ui/count-up";
 import { useEffect, useState } from "react";
@@ -38,6 +38,10 @@ import { QuestionActions, OptionActions, hasOptions } from "./QuestionCard";
 import type { RulesContext } from "./RegrasExibicao";
 import { ReadOnlyProvider } from "./ReadOnlyContext";
 
+/**
+ * Lista e edita o questionário salvo da pesquisa (seções, questões, alternativas e regras), em modo
+ * editável ou somente leitura.
+ */
 export default function ListarQuestoesSalvas({ researchId, readOnly = false, readOnlyMessage }: { researchId: string | number; readOnly?: boolean; readOnlyMessage?: string }) {
     const [sections, setSections] = useState<FormSection[]>([]);
     const [rules, setRules] = useState<DisplayRule[]>([]);
@@ -354,7 +358,7 @@ export default function ListarQuestoesSalvas({ researchId, readOnly = false, rea
         } catch (e) {
             toast.error("Erro ao adicionar opção.");
         }
-    }
+    };
 
     const handleBlurOptionText = async (optionId: string, text: string) => {
         try {
@@ -363,7 +367,7 @@ export default function ListarQuestoesSalvas({ researchId, readOnly = false, rea
         } catch (e) {
             toast.error("Erro ao salvar opção.");
         }
-    }
+    };
 
     const handleUpdateOptionLocal = (sectionId: string, questionId: string, optionId: string, text: string) => {
         setSections(prev => prev.map(s => s.id === sectionId ? {
@@ -371,7 +375,7 @@ export default function ListarQuestoesSalvas({ researchId, readOnly = false, rea
                 ...q, options: q.options?.map(o => o.id === optionId ? { ...o, text } : o)
             } : q)
         } : s));
-    }
+    };
 
     const handleDeleteOption = async (sectionId: string, questionId: string, optionId: string) => {
         const section = sections.find(s => s.id === sectionId);
@@ -396,7 +400,7 @@ export default function ListarQuestoesSalvas({ researchId, readOnly = false, rea
         } catch (e) {
             toast.error("Erro ao excluir opção.");
         }
-    }
+    };
 
     const moveOption = async (sectionId: string, questionId: string, optIndex: number, direction: "up" | "down") => {
         const section = sections.find(s => s.id === sectionId);
@@ -424,7 +428,7 @@ export default function ListarQuestoesSalvas({ researchId, readOnly = false, rea
         } catch (e) {
             toast.error("Erro ao reordenar opções.");
         }
-    }
+    };
 
     // ================= REGRAS DE EXIBIÇÃO =================
     const handleAddRule = async (
@@ -525,61 +529,61 @@ export default function ListarQuestoesSalvas({ researchId, readOnly = false, rea
 
     return (
         <ReadOnlyProvider value={readOnly}>
-        <div className="space-y-4 normal-case">
-            <div className="sticky top-2 z-10 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[24px] border border-border bg-white/90 p-3 pl-5 shadow-[0_18px_34px_-24px_rgba(10,20,16,0.5)] backdrop-blur">
-                <dl className="flex flex-1 flex-wrap items-center gap-x-6 gap-y-2">
-                    {stats.map((st, i) => (
-                        <div key={st.label} className={`flex items-baseline gap-1.5 ${i > 0 ? "sm:border-l sm:border-border sm:pl-6" : ""}`}>
-                            <dt className="order-2 text-[12.5px] text-muted-foreground">{st.label}</dt>
-                            <dd className="order-1 text-[26px] font-light leading-none tracking-tighter tabular-nums"><CountUp value={st.n} /></dd>
-                        </div>
-                    ))}
-                </dl>
-                <div className="flex items-center gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={allOpen ? collapseAll : expandAll}>
-                        {allOpen
-                            ? <><ChevronsDownUp className="mr-1.5 size-4" /> Recolher tudo</>
-                            : <><ChevronsUpDown className="mr-1.5 size-4" /> Expandir tudo</>}
-                    </Button>
-                    {!readOnly && (
-                        <Button size="sm" onClick={handleAddSection}>
-                            <FolderPlus className="mr-1.5 size-4" /> Adicionar seção
+            <div className="space-y-4 normal-case">
+                <div className="sticky top-2 z-10 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[24px] border border-border bg-white/90 p-3 pl-5 shadow-[0_18px_34px_-24px_rgba(10,20,16,0.5)] backdrop-blur">
+                    <dl className="flex flex-1 flex-wrap items-center gap-x-6 gap-y-2">
+                        {stats.map((st, i) => (
+                            <div key={st.label} className={`flex items-baseline gap-1.5 ${i > 0 ? "sm:border-l sm:border-border sm:pl-6" : ""}`}>
+                                <dt className="order-2 text-[12.5px] text-muted-foreground">{st.label}</dt>
+                                <dd className="order-1 text-[26px] font-light leading-none tracking-tighter tabular-nums"><CountUp value={st.n} /></dd>
+                            </div>
+                        ))}
+                    </dl>
+                    <div className="flex items-center gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={allOpen ? collapseAll : expandAll}>
+                            {allOpen
+                                ? <><ChevronsDownUp className="mr-1.5 size-4" /> Recolher tudo</>
+                                : <><ChevronsUpDown className="mr-1.5 size-4" /> Expandir tudo</>}
                         </Button>
-                    )}
+                        {!readOnly && (
+                            <Button size="sm" onClick={handleAddSection}>
+                                <FolderPlus className="mr-1.5 size-4" /> Adicionar seção
+                            </Button>
+                        )}
+                    </div>
                 </div>
+
+                {readOnly ? (
+                    <p className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground">
+                        <Lock className="size-3.5 shrink-0" />
+                        {readOnlyMessage ?? 'O questionário está travado e não pode ser editado.'}
+                    </p>
+                ) : (
+                    <p className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground">
+                        <Info className="size-3.5 shrink-0" />
+                        Os campos são salvos ao sair deles. Reordenar e excluir são imediatos.
+                    </p>
+                )}
+
+                {sections.map((section, sIndex) => (
+                    <SectionCard
+                        key={section.id}
+                        section={section}
+                        sIndex={sIndex}
+                        totalSections={sections.length}
+                        onBlurTitle={handleBlurSectionTitle}
+                        onMove={moveSection}
+                        onDelete={handleDeleteSection}
+                        onAddQuestion={handleAddQuestionToSection}
+                        qActions={qActions}
+                        optActions={optActions}
+                        rulesCtx={rulesCtx}
+                        openQuestionIds={openQuestionIds}
+                        onToggleQuestion={toggleQuestion}
+                    />
+                ))}
+                <div className="h-100 w-full flex-shrink-0" aria-hidden="true" />
             </div>
-
-            {readOnly ? (
-                <p className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground">
-                    <Lock className="size-3.5 shrink-0" />
-                    {readOnlyMessage ?? 'O questionário está travado e não pode ser editado.'}
-                </p>
-            ) : (
-                <p className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground">
-                    <Info className="size-3.5 shrink-0" />
-                    Os campos são salvos ao sair deles. Reordenar e excluir são imediatos.
-                </p>
-            )}
-
-            {sections.map((section, sIndex) => (
-                <SectionCard
-                    key={section.id}
-                    section={section}
-                    sIndex={sIndex}
-                    totalSections={sections.length}
-                    onBlurTitle={handleBlurSectionTitle}
-                    onMove={moveSection}
-                    onDelete={handleDeleteSection}
-                    onAddQuestion={handleAddQuestionToSection}
-                    qActions={qActions}
-                    optActions={optActions}
-                    rulesCtx={rulesCtx}
-                    openQuestionIds={openQuestionIds}
-                    onToggleQuestion={toggleQuestion}
-                />
-            ))}
-            <div className="h-100 w-full flex-shrink-0" aria-hidden="true" />
-        </div>
         </ReadOnlyProvider>
     );
 }

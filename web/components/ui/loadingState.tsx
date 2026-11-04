@@ -80,8 +80,10 @@ const DEFAULT_COUNT: Record<LoadingShape, number> = {
     inline: 0,
 };
 
+/** Lista de 0 a n-1, para repetir elementos. */
 const times = (n: number) => Array.from({ length: n }, (_, i) => i);
 
+/** Estado de carregamento com esqueletos (lista, cards, tabela...) e texto opcional. */
 export function LoadingState({ label, shape = "list", count, columns = 5, tone = "light", className }: LoadingStateProps) {
     const dark = tone === "dark";
     const total = count ?? DEFAULT_COUNT[shape];

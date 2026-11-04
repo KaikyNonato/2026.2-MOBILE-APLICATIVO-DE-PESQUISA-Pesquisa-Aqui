@@ -36,6 +36,7 @@ const TYPE_TONE: Record<FrontendQuestionType, string> = {
     "location": "bg-[#f3e0d9] text-[#8a432f]", "audio": "bg-[#f3e0d9] text-[#8a432f]",
 };
 
+/** Botão pequeno, com ícone, usado nas ações da questão. */
 function MiniButton({
     label, onClick, disabled, danger, children,
 }: { label: string; onClick: () => void; disabled?: boolean; danger?: boolean; children: ReactNode }) {
@@ -56,6 +57,7 @@ function MiniButton({
     );
 }
 
+/** Diz se o tipo de questão tem alternativas (escolha única ou múltipla). */
 export const hasOptions = (type: FrontendQuestionType) => type === "single-choice" || type === "multiple-choice";
 
 export interface QuestionActions {
@@ -86,6 +88,7 @@ interface QuestionCardProps {
     onToggle: () => void;
 }
 
+/** Campo com rótulo e dica opcional. */
 function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
     return (
         <div className="space-y-1.5">
@@ -96,6 +99,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     );
 }
 
+/** Bloco com título, para agrupar campos. */
 function Block({ title, children }: { title: string; children: ReactNode }) {
     return (
         <div className="space-y-3 rounded-[18px] border border-border bg-white p-4">
@@ -105,6 +109,10 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
     );
 }
 
+/**
+ * Card de uma questão do questionário: resumo e, quando aberto, o editor (tipo, enunciado,
+ * alternativas e regras).
+ */
 export function QuestionCard({ sectionId, q, qIndex, totalQuestions, qActions, optActions, rulesCtx, open, onToggle }: QuestionCardProps) {
     const readOnly = useReadOnly();
     const TypeIcon = QUESTION_TYPE_ICONS[q.type] ?? Type;
@@ -181,11 +189,11 @@ export function QuestionCard({ sectionId, q, qIndex, totalQuestions, qActions, o
                 </button>
 
                 {!readOnly && (
-                <div className="flex shrink-0 items-center md:opacity-0 md:transition-opacity md:group-focus-within:opacity-100 md:group-hover:opacity-100">
-                    <MiniButton label="Mover para cima" onClick={() => qActions.moveQuestion(sectionId, qIndex, "up")} disabled={qIndex === 0}><ArrowUp /></MiniButton>
-                    <MiniButton label="Mover para baixo" onClick={() => qActions.moveQuestion(sectionId, qIndex, "down")} disabled={qIndex === totalQuestions - 1}><ArrowDown /></MiniButton>
-                    <MiniButton danger label="Excluir questão" onClick={() => qActions.handleDeleteQuestion(sectionId, q.id)}><Trash2 /></MiniButton>
-                </div>
+                    <div className="flex shrink-0 items-center md:opacity-0 md:transition-opacity md:group-focus-within:opacity-100 md:group-hover:opacity-100">
+                        <MiniButton label="Mover para cima" onClick={() => qActions.moveQuestion(sectionId, qIndex, "up")} disabled={qIndex === 0}><ArrowUp /></MiniButton>
+                        <MiniButton label="Mover para baixo" onClick={() => qActions.moveQuestion(sectionId, qIndex, "down")} disabled={qIndex === totalQuestions - 1}><ArrowDown /></MiniButton>
+                        <MiniButton danger label="Excluir questão" onClick={() => qActions.handleDeleteQuestion(sectionId, q.id)}><Trash2 /></MiniButton>
+                    </div>
                 )}
             </div>
 
@@ -353,13 +361,13 @@ export function QuestionCard({ sectionId, q, qIndex, totalQuestions, qActions, o
                                 ))}
                             </div>
                             {!readOnly && (
-                            <button
-                                type="button"
-                                onClick={() => optActions.handleAddOption(sectionId, q.id)}
-                                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#b9c9bf] py-2 text-[13px] font-semibold text-[var(--green-deep)] transition-colors hover:bg-[#e4ece7]"
-                            >
-                                <Plus className="size-4" /> Adicionar opção
-                            </button>
+                                <button
+                                    type="button"
+                                    onClick={() => optActions.handleAddOption(sectionId, q.id)}
+                                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#b9c9bf] py-2 text-[13px] font-semibold text-[var(--green-deep)] transition-colors hover:bg-[#e4ece7]"
+                                >
+                                    <Plus className="size-4" /> Adicionar opção
+                                </button>
                             )}
                         </Block>
                     )}

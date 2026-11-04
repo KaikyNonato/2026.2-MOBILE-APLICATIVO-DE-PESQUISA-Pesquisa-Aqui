@@ -1,12 +1,17 @@
 import { jwtVerify } from "jose";
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ['/login']
+const PUBLIC_PATHS = ['/login'];
 // O pesquisador só usa o início, a lista das próprias pesquisas e o perfil (a coleta é no aplicativo).
 // Qualquer outra tela do painel volta para o início, mesmo que ele digite o endereço.
-const RESEARCHER_PATHS = ['/', '/pesquisas', '/perfil', '/trocar-senha']
-const secret = new TextEncoder().encode(process.env.JWT_SECRET)
+const RESEARCHER_PATHS = ['/', '/pesquisas', '/perfil', '/trocar-senha'];
+/** Chave para conferir o JWT (a mesma `JWT_SECRET` da API). */
+const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
+/**
+ * Proteção de rotas do painel: confere o cookie `access_token` e só deixa passar quem tem sessão
+ * válida. Rotas públicas ficam livres.
+ */
 export const proxy = async (request: NextRequest) => {
     const { pathname } = request.nextUrl;
     const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
@@ -46,10 +51,10 @@ export const proxy = async (request: NextRequest) => {
     }
 
     return response;
-}
+};
 
 export const config = {
     matcher: [
         '/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
     ],
-}
+};

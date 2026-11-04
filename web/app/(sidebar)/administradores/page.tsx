@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import BannerComponent from "@/components/ui/bannerComponent";
 import DialogLayout from "@/components/ui/dialogLayout";
@@ -19,6 +19,7 @@ import { Chart } from "../(home)/components/grafico";
 import CadastrarAdministradorForm from "../empresas/components/CadastrarAdministradorForm";
 import ListaAdministradores from "./components/ListaAdministradores";
 
+/** Página de administradores: cadastro e lista. */
 export default function AdministradoresPage() {
     const { user } = useCurrentUser();
     const isSuperAdmin = user?.profile === 'SUPERADMINISTRATOR';

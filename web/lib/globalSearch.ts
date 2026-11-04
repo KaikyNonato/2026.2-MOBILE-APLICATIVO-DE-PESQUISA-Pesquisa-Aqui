@@ -78,6 +78,7 @@ async function fetchAllPages<T>(load: (page: number) => Promise<Page<T>>): Promi
 const cache = new Map<string, { entries: SearchEntry[]; at: number }>();
 const inFlight = new Map<string, Promise<SearchEntry[]>>();
 
+/** Monta o item de busca de uma pesquisa. */
 const researchEntry = (r: Research): SearchEntry => {
     const status = STATUS_LABELS[r.status];
     return {
@@ -92,14 +93,17 @@ const researchEntry = (r: Research): SearchEntry => {
     };
 };
 
+/** Completa o número com zero à esquerda (2 dígitos). */
 const pad = (n: number) => String(n).padStart(2, "0");
 
+/** Formata data e hora como dd/mm/aaaa hh:mm (texto vazio se a data for inválida). */
 const formatDateTime = (iso: string) => {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return "";
     return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
+/** Monta o item de busca de uma coleta, ligada à pesquisa dela. */
 const collectionEntry = (c: CollectionSummary, research: Research): SearchEntry => {
     const when = formatDateTime(c.finishedAt || c.startedAt);
     return {
@@ -114,6 +118,7 @@ const collectionEntry = (c: CollectionSummary, research: Research): SearchEntry 
     };
 };
 
+/** Monta o item de busca de um pesquisador. */
 const researcherEntry = (u: UserItem): SearchEntry => ({
     key: `researcher:${u.id}`,
     kind: "researcher",
@@ -123,6 +128,7 @@ const researcherEntry = (u: UserItem): SearchEntry => ({
     href: "/pesquisadores",
 });
 
+/** Monta o item de busca de um administrador. */
 const adminEntry = (u: UserItem): SearchEntry => ({
     key: `admin:${u.id}`,
     kind: "admin",
@@ -132,6 +138,7 @@ const adminEntry = (u: UserItem): SearchEntry => ({
     href: "/administradores",
 });
 
+/** Monta o item de busca de uma empresa. */
 const companyEntry = (c: CompanyItem): SearchEntry => ({
     key: `company:${c.id}`,
     kind: "company",
@@ -143,6 +150,10 @@ const companyEntry = (c: CompanyItem): SearchEntry => ({
     badgeTone: c.situation === "ACTIVE" ? "live" : "off",
 });
 
+/**
+ * Carrega os itens da busca global conforme o perfil. Cada fonte é independente: se uma falhar, as
+ * outras continuam.
+ */
 async function fetchEntries(profile: SearchProfile, query: string): Promise<SearchEntry[]> {
     // Cada fonte é independente: se uma falhar, as outras continuam aparecendo.
     const settled = async <T>(promise: Promise<T>, fallback: T): Promise<T> => {
@@ -264,9 +275,10 @@ function fold(text: string): { folded: string; map: number[] } {
     return { folded, map };
 }
 
+/** Texto sem acento e em minúsculas, para comparar buscas. */
 export const normalizeText = (text: string) => fold(text).folded;
 
-// "#12" vale como "12": o número da coleta aparece com "#" na tela.
+/** "#12" vale como "12": o número da coleta aparece com "#" na tela. */
 const tokensOf = (query: string) =>
     normalizeText(query)
         .split(/\s+/)
@@ -349,7 +361,7 @@ export function highlightRanges(text: string, query: string): Array<[number, num
 
     for (const token of tokens) {
         let from = 0;
-        for (;;) {
+        for (; ;) {
             const at = folded.indexOf(token, from);
             if (at < 0) break;
             const start = map[at];

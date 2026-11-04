@@ -1,9 +1,10 @@
-"use client"
+"use client";
 
-import { Separator as SeparatorPrimitive } from "@base-ui/react/separator"
+import { Separator as SeparatorPrimitive } from "@base-ui/react/separator";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
+/** Linha que separa conteúdos. */
 function Separator({
   className,
   orientation = "horizontal",
@@ -19,7 +20,7 @@ function Separator({
       )}
       {...props}
     />
-  )
+  );
 }
 
-export { Separator }
+export { Separator };

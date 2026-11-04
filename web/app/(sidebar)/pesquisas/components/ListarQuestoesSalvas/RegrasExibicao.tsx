@@ -8,7 +8,7 @@ import type { DisplayRule, FormQuestion, FormSection, RuleOperator } from "@/lib
 import { useReadOnly } from "./ReadOnlyContext";
 
 export type RuleAction = "SHOW" | "HIDE";
-export interface RuleConditionDraft { sourceQuestionId: number; operator: RuleOperator; triggerValue: string }
+export interface RuleConditionDraft { sourceQuestionId: number; operator: RuleOperator; triggerValue: string; }
 
 // Contexto das regras repassado de ListarQuestoesSalvas até cada questão e seção.
 export interface RulesContext {
@@ -19,6 +19,7 @@ export interface RulesContext {
     onDeleteRule: (ruleId: number) => Promise<void>;
 }
 
+/** Corta o texto no tamanho máximo, acrescentando `…`. */
 const shorten = (text: string, max = 50) => (text.length > max ? `${text.slice(0, max)}…` : text);
 
 // Mesma tabela da API (api/src/question-rule/rule-logic.ts): quais operadores servem para cada tipo de questão.
@@ -27,6 +28,7 @@ const OPERATOR_LABELS: Record<RuleOperator, string> = {
     CONTAINS: "contém", NOT_CONTAINS: "não contém", ANSWERED: "foi respondida", NOT_ANSWERED: "não foi respondida",
 };
 
+/** Operadores de comparação válidos para o tipo de questão (mesma tabela da API). */
 function operatorsFor(type: string): RuleOperator[] {
     const list: RuleOperator[] = [];
     if (["boolean", "single-choice", "multiple-choice", "rating-1-5", "number", "text"].includes(type)) list.push("EQ", "NEQ");
@@ -36,8 +38,13 @@ function operatorsFor(type: string): RuleOperator[] {
     return list;
 }
 
+/** Diz se o operador precisa de valor (todos precisam, menos "respondida" e "não respondida"). */
 const needsValue = (op: RuleOperator) => op !== "ANSWERED" && op !== "NOT_ANSWERED";
 
+/**
+ * Valores possíveis do gatilho quando a questão tem opções fixas (sim/não, escala, alternativas).
+ * `null` se o valor é livre.
+ */
 function valueChoices(q: FormQuestion): { value: string; label: string }[] | null {
     if (q.type === "boolean") return [{ value: "YES", label: "Sim" }, { value: "NO", label: "Não" }];
     if (q.type === "rating-1-5") {
@@ -49,9 +56,11 @@ function valueChoices(q: FormQuestion): { value: string; label: string }[] | nul
     return null; // número e texto: digitado
 }
 
+/** Diz se o valor só pode ser escolhido de uma lista (questão de escolha com igual ou diferente). */
 const isChoiceOnly = (q: FormQuestion, op: RuleOperator) =>
     (q.type === "boolean" || q.type === "single-choice" || q.type === "multiple-choice") && (op === "EQ" || op === "NEQ");
 
+/** Procura uma questão, e a seção dela, pelo id. */
 function findQuestion(sections: FormSection[], id: number | null) {
     if (id === null) return null;
     for (const section of sections) {
@@ -61,11 +70,13 @@ function findQuestion(sections: FormSection[], id: number | null) {
     return null;
 }
 
+/** Rótulo da posição da questão (`Seção X · QY`) ou o texto de reserva. */
 const positionOf = (sections: FormSection[], id: number | null, fallback: string) => {
     const found = findQuestion(sections, id);
     return found ? `Seção ${found.section.order} · Q${found.question.order}` : fallback;
 };
 
+/** Texto legível do valor que dispara a regra. */
 function valueText(sections: FormSection[], rule: DisplayRule) {
     if (!needsValue(rule.operator as RuleOperator)) return "";
     const source = findQuestion(sections, rule.sourceQuestionId)?.question;
@@ -89,11 +100,13 @@ function groupRules(rules: DisplayRule[]): DisplayRule[][] {
 }
 
 type Draft = { sourceId: string; operator: RuleOperator | ""; value: string };
+/** Rascunho vazio de uma condição. */
 const emptyDraft = (): Draft => ({ sourceId: "", operator: "", value: "" });
 const MAX_CONDITIONS = 5;
 
-interface Props { question?: FormQuestion; section?: FormSection; ctx: RulesContext }
+interface Props { question?: FormQuestion; section?: FormSection; ctx: RulesContext; }
 
+/** Editor das regras de exibição condicional de uma questão ou de uma seção. */
 export function RegrasExibicao({ question, section, ctx }: Props) {
     const readOnly = useReadOnly();
     const isSection = !!section;

@@ -1,6 +1,10 @@
-// Datas que vêm da API (vigência da pesquisa). O Hermes (motor JS do app) é bem mais exigente que o navegador
-// para ler datas: formatos do Postgres como "2026-10-27 15:00:00.123456+00" viram "Invalid Date" e a tela
-// mostrava "-". Aqui o texto é normalizado para ISO 8601 antes de ler.
+/**
+ * Datas que vêm da API (vigência da pesquisa). O Hermes (motor JS do app) é bem mais exigente que o
+ * navegador
+ * para ler datas: formatos do Postgres como "2026-10-27 15:00:00.123456+00" viram "Invalid Date" e
+ * a tela
+ * mostrava "-". Aqui o texto é normalizado para ISO 8601 antes de ler.
+ */
 export function parseApiDate(value?: string | number | Date | null): Date | null {
     if (value === undefined || value === null || value === '') return null;
     if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;

@@ -13,6 +13,7 @@ export interface CompanyItem {
     updatedAt?: string;
 }
 
+/** Cadastra uma empresa. */
 export const createCompany = async (
     legalName: string,
     contactInformation: string,
@@ -40,8 +41,9 @@ export const createCompany = async (
     }
 
     return response.json();
-}
+};
 
+/** Lista as empresas. */
 export const getCompanies = async () => {
     const response = await apiFetch('/company', {
         method: 'GET',
@@ -51,8 +53,9 @@ export const getCompanies = async () => {
     if (!response.ok) throw new Error('Failed to get companies');
 
     return response.json();
-}
+};
 
+/** Desativa uma empresa sem apagar os dados. */
 export const deactivate = async (id: number) => {
     const response = await apiFetch(`/company/${id}`, {
         method: 'PATCH',
@@ -60,12 +63,12 @@ export const deactivate = async (id: number) => {
             'Content-Type': 'application/json',
         },
         credentials: 'include',
-    })
+    });
 
-    if (!response.ok) throw new Error('Failed to deactivate company')
+    if (!response.ok) throw new Error('Failed to deactivate company');
 
     return response.json();
-}
+};
 
 const COMPANY_ERRORS: Record<string, string> = {
     'Only super administrators can edit companies.': 'Somente o superadministrador pode editar empresas.',
@@ -75,6 +78,7 @@ const COMPANY_ERRORS: Record<string, string> = {
         'Esta empresa possui usuários ou pesquisas vinculados e não pode ser excluída. Desative-a em vez disso.',
 };
 
+/** Converte o erro da API de empresas em um `Error` com texto em português. */
 const companyError = async (response: Response, fallback: string) => {
     const errorBody = await response.json().catch(() => null);
     const message = typeof errorBody?.message === 'string' ? errorBody.message : '';
@@ -87,6 +91,7 @@ export interface UpdateCompanyInput {
     situation?: 'ACTIVE' | 'INACTIVE';
 }
 
+/** Edita os dados de uma empresa. */
 export const updateCompany = async (id: number, input: UpdateCompanyInput): Promise<CompanyItem> => {
     const response = await apiFetch(`/company/${id}`, {
         method: 'PUT',
@@ -100,8 +105,9 @@ export const updateCompany = async (id: number, input: UpdateCompanyInput): Prom
     if (!response.ok) throw await companyError(response, 'Falha ao atualizar empresa');
 
     return response.json();
-}
+};
 
+/** Exclui uma empresa. */
 export const deleteCompany = async (id: number) => {
     const response = await apiFetch(`/company/${id}`, {
         method: 'DELETE',
@@ -111,14 +117,14 @@ export const deleteCompany = async (id: number) => {
     if (!response.ok) throw await companyError(response, 'Falha ao excluir empresa');
 
     return response.json();
-}
+};
 
 /** Uma página de empresas (busca, situação e ordem no servidor). */
 export const getCompaniesPage = async (params: PageParams & { situation?: CompanyItem['situation'] }): Promise<Page<CompanyItem>> => {
     const response = await apiFetch(`/company${pageQuery(params)}`, { method: 'GET', credentials: 'include' });
     if (!response.ok) throw new Error('Failed to get companies');
     return asPage<CompanyItem>(await response.json(), params);
-}
+};
 
 export interface CompanyStats {
     year: number;
@@ -140,13 +146,13 @@ export const getCompanyStats = async (): Promise<CompanyStats> => {
     const response = await apiFetch('/company/stats', { method: 'GET', credentials: 'include' });
     if (!response.ok) throw new Error('Falha ao carregar os números das empresas');
     return response.json();
-}
+};
 
 /** Empresas ativas no formato do <RemoteComboBox> (value = id, label = razão social): pesquisa e página vêm do servidor. */
 export const getCompanyOptions = async (params: { page: number; pageSize: number; q: string }) => {
     const page = await getCompaniesPage({ ...params, situation: 'ACTIVE', sort: 'name' });
     return { ...page, items: page.items.map((company) => ({ value: String(company.id), label: company.legalName })) };
-}
+};
 
 export type CompanyImageKind = 'logo' | 'cover';
 
@@ -162,6 +168,10 @@ const IMAGE_ERRORS: Record<string, string> = {
     'Only the company administrator can change its images.': 'Só o administrador da empresa pode alterar as imagens.',
 };
 
+/**
+ * Converte o erro da API de imagens da empresa em um `Error` (imagem grande demais tem mensagem
+ * própria).
+ */
 const imageError = async (response: Response, fallback: string) => {
     // O servidor recusa antes de ler o arquivo grande demais.
     if (response.status === 413) return new Error('A imagem deve ter no máximo 5 MB.');
@@ -184,6 +194,7 @@ export const uploadCompanyImage = async (companyId: number, kind: CompanyImageKi
     return response.json();
 };
 
+/** Remove o logo ou a capa de uma empresa. */
 export const removeCompanyImage = async (companyId: number, kind: CompanyImageKind): Promise<CompanyItem> => {
     const response = await apiFetch(`/company/${companyId}/images/${kind}`, { method: 'DELETE', credentials: 'include' });
 

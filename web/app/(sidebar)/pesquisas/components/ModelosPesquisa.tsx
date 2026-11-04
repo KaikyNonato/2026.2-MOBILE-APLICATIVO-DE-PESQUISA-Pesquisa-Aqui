@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loadingState";
@@ -25,6 +25,7 @@ import toast from "react-hot-toast";
 // Item da biblioteca: modelo pronto ou modelo salvo pela empresa (`custom`).
 type Item = Omit<ResearchTemplate, 'id'> & { id: string; custom?: SavedTemplate };
 
+/** Converte um modelo salvo no item exibido na lista de modelos. */
 const summarize = (c: SavedTemplate): Item => ({
     id: `saved-${c.id}`,
     name: c.name,
@@ -58,7 +59,6 @@ export default function ModelosPesquisa({ onClose }: { onClose?: () => void }) {
         getSavedTemplates().then(setCustoms).catch(() => setCustoms([]));
         getResearchTemplates().then(setTemplates).catch((e) => { toast.error(e instanceof Error ? e.message : 'Erro ao carregar os modelos'); setTemplates([]); });
     }, []);
-
 
     const create = async () => {
         if (!selected) return;

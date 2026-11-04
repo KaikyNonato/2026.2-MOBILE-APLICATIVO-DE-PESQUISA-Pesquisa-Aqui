@@ -57,6 +57,7 @@ export const sortMyResearches = (list: MyResearch[]): MyResearch[] =>
             new Date(a.endDate).getTime() - new Date(b.endDate).getTime(),
     );
 
+/** Formata uma data ISO como dia, mês abreviado e ano (`—` se vazia ou inválida). */
 export const formatShortDate = (iso?: string) => {
     if (!iso) return "—";
     const d = new Date(iso);

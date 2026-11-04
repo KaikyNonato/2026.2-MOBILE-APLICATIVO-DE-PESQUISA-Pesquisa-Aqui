@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ interface CadastrarPesquisaFormProps {
     onSuccess?: () => void;
 }
 
+/** Formulário de criação de pesquisa. */
 export default function CadastrarPesquisaForm({ onSuccess }: CadastrarPesquisaFormProps) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -24,7 +25,7 @@ export default function CadastrarPesquisaForm({ onSuccess }: CadastrarPesquisaFo
     const datesValid = !startDate || !endDate || startDate <= endDate;
 
     const [isSubmitLoading, setIsSubmitLoading] = useState(false);
-    
+
     const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
         e.preventDefault();
 
@@ -59,7 +60,6 @@ export default function CadastrarPesquisaForm({ onSuccess }: CadastrarPesquisaFo
             if (onSuccess) {
                 onSuccess();
             }
-
         } catch (error) {
             console.error(error);
 

@@ -77,6 +77,7 @@ export interface CollectionDetail extends CollectionSummary {
     sections: CollectionSection[];
 }
 
+/** Converte a resposta de erro da API em um `Error` com a mensagem e o status. */
 const readError = async (response: Response, fallback: string) => {
     const errorBody = await response.json().catch(() => null);
     const message = Array.isArray(errorBody?.message) ? errorBody.message.join(', ') : errorBody?.message;
@@ -85,6 +86,7 @@ const readError = async (response: Response, fallback: string) => {
     return error;
 };
 
+/** Lista as coletas de uma pesquisa. */
 export const getCollections = async (researchId: number): Promise<CollectionSummary[]> => {
     const response = await apiFetch(`/collection?researchId=${researchId}`, {
         method: 'GET',
@@ -96,7 +98,7 @@ export const getCollections = async (researchId: number): Promise<CollectionSumm
     return response.json();
 };
 
-// Uma página das coletas da pesquisa (busca, gravação e ordem no servidor).
+/** Uma página das coletas da pesquisa (busca, gravação e ordem no servidor). */
 export const getCollectionsPage = async (
     researchId: number,
     params: PageParams & { audio?: 'AUDIO' | 'NO_AUDIO' },
@@ -119,14 +121,14 @@ export interface CollectionStats {
     lastAt: string | null;
 }
 
-// Totais da pesquisa (recebidas, com gravação, pesquisadores, última), sem trazer as coletas.
+/** Totais da pesquisa (recebidas, com gravação, pesquisadores, última), sem trazer as coletas. */
 export const getCollectionStats = async (researchId: number): Promise<CollectionStats> => {
     const response = await apiFetch(`/collection/stats?researchId=${researchId}`, { method: 'GET', credentials: 'include' });
     if (!response.ok) throw await readError(response, 'Falha ao carregar os totais das coletas');
     return response.json();
 };
 
-// Abre uma coleta com as respostas, na ordem do questionário.
+/** Abre uma coleta com as respostas, na ordem do questionário. */
 export const getCollection = async (collectionId: number): Promise<CollectionDetail> => {
     const response = await apiFetch(`/collection/${collectionId}`, {
         method: 'GET',
@@ -138,7 +140,7 @@ export const getCollection = async (collectionId: number): Promise<CollectionDet
     return response.json();
 };
 
-// Baixa uma foto ou um áudio de resposta pela API autenticada (o arquivo nunca é público).
+/** Baixa uma foto ou um áudio de resposta pela API autenticada (o arquivo nunca é público). */
 export const getCollectionMedia = async (collectionId: number, name: string): Promise<Blob> => {
     const response = await apiFetch(`/collection/${collectionId}/media/${encodeURIComponent(name)}`, {
         method: 'GET',
@@ -150,7 +152,7 @@ export const getCollectionMedia = async (collectionId: number, name: string): Pr
     return response.blob();
 };
 
-// Baixa o áudio de uma coleta pela API autenticada (o arquivo nunca é público).
+/** Baixa o áudio de uma coleta pela API autenticada (o arquivo nunca é público). */
 export const getCollectionAudio = async (collectionId: number): Promise<Blob> => {
     const response = await apiFetch(`/collection/${collectionId}/audio`, {
         method: 'GET',
@@ -164,7 +166,7 @@ export const getCollectionAudio = async (collectionId: number): Promise<Blob> =>
     return blob.type.startsWith('audio/') ? blob : new Blob([blob], { type: 'audio/mp4' });
 };
 
-// 3725 -> "1:02:05"; 65 -> "1:05"
+/** 3725 -> "1:02:05"; 65 -> "1:05" */
 export const formatDuration = (totalSeconds: number | null): string => {
     if (totalSeconds === null || totalSeconds === undefined) return '-';
     const hours = Math.floor(totalSeconds / 3600);
@@ -183,6 +185,7 @@ export type FormattedAnswer =
     | { kind: 'location'; latitude: number; longitude: number; accuracy: number | null; lowAccuracy: boolean }
     | { kind: 'file'; names: string[] };
 
+/** Lê um texto como JSON; devolve `null` se for inválido. */
 const parseJson = (raw: string): unknown => {
     try {
         return JSON.parse(raw);
@@ -191,12 +194,16 @@ const parseJson = (raw: string): unknown => {
     }
 };
 
-// "2026-10-18" -> "18/10/2026" (sem passar por Date, que deslocaria o dia pelo fuso)
+/** "2026-10-18" -> "18/10/2026" (sem passar por Date, que deslocaria o dia pelo fuso) */
 const formatIsoDate = (raw: string) => {
     const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
     return match ? `${match[3]}/${match[2]}/${match[1]}` : raw;
 };
 
+/**
+ * Converte a resposta de uma questão no formato pronto para exibir (vazio, texto, escolhas,
+ * localização, mídia...).
+ */
 export const formatAnswer = (question: CollectionQuestion): FormattedAnswer => {
     const raw = question.answer;
     if (raw === null || raw.trim() === '') return { kind: 'empty' };

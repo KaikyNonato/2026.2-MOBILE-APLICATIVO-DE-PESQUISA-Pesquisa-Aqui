@@ -6,6 +6,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from '../prisma.module.js';
 import { UserModule } from '../user/user.module.js';
 
+/**
+ * Módulo de autenticação: login, perfil do usuário logado, troca de senha e foto de perfil.
+ * Registra o JWT de forma global.
+ */
 @Module({
   imports: [
     PrismaModule,

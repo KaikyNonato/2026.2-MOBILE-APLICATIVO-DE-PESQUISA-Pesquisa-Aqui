@@ -107,6 +107,7 @@ function toComparableList(answer: AnswerValue): string[] {
     });
 }
 
+/** Diz se a resposta está vazia (nula, texto em branco ou lista vazia). */
 export function isAnswerEmpty(answer: AnswerValue): boolean {
     if (answer === null || answer === undefined) return true;
     if (typeof answer === 'string') return answer.trim() === '';

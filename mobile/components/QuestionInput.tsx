@@ -44,10 +44,12 @@ function sanitizeNumeric(text: string, allowNegative: boolean): string {
     return (negative ? '-' : '') + out;
 }
 
+/** Valor da resposta como texto (vazio se não for texto). */
 const asText = (value: AnswerValue) => (typeof value === 'string' ? value : '');
 
 // ---------- Um desenhista por tipo ----------
 
+/** Campo de texto. */
 function TextAnswer({ question, value, onChange, error, onBlur }: InputProps) {
     const { maxLength } = getQuestionLimits(question);
     const text = asText(value);
@@ -76,6 +78,7 @@ function TextAnswer({ question, value, onChange, error, onBlur }: InputProps) {
     );
 }
 
+/** Campo numérico, respeitando o mínimo e o máximo. */
 function NumericAnswer({ question, value, onChange, error, onBlur }: InputProps) {
     const { minValue, maxValue } = getQuestionLimits(question);
     const allowNegative = minValue === undefined || minValue < 0;
@@ -84,10 +87,10 @@ function NumericAnswer({ question, value, onChange, error, onBlur }: InputProps)
         minValue !== undefined && maxValue !== undefined
             ? `Entre ${minValue} e ${maxValue}`
             : minValue !== undefined
-              ? `Mínimo ${minValue}`
-              : maxValue !== undefined
-                ? `Máximo ${maxValue}`
-                : null;
+                ? `Mínimo ${minValue}`
+                : maxValue !== undefined
+                    ? `Máximo ${maxValue}`
+                    : null;
 
     return (
         <View style={styles.column}>
@@ -106,6 +109,7 @@ function NumericAnswer({ question, value, onChange, error, onBlur }: InputProps)
     );
 }
 
+/** Campo de data ou hora, que abre o seletor. */
 function PickerAnswer({
     mode,
     question,
@@ -156,6 +160,7 @@ function PickerAnswer({
 const sortedOptions = (question: PackageQuestion) =>
     [...(question.options ?? [])].sort((a, b) => a.order - b.order);
 
+/** Dois botões grandes, Sim e Não. */
 function YesNoAnswer({ value, onChange }: InputProps) {
     // Dois botões grandes, lado a lado, com altura para o polegar: dá para responder com uma mão.
     // É o tipo que mais dispara pulo, então o toque aqui precisa ser fácil e sem erro.
@@ -183,6 +188,7 @@ function YesNoAnswer({ value, onChange }: InputProps) {
     );
 }
 
+/** Escolha única: uma alternativa. */
 function SingleChoiceAnswer({ question, value, onChange }: InputProps) {
     const options = sortedOptions(question);
     return (
@@ -210,6 +216,7 @@ function SingleChoiceAnswer({ question, value, onChange }: InputProps) {
     );
 }
 
+/** Escolha múltipla, com mínimo e máximo de seleções. */
 function MultipleChoiceAnswer({ question, value, onChange }: InputProps) {
     const options = sortedOptions(question);
     const { minSelections, maxSelections } = getQuestionLimits(question);
@@ -271,6 +278,7 @@ function MultipleChoiceAnswer({ question, value, onChange }: InputProps) {
     );
 }
 
+/** Escala de 1 a 5, com rótulos nas pontas. */
 function ScaleAnswer({ question, value, onChange }: InputProps) {
     // Rótulos das pontas (1 e 5) cadastrados na web e entregues no pacote
     const left = question.scaleLeftLabel?.trim();
@@ -325,6 +333,7 @@ const ANSWER_COMPONENTS: Record<SupportedQuestionType, React.ComponentType<Input
 // em "12" não pode gritar "mínimo 10" no meio do caminho). Seletores validam na hora de escolher.
 const TYPED_TYPES = new Set<string>(['FREE_TEXT', 'NUMERIC']);
 
+/** Mostra o campo certo para cada tipo de questão e exibe o erro depois do primeiro toque. */
 export default function QuestionInput({ question, value, onChange, collectionId, audioBridge }: QuestionInputProps) {
     const [touched, setTouched] = useState(false);
 

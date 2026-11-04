@@ -2,6 +2,10 @@ import { db } from './db.js';
 import * as bcrypt from 'bcrypt';
 import { generateTemporaryPassword } from '../auth/password-policy.js';
 
+/**
+ * Cria o superadministrador inicial (usuário `admin`), com senha temporária que precisa ser trocada
+ * no primeiro acesso.
+ */
 async function main() {
   console.log('Iniciando seed...');
 

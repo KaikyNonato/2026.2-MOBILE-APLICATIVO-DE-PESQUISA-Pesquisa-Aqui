@@ -51,15 +51,18 @@ export interface ActivityItem {
 // Diferença mínima entre updatedAt e createdAt para considerar que houve uma edição de fato.
 const EDIT_THRESHOLD_MS = 2000;
 
+/** Converte um texto em data (`null` se vazio ou inválido). */
 const parseDate = (raw?: string): Date | null => {
     if (!raw) return null;
     const date = new Date(raw);
     return Number.isNaN(date.getTime()) ? null : date;
 };
 
+/** Diz se o registro foi alterado depois de criado (acima de `EDIT_THRESHOLD_MS`). */
 const wasEdited = (createdAt: Date | null, updatedAt: Date | null) =>
     !!createdAt && !!updatedAt && updatedAt.getTime() - createdAt.getTime() > EDIT_THRESHOLD_MS;
 
+/** Ordena as atividades da mais nova para a mais antiga e corta no limite. */
 const sortRecent = (items: ActivityItem[], limit: number) =>
     items.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, limit);
 

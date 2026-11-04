@@ -26,8 +26,11 @@ const MAX_AVATARS = 3;
 /** Faltando até este número de dias, a trilha ganha o tom de argila ("prazo perto"). */
 const SOON_DAYS = 14;
 
+/** Completa o número com zero à esquerda (2 dígitos). */
 const pad = (n: number) => String(n).padStart(2, "0");
+/** Escolhe entre o singular e o plural conforme o número. */
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+/** Formata o número com uma casa decimal e vírgula. */
 const dec = (n: number) => n.toFixed(1).replace(".", ",");
 
 /** Número do dia (independe de fuso e de horário de verão). */

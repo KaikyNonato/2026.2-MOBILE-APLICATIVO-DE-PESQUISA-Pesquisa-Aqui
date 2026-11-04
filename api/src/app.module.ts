@@ -16,6 +16,10 @@ import { DashboardModule } from './dashboard/dashboard.module.js';
 import { MediaModule } from './media/media.module.js';
 import { MediaUrlInterceptor } from './media/media-url.interceptor.js';
 
+/**
+ * Módulo principal: reúne os módulos da API, o limite de requisições por IP e a troca dos endereços
+ * do Cloudinary pelas rotas `/media`.
+ */
 @Module({
   imports: [
     // Limite geral por IP: 300 requisições por minuto. O login tem um limite próprio, mais baixo (ver AuthController).

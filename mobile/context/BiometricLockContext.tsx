@@ -24,8 +24,13 @@ interface BiometricLockValue {
     unlock: () => Promise<boolean>;
 }
 
+/** Contexto do bloqueio por biometria. */
 const BiometricLockContext = createContext<BiometricLockValue | null>(null);
 
+/**
+ * Provedor do bloqueio por biometria do aplicativo (disponibilidade, preferência do usuário e
+ * estado travado).
+ */
 export function BiometricLockProvider({ children }: { children: ReactNode }) {
     const { isAuthenticated, isLoading } = useAuth();
     const [available, setAvailable] = useState(false);
@@ -110,6 +115,7 @@ export function BiometricLockProvider({ children }: { children: ReactNode }) {
     return <BiometricLockContext.Provider value={value}>{children}</BiometricLockContext.Provider>;
 }
 
+/** Acessa o bloqueio por biometria. Só funciona dentro de `BiometricLockProvider`. */
 export function useBiometricLock() {
     const ctx = useContext(BiometricLockContext);
     if (!ctx) throw new Error('useBiometricLock deve ser usado dentro de BiometricLockProvider');

@@ -18,8 +18,10 @@ interface AuthContextValue {
   refreshUser: () => Promise<void>;
 }
 
+/** Contexto da sessão do usuário. */
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** Provedor da sessão: confere o token ao abrir o aplicativo e guarda o usuário logado. */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** Acessa a sessão do usuário. Só funciona dentro de `AuthProvider`. */
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth deve ser usado dentro de AuthProvider');

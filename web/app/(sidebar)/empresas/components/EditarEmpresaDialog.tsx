@@ -23,6 +23,7 @@ interface EditarEmpresaDialogProps {
     onSaved: (updated: CompanyItem) => void;
 }
 
+/** Caixa para editar uma empresa. */
 export default function EditarEmpresaDialog({ company, onOpenChange, onSaved }: EditarEmpresaDialogProps) {
     // Mantém a última empresa enquanto a caixa fecha, para o conteúdo não sumir no meio da animação.
     const [shown, setShown] = useState<CompanyItem | null>(company);
@@ -54,6 +55,7 @@ export default function EditarEmpresaDialog({ company, onOpenChange, onSaved }: 
     );
 }
 
+/** Formulário de edição da empresa, usado dentro da caixa. */
 function EditarEmpresaForm({
     company,
     onCancel,

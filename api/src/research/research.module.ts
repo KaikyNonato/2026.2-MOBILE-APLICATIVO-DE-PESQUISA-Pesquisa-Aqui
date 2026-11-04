@@ -6,6 +6,7 @@ import { ResearchTemplateService } from './research-template.service.js';
 import { PrismaModule } from '../prisma.module.js';
 import { StorageModule } from '../collection/storage.module.js';
 
+/** Módulo de pesquisas: cadastro, relatórios, exportações e modelos. */
 @Module({
   imports: [PrismaModule, StorageModule],
   controllers: [ResearchController],

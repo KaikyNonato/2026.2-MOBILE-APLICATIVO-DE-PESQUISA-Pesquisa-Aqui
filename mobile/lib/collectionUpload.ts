@@ -1,15 +1,22 @@
 import { File } from 'expo-file-system';
 import { apiFetch } from "./api";
 
-// Parte de arquivo para o FormData. O fetch do Expo não aceita o formato antigo do React Native
-// ({ uri, name, type }): só texto, Blob ou um objeto com `bytes()`. Aqui o arquivo é lido do aparelho
-// no momento do envio, e nome e tipo ficam sob controle do app (o servidor valida o tipo do áudio).
-// O File só lê endereço com esquema (file://, content://)
+/**
+ * Parte de arquivo para o FormData. O fetch do Expo não aceita o formato antigo do React Native
+ * ({ uri, name, type }): só texto, Blob ou um objeto com `bytes()`. Aqui o arquivo é lido do
+ * aparelho
+ * no momento do envio, e nome e tipo ficam sob controle do app (o servidor valida o tipo do áudio).
+ * O File só lê endereço com esquema (file://, content://)
+ */
 const toFileUri = (uri: string) => (/^[a-z][a-z0-9+.-]*:\/\//i.test(uri) ? uri : `file://${uri}`);
 
 /** Tamanho do arquivo no aparelho, em bytes (0 se não existe). */
 export const fileSizeOf = (uri: string): number => new File(toFileUri(uri)).size;
 
+/**
+ * Monta a parte de arquivo de um envio multipart a partir de um arquivo local, lendo os bytes só na
+ * hora de enviar.
+ */
 export function filePart(uri: string, name: string, type: string): Blob {
     const file = new File(toFileUri(uri));
     return { name, type, bytes: () => file.bytes() } as unknown as Blob;
@@ -78,13 +85,17 @@ export interface CollectionInput {
     questionAudios?: CollectionQuestionAudio[];
 }
 
-// O servidor recusou a coleta por falta do consentimento registrado (pesquisa com gravação).
+/** O servidor recusou a coleta por falta do consentimento registrado (pesquisa com gravação). */
 export class ConsentRequiredError extends Error { }
 
-// Monta o multipart da coleta: o campo `payload` (JSON) e um campo por tipo de arquivo.
-// O servidor liga cada arquivo à sua questão pela POSIÇÃO: `payload.photos[i]` descreve o i-ésimo `photos`,
-// e `payload.questionAudios[i]` o i-ésimo `questionAudios`. Por isso a lista e os arquivos saem do mesmo laço,
-// na mesma ordem, e não dependem de o nome do arquivo chegar intacto ao servidor.
+/**
+ * Monta o multipart da coleta: o campo `payload` (JSON) e um campo por tipo de arquivo.
+ * O servidor liga cada arquivo à sua questão pela POSIÇÃO: `payload.photos[i]` descreve o i-ésimo
+ * `photos`,
+ * e `payload.questionAudios[i]` o i-ésimo `questionAudios`. Por isso a lista e os arquivos saem do
+ * mesmo laço,
+ * na mesma ordem, e não dependem de o nome do arquivo chegar intacto ao servidor.
+ */
 export function buildCollectionFormData(input: CollectionInput): FormData {
     const photos = input.photos ?? [];
     const questionAudios = input.questionAudios ?? [];
@@ -179,7 +190,10 @@ export function listUploadFiles(input: CollectionInput): UploadFile[] {
     return files;
 }
 
-// Multipart de UM arquivo (POST /collection/:clientId/files): o arquivo e os campos que o ligam à coleta.
+/**
+ * Multipart de UM arquivo (POST /collection/:clientId/files): o arquivo e os campos que o ligam à
+ * coleta.
+ */
 export function buildFileFormData(file: UploadFile): FormData {
     const form = new FormData();
     form.append('name', file.name);
@@ -192,20 +206,23 @@ export function buildFileFormData(file: UploadFile): FormData {
 /** Tamanho de cada pedaço enviado. Pequeno o bastante para caber numa rede ruim, grande o bastante para não virar enxurrada de requisições. */
 export const UPLOAD_CHUNK_BYTES = 1024 * 1024;
 
-// Parte de arquivo montada de bytes que já estão na memória (um pedaço do arquivo).
+/** Parte de arquivo montada de bytes que já estão na memória (um pedaço do arquivo). */
 function bytesPart(bytes: Uint8Array, name: string, type: string): Blob {
     return { name, type, bytes: async () => bytes } as unknown as Blob;
 }
 
-// Query de GET /collection/:clientId/files/progress: "quanto deste arquivo o servidor já tem?"
+/** Query de GET /collection/:clientId/files/progress: "quanto deste arquivo o servidor já tem?" */
 export function buildProgressQuery(file: UploadFile, totalBytes: number): string {
     const params = new URLSearchParams({ name: file.name, totalBytes: String(totalBytes) });
     if (file.questionId !== undefined) params.set('questionId', String(file.questionId));
     return params.toString();
 }
 
-// Multipart de UM PEDAÇO (POST /collection/:clientId/files/chunk): os mesmos campos que identificam o arquivo
-// no envio inteiro, mais a posição do pedaço (`offset`) e o tamanho do arquivo todo (`totalBytes`).
+/**
+ * Multipart de UM PEDAÇO (POST /collection/:clientId/files/chunk): os mesmos campos que identificam
+ * o arquivo
+ * no envio inteiro, mais a posição do pedaço (`offset`) e o tamanho do arquivo todo (`totalBytes`).
+ */
 export function buildChunkFormData(file: UploadFile, offset: number, totalBytes: number, bytes: Uint8Array): FormData {
     const form = new FormData();
     form.append('name', file.name);
@@ -229,7 +246,7 @@ export async function readFileChunk(uri: string, offset: number, length: number)
     }
 }
 
-// Envia a coleta: respostas, consentimento (data, hora) e o áudio, tudo na mesma requisição.
+/** Envia a coleta: respostas, consentimento (data, hora) e o áudio, tudo na mesma requisição. */
 export async function uploadCollection(input: CollectionInput) {
     const response = await apiFetch('/collection', {
         method: 'POST',

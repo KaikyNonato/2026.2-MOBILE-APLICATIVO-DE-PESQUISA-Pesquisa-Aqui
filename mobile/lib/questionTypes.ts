@@ -31,12 +31,14 @@ export const DEFAULT_MAX_AUDIO_SECONDS = 600;
  */
 export const DEFAULT_MAX_PHOTOS = 10;
 
+/** Converte o valor em número (`undefined` se vazio ou inválido). */
 function toNumber(value: unknown): number | undefined {
     if (value === null || value === undefined || value === '') return undefined;
     const n = Number(value);
     return Number.isFinite(n) ? n : undefined;
 }
 
+/** Extrai `AAAA-MM-DD` de um texto (`undefined` se não casar). */
 function toIsoDate(value: unknown): string | undefined {
     if (typeof value !== 'string') return undefined;
     const m = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -89,6 +91,7 @@ export interface DateParts {
     year: number;
 }
 
+/** Quantos dias tem o mês (de 1 a 12) do ano. */
 export function daysInMonth(year: number, month: number): number {
     return new Date(year, month, 0).getDate();
 }
@@ -98,6 +101,7 @@ export function dateKey(d: DateParts): number {
     return d.year * 10000 + d.month * 100 + d.day;
 }
 
+/** Diz se dia, mês e ano formam uma data real. */
 function isRealDate(d: DateParts): boolean {
     return d.month >= 1 && d.month <= 12 && d.day >= 1 && d.day <= daysInMonth(d.year, d.month);
 }
@@ -119,10 +123,12 @@ export function parseIsoDate(text: string | undefined): DateParts | null {
     return isRealDate(parts) ? parts : null;
 }
 
+/** Formata a data como DD/MM/AAAA. */
 export function formatBrDate(d: DateParts): string {
     return `${String(d.day).padStart(2, '0')}/${String(d.month).padStart(2, '0')}/${d.year}`;
 }
 
+/** Lê `HH:MM` e devolve hora e minuto (`null` se for inválido). */
 export function parseTime(text: string): { hour: number; minute: number } | null {
     const m = text.match(/^(\d{2}):(\d{2})$/);
     if (!m) return null;
@@ -131,6 +137,7 @@ export function parseTime(text: string): { hour: number; minute: number } | null
     return hour <= 23 && minute <= 59 ? { hour, minute } : null;
 }
 
+/** Formata hora e minuto como `HH:MM`. */
 export function formatTime(hour: number, minute: number): string {
     return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
@@ -143,12 +150,14 @@ export function parseNumeric(text: string): number | null {
     return /^-?\d+(\.\d+)?$/.test(normalized) ? Number(normalized) : null;
 }
 
+/** Formata o número com vírgula decimal. */
 const formatNumber = (n: number) => String(n).replace('.', ',');
 
 // ---------- Comportamento por tipo ----------
 
 type Validator = (question: PackageQuestion, value: AnswerValue) => string | null;
 
+/** Valida o tamanho máximo do texto. Devolve a mensagem de erro ou `null`. */
 function validateText(question: PackageQuestion, value: AnswerValue): string | null {
     const { maxLength } = getQuestionLimits(question);
     if (typeof value !== 'string' || maxLength === undefined) return null;
@@ -157,6 +166,7 @@ function validateText(question: PackageQuestion, value: AnswerValue): string | n
         : null;
 }
 
+/** Valida se o número está entre o mínimo e o máximo da questão. */
 function validateNumeric(question: PackageQuestion, value: AnswerValue): string | null {
     const { minValue, maxValue } = getQuestionLimits(question);
     const n = typeof value === 'number' ? value : parseNumeric(String(value));
@@ -181,6 +191,7 @@ export function describeDateRange(question: PackageQuestion): string | null {
     return null;
 }
 
+/** Valida a data no formato DD/MM/AAAA e os limites da questão. */
 function validateDate(question: PackageQuestion, value: AnswerValue): string | null {
     const date = typeof value === 'string' ? parseBrDate(value) : null;
     if (!date) return 'Informe uma data válida no formato DD/MM/AAAA.';
@@ -192,10 +203,12 @@ function validateDate(question: PackageQuestion, value: AnswerValue): string | n
     return outOfRange ? `Informe uma data ${describeDateRange(question)}.` : null;
 }
 
+/** Valida o horário no formato `HH:MM`. */
 function validateTime(_question: PackageQuestion, value: AnswerValue): string | null {
     return typeof value === 'string' && parseTime(value) ? null : 'Informe um horário válido no formato HH:MM.';
 }
 
+/** Valida o mínimo e o máximo de alternativas marcadas. */
 function validateMultipleChoice(question: PackageQuestion, value: AnswerValue): string | null {
     const { minSelections, maxSelections } = getQuestionLimits(question);
     const count = Array.isArray(value) ? value.length : 0;
@@ -223,6 +236,7 @@ export function getPhotoUris(value: AnswerValue): string[] {
     return [];
 }
 
+/** Valida a quantidade de fotos, dentro do limite da questão. */
 function validatePhotos(question: PackageQuestion, value: AnswerValue): string | null {
     const limit = getPhotoLimit(question);
     const count = getPhotoUris(value).length;
@@ -248,6 +262,7 @@ export function serializeAudioAnswer(value: AudioAnswerValue): string {
     return JSON.stringify(value);
 }
 
+/** Lê a resposta de áudio (JSON guardado). Devolve `null` se for inválida. */
 export function parseAudioAnswer(value: AnswerValue): AudioAnswerValue | null {
     if (typeof value !== 'string' || value.trim() === '') return null;
     try {
@@ -259,6 +274,7 @@ export function parseAudioAnswer(value: AnswerValue): AudioAnswerValue | null {
     }
 }
 
+/** Endereços locais do áudio da resposta (lista vazia se não houver). */
 export function getAudioUris(value: AnswerValue): string[] {
     const audio = parseAudioAnswer(value);
     return audio ? [audio.uri] : [];
@@ -300,6 +316,7 @@ export function isLowAccuracy(accuracy: number | null | undefined): boolean {
     return accuracy > LOW_ACCURACY_THRESHOLD_METERS;
 }
 
+/** Diz se latitude e longitude são números dentro dos limites. */
 const isValidCoordinate = (latitude: number, longitude: number) =>
     Number.isFinite(latitude) &&
     Number.isFinite(longitude) &&

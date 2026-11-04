@@ -27,6 +27,7 @@ export const Colors = {
   },
 };
 
+/** Famílias de fonte de cada plataforma (iOS, Android e web). */
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

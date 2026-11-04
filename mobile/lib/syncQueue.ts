@@ -21,7 +21,10 @@ import { createSyncEngine, type SendOutcome } from './syncEngine';
 // É um só para o app inteiro: a tela de sincronização, o envio automático e o fim da coleta usam este mesmo.
 // Como vive fora das telas, o envio continua mesmo que o pesquisador saia da tela ou comece outra coleta.
 
-// Monta o envio de uma coleta finalizada a partir do que está no aparelho. Devolve o motivo da falha se não der.
+/**
+ * Monta o envio de uma coleta finalizada a partir do que está no aparelho. Devolve o motivo da
+ * falha se não der.
+ */
 async function loadInput(clientId: string): Promise<{ input: CollectionInput } | { failure: SendOutcome }> {
     const collection = await getCollection(clientId);
     if (!collection || collection.status !== 'FINISHED') {
@@ -45,7 +48,12 @@ async function loadInput(clientId: string): Promise<{ input: CollectionInput } |
     return { input: await buildCollectionInput(collection, orderedQuestions(pkg), pkg.displayRules) };
 }
 
+/**
+ * Fila de envio de coletas do aplicativo: liga o motor de sincronização ao armazenamento local e à
+ * rede.
+ */
 export const syncQueue = createSyncEngine({
+    /** Lista as coletas aguardando envio, com a última falha de cada uma. */
     async listQueue() {
         return (await listSendQueue()).map((collection) => ({
             clientId: collection.clientId,
@@ -54,13 +62,17 @@ export const syncQueue = createSyncEngine({
         }));
     },
 
-    // Etapa 1: só as respostas. Os arquivos sobem depois (sendFiles), cada um por conta própria.
+    /** Etapa 1: só as respostas. Os arquivos sobem depois (sendFiles), cada um por conta própria. */
     async send(clientId) {
         const loaded = await loadInput(clientId);
         if ('failure' in loaded) return loaded.failure;
         return sendCollection(loaded.input);
     },
 
+    /**
+     * Chamado quando o servidor aceita a coleta: marca como enviada e monta a lista de arquivos a
+     * confirmar. Sem como montá-la, a coleta sai da fila.
+     */
     async onCollectionSent(clientId) {
         await markCollectionSent(clientId);
         const loaded = await loadInput(clientId);
@@ -70,7 +82,7 @@ export const syncQueue = createSyncEngine({
         return listUploadFiles(loaded.input).some((file) => !uploaded.includes(file.key));
     },
 
-    // Etapa 2: os arquivos que o servidor ainda não tem. O que já subiu não sobe de novo.
+    /** Etapa 2: os arquivos que o servidor ainda não tem. O que já subiu não sobe de novo. */
     async sendFiles(clientId) {
         const loaded = await loadInput(clientId);
         if ('failure' in loaded) return loaded.failure;
@@ -90,6 +102,10 @@ export const syncQueue = createSyncEngine({
         return outcome;
     },
 
+    /**
+     * Chamado quando o servidor confirma tudo (inclusive os arquivos): guarda a coleta no histórico
+     * de enviadas.
+     */
     async onConfirmed(clientId) {
         const collection = await getCollection(clientId);
         // Fica o registro de que chegou (histórico de enviadas). Se não gravar, a coleta sai da fila do mesmo jeito.
@@ -110,6 +126,7 @@ export const syncQueue = createSyncEngine({
 
     onFailed: recordSendFailure,
 
+    /** Diz se o aparelho tem rede que alcança a internet. */
     async isOnline() {
         return isNetworkReachable(await NetInfo.fetch());
     },

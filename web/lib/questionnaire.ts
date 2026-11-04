@@ -25,7 +25,9 @@ const TYPE_FROM_BACKEND: Record<BackendQuestionType, FrontendQuestionType> = {
     "LOCATION": "location", "AUDIO": "audio",
 };
 
+/** Converte o tipo de questão do formulário para o tipo usado pela API. */
 export const toBackendType = (type: FrontendQuestionType): BackendQuestionType => TYPE_TO_BACKEND[type];
+/** Converte o tipo de questão da API para o do formulário (`text` se for desconhecido). */
 export function fromBackendType(type: BackendQuestionType): FrontendQuestionType { return TYPE_FROM_BACKEND[type] ?? "text"; }
 
 export interface Option { id: string; text: string; order: number; }
@@ -90,8 +92,10 @@ export interface RuleConditionInput {
     triggerValue: string;
 }
 
-// A API devolve 409 quando a operação mexeria em regras; nada foi alterado ainda.
-// Repetir a chamada com force=true confirma e apaga essas regras.
+/**
+ * A API devolve 409 quando a operação mexeria em regras; nada foi alterado ainda.
+ * Repetir a chamada com force=true confirma e apaga essas regras.
+ */
 export class RulesConflictError extends Error {
     rules: DisplayRule[];
     constructor(message: string, rules: DisplayRule[]) {
@@ -101,6 +105,10 @@ export class RulesConflictError extends Error {
     }
 }
 
+/**
+ * Lê o erro da API e lança: conflito de regras de exibição (409) vira `RulesConflictError`; o resto
+ * vira `Error` com a mensagem.
+ */
 async function throwApiError(response: Response, fallback: string): Promise<never> {
     const body = await response.json().catch(() => null);
     if (response.status === 409 && body?.code === "RULES_CONFLICT") {
@@ -110,8 +118,10 @@ async function throwApiError(response: Response, fallback: string): Promise<neve
     throw new Error(message || fallback);
 }
 
+/** Monta o `?force=true` das chamadas que confirmam uma alteração mesmo afetando regras. */
 const forceQuery = (force?: boolean) => (force ? "?force=true" : "");
 
+/** Monta o texto de confirmação que lista as regras de exibição afetadas. */
 export function describeRulesConflict(error: RulesConflictError): string {
     const lines = error.rules.map(
         (r) => `• ${r.targetLabel}: ${r.action === "HIDE" ? "some" : "só aparece"} se ${r.sourceLabel} ${r.operatorLabel} ${r.triggerLabel}`
@@ -142,11 +152,13 @@ export async function withRulesConfirm<T>(
     }
 }
 
+/** Lista as regras de exibição de uma pesquisa. */
 export const getRulesApi = async (researchId: number): Promise<DisplayRule[]> => {
     const response = await apiFetch(`/question-rule?researchId=${researchId}`, { method: 'GET', credentials: 'include' });
     if (!response.ok) return throwApiError(response, 'Failed to get rules');
     return response.json();
-}
+};
+/** Cria uma regra de exibição. */
 export const createRuleApi = async (payload: {
     conditions: RuleConditionInput[]; targetQuestionId?: number; targetSectionId?: number; action?: "SHOW" | "HIDE";
 }): Promise<DisplayRule> => {
@@ -156,19 +168,21 @@ export const createRuleApi = async (payload: {
     });
     if (!response.ok) return throwApiError(response, 'Falha ao criar a regra');
     return response.json();
-}
+};
+/** Exclui uma regra de exibição. */
 export const deleteRuleApi = async (id: number) => {
     const response = await apiFetch(`/question-rule/${id}`, { method: 'DELETE', credentials: 'include' });
     if (!response.ok) return throwApiError(response, 'Falha ao excluir a regra');
     return response.json();
-}
+};
 
-// === SEÇÕES ===
+/** === SEÇÕES === */
 export const getSections = async (researchId: number) => {
     const response = await apiFetch(`/section?researchId=${researchId}`, { method: 'GET', credentials: 'include' });
     if (!response.ok) throw new Error('Failed to get sections');
     return response.json();
-}
+};
+/** Cria uma seção na pesquisa. */
 export const createSection = async (title: string, order: number, researchId: number) => {
     const response = await apiFetch(`/section`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -176,7 +190,8 @@ export const createSection = async (title: string, order: number, researchId: nu
     });
     if (!response.ok) throw new Error('Failed to create section');
     return response.json();
-}
+};
+/** Edita o título ou a ordem de uma seção. */
 export const updateSectionApi = async (id: number, payload: { title?: string; order?: number }) => {
     const response = await apiFetch(`/section/${id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -184,13 +199,14 @@ export const updateSectionApi = async (id: number, payload: { title?: string; or
     });
     if (!response.ok) throw new Error('Failed to update section');
     return response.json();
-}
+};
+/** Exclui uma seção. Com `force`, confirma mesmo afetando regras. */
 export const deleteSectionApi = async (id: number, force = false) => {
     const response = await apiFetch(`/section/${id}${forceQuery(force)}`, { method: 'DELETE' });
     if (!response.ok) return throwApiError(response, 'Failed to delete section');
     return response.json();
-}
-// Reordena todas as seções de uma vez (a API valida as regras no resultado final).
+};
+/** Reordena todas as seções de uma vez (a API valida as regras no resultado final). */
 export const reorderSectionsApi = async (researchId: number, orderedIds: number[], force = false) => {
     const response = await apiFetch(`/section/reorder`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -198,14 +214,15 @@ export const reorderSectionsApi = async (researchId: number, orderedIds: number[
     });
     if (!response.ok) return throwApiError(response, 'Failed to reorder sections');
     return response.json();
-}
+};
 
-// === QUESTÕES ===
+/** === QUESTÕES === */
 export const getQuestions = async (sectionId: number) => {
     const response = await apiFetch(`/question?sectionId=${sectionId}`, { method: 'GET', credentials: 'include' });
     if (!response.ok) throw new Error('Failed to get questions');
     return response.json();
-}
+};
+/** Cria uma questão. */
 export const createQuestion = async (payload: any) => {
     const response = await apiFetch(`/question`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -213,7 +230,8 @@ export const createQuestion = async (payload: any) => {
     });
     if (!response.ok) throw new Error('Failed to create question');
     return response.json();
-}
+};
+/** Edita uma questão. Com `force`, confirma mesmo afetando regras. */
 export const updateQuestionApi = async (id: number, payload: any, force = false) => {
     const response = await apiFetch(`/question/${id}${forceQuery(force)}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -221,13 +239,14 @@ export const updateQuestionApi = async (id: number, payload: any, force = false)
     });
     if (!response.ok) return throwApiError(response, 'Failed to update question');
     return response.json();
-}
+};
+/** Exclui uma questão. Com `force`, confirma mesmo afetando regras. */
 export const deleteQuestionApi = async (id: number, force = false) => {
     const response = await apiFetch(`/question/${id}${forceQuery(force)}`, { method: 'DELETE' });
     if (!response.ok) return throwApiError(response, 'Failed to delete question');
     return response.json();
-}
-// Reordena todas as questões de uma seção de uma vez (a API valida as regras no resultado final).
+};
+/** Reordena todas as questões de uma seção de uma vez (a API valida as regras no resultado final). */
 export const reorderQuestionsApi = async (sectionId: number, orderedIds: number[], force = false) => {
     const response = await apiFetch(`/question/reorder`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -235,9 +254,9 @@ export const reorderQuestionsApi = async (sectionId: number, orderedIds: number[
     });
     if (!response.ok) return throwApiError(response, 'Failed to reorder questions');
     return response.json();
-}
+};
 
-// === OPÇÕES ===
+/** === OPÇÕES === */
 export const createOptionApi = async (questionId: number, text: string, order: number) => {
     const response = await apiFetch(`/question/${questionId}/option`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -245,7 +264,8 @@ export const createOptionApi = async (questionId: number, text: string, order: n
     });
     if (!response.ok) throw new Error('Failed to create option');
     return response.json();
-}
+};
+/** Edita o texto ou a ordem de uma alternativa. */
 export const updateOptionApi = async (id: number, payload: { text?: string; order?: number }) => {
     const response = await apiFetch(`/question/option/${id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -253,18 +273,21 @@ export const updateOptionApi = async (id: number, payload: { text?: string; orde
     });
     if (!response.ok) throw new Error('Failed to update option');
     return response.json();
-}
+};
+/** Exclui uma alternativa. Com `force`, confirma mesmo afetando regras. */
 export const deleteOptionApi = async (id: number, force = false) => {
     const response = await apiFetch(`/question/option/${id}${forceQuery(force)}`, { method: 'DELETE', credentials: 'include' });
     if (!response.ok) return throwApiError(response, 'Failed to delete option');
     return response.json();
-}
+};
+/** Lista as alternativas de uma questão. */
 export const getOptionsApi = async (questionId: number) => {
     const response = await apiFetch(`/question/${questionId}/options`, { method: 'GET', credentials: 'include' });
     if (!response.ok) return [];
     return response.json();
-}
+};
 
+/** Carrega o questionário inteiro (seções, questões e alternativas) numa só chamada. */
 export const loadQuestionnaire = async (researchId: number): Promise<FormSection[]> => {
     // Uma só chamada traz seções, questões e alternativas (antes eram uma por seção e uma por questão).
     const response = await apiFetch(`/section/questionnaire?researchId=${researchId}`, { method: 'GET', credentials: 'include' });
@@ -302,8 +325,9 @@ export const loadQuestionnaire = async (researchId: number): Promise<FormSection
                         .map((o: any) => ({ id: String(o.id), text: o.text, order: o.order })),
                 })),
         }));
-}
+};
 
+/** Salva o questionário montado no formulário, criando seções, questões e alternativas na API. */
 export const saveQuestionnaire = async (researchId: number, sections: FormSection[]): Promise<void> => {
     for (let sIndex = 0; sIndex < sections.length; sIndex++) {
         const sec = sections[sIndex];

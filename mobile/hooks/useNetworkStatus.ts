@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 
+/** Diz se o aparelho está online, acompanhando as mudanças. */
 export const useNetworkStatus = (): boolean => {
     const [isOnline, setIsOnline] = useState(true);
 
@@ -10,9 +11,9 @@ export const useNetworkStatus = (): boolean => {
         });
 
         return () => unsubscribe();
-    }, [])
+    }, []);
 
     return isOnline;
-}
+};
 
-export default useNetworkStatus
+export default useNetworkStatus;

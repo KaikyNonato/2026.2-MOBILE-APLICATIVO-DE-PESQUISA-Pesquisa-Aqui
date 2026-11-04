@@ -5,14 +5,14 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "@/components/ui/dialog"
-import { useState } from "react"
+} from "@/components/ui/dialog";
+import { useState } from "react";
 import {
     Button
-} from "@/components/ui/button"
+} from "@/components/ui/button";
 
 type DialogLayoutProps = {
-    triggerButtonVariant?: "link" | "default" | "outline" | "secondary" | "ghost" | "destructive"
+    triggerButtonVariant?: "link" | "default" | "outline" | "secondary" | "ghost" | "destructive";
     dialogTrigger?: React.ReactNode;
     /** Conteúdo do diálogo. Pode ser uma função que recebe `close` para fechar o diálogo (ex.: depois de salvar). */
     dialogContent?: React.ReactNode | ((close: () => void) => React.ReactNode);
@@ -22,8 +22,9 @@ type DialogLayoutProps = {
     triggerButtonSize?: "default" | "sm" | "lg" | "xs";
 };
 
+/** Caixa de diálogo pronta: botão que abre, título, descrição e conteúdo. */
 export default function DialogLayout({ triggerButtonVariant, dialogTrigger, dialogTitle, dialogDescription, dialogContent, dialogContentClassName, triggerButtonSize }: DialogLayoutProps) {
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(false);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -45,5 +46,5 @@ export default function DialogLayout({ triggerButtonVariant, dialogTrigger, dial
                 </div>
             </DialogContent>
         </Dialog>
-    )
+    );
 }

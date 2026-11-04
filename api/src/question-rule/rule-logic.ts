@@ -35,8 +35,10 @@ export interface NewRuleInput {
   triggerValue: string;
 }
 
+/** Diz se o tipo da questão é de escolha (única ou múltipla). */
 const isChoice = (type: string) => type === 'SINGLE_CHOICE' || type === 'MULTIPLE_CHOICE';
 
+/** Diz se uma questão desse tipo pode ser a origem de uma regra de exibição. */
 export function canBeRuleSource(type: string): boolean {
   return (RULE_SOURCE_TYPES as readonly string[]).includes(type);
 }
@@ -53,10 +55,12 @@ export function buildRanking(questions: StructQuestion[]): Map<number, number> {
   return new Map(sorted.map((q, index) => [q.id, index]));
 }
 
+/** Rótulo curto da questão, no formato "Seção X · QY". */
 export function questionLabel(q: StructQuestion): string {
   return `Seção ${q.sectionOrder} · Q${q.order}`;
 }
 
+/** Texto legível do valor que dispara a regra (Sim/Não, o texto da alternativa ou o próprio valor). */
 export function triggerLabel(q: StructQuestion | undefined, triggerValue: string): string {
   if (!q) return triggerValue;
   if (q.type === 'YES_NO') return triggerValue === 'YES' ? 'Sim' : triggerValue === 'NO' ? 'Não' : triggerValue;
@@ -161,7 +165,6 @@ export function findRulesWithInvalidTrigger(question: StructQuestion, edges: Rul
   );
 }
 
-
 // =====================================================================================================
 // Regras avançadas: operadores, grupos E/OU, pulo de seção.
 //
@@ -192,6 +195,7 @@ export const OPERATOR_LABELS: Record<RuleOperator, string> = {
   NOT_ANSWERED: 'não foi respondida',
 };
 
+/** Diz se o valor é um operador de regra válido. */
 export const isOperator = (value: unknown): value is RuleOperator =>
   typeof value === 'string' && (OPERATORS as readonly string[]).includes(value);
 
@@ -208,6 +212,7 @@ export function operatorsFor(type: string): RuleOperator[] {
   return list;
 }
 
+/** Diz se o operador precisa de um valor (todos precisam, menos "respondida" e "não respondida"). */
 export const needsValue = (operator: string) => operator !== 'ANSWERED' && operator !== 'NOT_ANSWERED';
 
 export interface Condition {

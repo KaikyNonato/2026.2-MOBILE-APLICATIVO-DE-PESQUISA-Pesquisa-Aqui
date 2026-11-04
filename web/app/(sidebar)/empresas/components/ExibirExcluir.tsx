@@ -67,12 +67,17 @@ const PROFILE_TRANSLATION: Record<string, string> = {
     RESEARCHER: 'Pesquisador',
 };
 
+/** Formata uma data ISO como dd/mm/aaaa (vazio se for inválida). */
 const formatDate = (iso?: string) => {
     if (!iso) return '';
     const d = new Date(iso);
     return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR');
 };
 
+/**
+ * Lista de empresas usada no painel inicial do superadministrador, com as ações de editar,
+ * desativar e excluir (quando permitidas).
+ */
 export default function ExibirEditar({
     allowActions = true,
     counts,
@@ -365,7 +370,6 @@ export default function ExibirEditar({
             } as DataColumn<Admin>]
             : []),
     ];
-
 
     return (
         <div className="flex flex-col">

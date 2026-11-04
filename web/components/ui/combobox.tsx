@@ -1,24 +1,26 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Combobox as ComboboxPrimitive } from "@base-ui/react"
+import * as React from "react";
+import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from "@/components/ui/input-group"
-import { ChevronDownIcon, XIcon, CheckIcon } from "lucide-react"
+} from "@/components/ui/input-group";
+import { ChevronDownIcon, XIcon, CheckIcon } from "lucide-react";
 
-const Combobox = ComboboxPrimitive.Root
+const Combobox = ComboboxPrimitive.Root;
 
+/** Valor selecionado do combobox. */
 function ComboboxValue({ ...props }: ComboboxPrimitive.Value.Props) {
-  return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />
+  return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />;
 }
 
+/** Botão que abre a lista do combobox. */
 function ComboboxTrigger({
   className,
   children,
@@ -33,9 +35,10 @@ function ComboboxTrigger({
       {children}
       <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />
     </ComboboxPrimitive.Trigger>
-  )
+  );
 }
 
+/** Botão que limpa a seleção. */
 function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
   return (
     <ComboboxPrimitive.Clear
@@ -46,9 +49,10 @@ function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
     >
       <XIcon className="pointer-events-none" />
     </ComboboxPrimitive.Clear>
-  )
+  );
 }
 
+/** Campo de busca do combobox. */
 function ComboboxInput({
   className,
   children,
@@ -57,8 +61,8 @@ function ComboboxInput({
   showClear = false,
   ...props
 }: ComboboxPrimitive.Input.Props & {
-  showTrigger?: boolean
-  showClear?: boolean
+  showTrigger?: boolean;
+  showClear?: boolean;
 }) {
   return (
     <InputGroup className={cn("w-auto", className)}>
@@ -81,9 +85,10 @@ function ComboboxInput({
       </InputGroupAddon>
       {children}
     </InputGroup>
-  )
+  );
 }
 
+/** Painel flutuante com a lista de opções. */
 function ComboboxContent({
   className,
   side = "bottom",
@@ -110,14 +115,15 @@ function ComboboxContent({
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
           data-chips={!!anchor}
-          className={cn("group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className )}
+          className={cn("group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className)}
           {...props}
         />
       </ComboboxPrimitive.Positioner>
     </ComboboxPrimitive.Portal>
-  )
+  );
 }
 
+/** Lista rolável de opções. */
 function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
   return (
     <ComboboxPrimitive.List
@@ -128,9 +134,10 @@ function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
       )}
       {...props}
     />
-  )
+  );
 }
 
+/** Uma opção do combobox. */
 function ComboboxItem({
   className,
   children,
@@ -154,9 +161,10 @@ function ComboboxItem({
         <CheckIcon className="pointer-events-none" />
       </ComboboxPrimitive.ItemIndicator>
     </ComboboxPrimitive.Item>
-  )
+  );
 }
 
+/** Grupo de opções. */
 function ComboboxGroup({ className, ...props }: ComboboxPrimitive.Group.Props) {
   return (
     <ComboboxPrimitive.Group
@@ -164,9 +172,10 @@ function ComboboxGroup({ className, ...props }: ComboboxPrimitive.Group.Props) {
       className={cn(className)}
       {...props}
     />
-  )
+  );
 }
 
+/** Título de um grupo de opções. */
 function ComboboxLabel({
   className,
   ...props
@@ -177,15 +186,17 @@ function ComboboxLabel({
       className={cn("px-2 py-1.5 text-xs text-muted-foreground", className)}
       {...props}
     />
-  )
+  );
 }
 
+/** Coleção de itens renderizada a partir de uma lista. */
 function ComboboxCollection({ ...props }: ComboboxPrimitive.Collection.Props) {
   return (
     <ComboboxPrimitive.Collection data-slot="combobox-collection" {...props} />
-  )
+  );
 }
 
+/** Mensagem exibida quando nenhuma opção bate com a busca. */
 function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
   return (
     <ComboboxPrimitive.Empty
@@ -196,9 +207,10 @@ function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
       )}
       {...props}
     />
-  )
+  );
 }
 
+/** Linha que separa grupos de opções. */
 function ComboboxSeparator({
   className,
   ...props
@@ -209,9 +221,10 @@ function ComboboxSeparator({
       className={cn("-mx-1 my-1 h-px bg-border", className)}
       {...props}
     />
-  )
+  );
 }
 
+/** Área que mostra as opções escolhidas como chips (seleção múltipla). */
 function ComboboxChips({
   className,
   ...props
@@ -226,16 +239,17 @@ function ComboboxChips({
       )}
       {...props}
     />
-  )
+  );
 }
 
+/** Um chip de opção escolhida. */
 function ComboboxChip({
   className,
   children,
   showRemove = true,
   ...props
 }: ComboboxPrimitive.Chip.Props & {
-  showRemove?: boolean
+  showRemove?: boolean;
 }) {
   return (
     <ComboboxPrimitive.Chip
@@ -257,9 +271,10 @@ function ComboboxChip({
         </ComboboxPrimitive.ChipRemove>
       )}
     </ComboboxPrimitive.Chip>
-  )
+  );
 }
 
+/** Campo de busca dentro da área de chips. */
 function ComboboxChipsInput({
   className,
   ...props
@@ -270,11 +285,12 @@ function ComboboxChipsInput({
       className={cn("min-w-16 flex-1 outline-none", className)}
       {...props}
     />
-  )
+  );
 }
 
+/** Referência usada para ancorar o painel do combobox no seu campo. */
 function useComboboxAnchor() {
-  return React.useRef<HTMLDivElement | null>(null)
+  return React.useRef<HTMLDivElement | null>(null);
 }
 
 export {
@@ -294,4 +310,4 @@ export {
   ComboboxTrigger,
   ComboboxValue,
   useComboboxAnchor,
-}
+};

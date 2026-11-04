@@ -79,11 +79,13 @@ export async function changePassword(currentPassword: string, newPassword: strin
     if (data.access_token) await saveToken(data.access_token);
 }
 
+/** Diz se há um token guardado. */
 export async function isLoggedIn(): Promise<boolean> {
     const token = await getToken();
     return !!token;
 }
 
+/** Busca o usuário logado (`/auth/me`). Devolve `null` se falhar. */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
     try {
         const response = await apiFetch('/auth/me');
@@ -94,6 +96,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     }
 }
 
+/** Encerra a sessão: devolve as cópias ao servidor e apaga o token. */
 export async function logout(): Promise<void> {
     // Antes de apagar o token (a API precisa dele): devolve as cópias, para o contador de cópias do servidor cair.
     await returnAllCopies().catch(() => undefined);
@@ -104,6 +107,7 @@ export async function logout(): Promise<void> {
     await clearResearchesCache();
 }
 
+/** Extrai a mensagem de erro da resposta da API (ou usa o texto de reserva). */
 async function readError(response: Response, fallback: string): Promise<string> {
     const data = await response.json().catch(() => ({}));
     const message = Array.isArray(data?.message) ? data.message[0] : data?.message;

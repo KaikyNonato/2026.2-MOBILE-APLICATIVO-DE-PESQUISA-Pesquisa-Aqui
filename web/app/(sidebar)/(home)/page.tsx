@@ -1,10 +1,14 @@
-'use client'
+'use client';
 
-import { useCurrentUser } from "@/hooks/useCurrentUser"
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import SuperAdmPage from "./components/SuperAdmPage";
 import AdmPage from "./components/AdmPage";
 import PesquisadorPage from "./components/PesquisadorPage";
 
+/**
+ * Página inicial: mostra o painel do perfil do usuário (superadministrador, administrador ou
+ * pesquisador).
+ */
 export default function Home() {
     const { user } = useCurrentUser();
 

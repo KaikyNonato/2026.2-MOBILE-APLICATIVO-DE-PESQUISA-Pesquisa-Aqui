@@ -3,6 +3,10 @@ import { logout } from "./auth";
 // Caminho do próprio painel: o next.config.ts repassa /api/* para a API (variável API_URL).
 const API_BASE_URL = "/api";
 
+/**
+ * Chamada única à API do painel (`/api/...`). Em upload com FormData deixa o navegador montar o
+ * Content-Type; um 401 faz logout, e a senha temporária redireciona para a troca de senha.
+ */
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
     // Upload (FormData): o navegador monta o Content-Type com o separador do multipart; fixar JSON quebraria o envio.
     const isForm = typeof FormData !== 'undefined' && options.body instanceof FormData;
@@ -34,6 +38,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     return response;
 }
 
+/** Diz se o erro é o de sessão expirada (`Session expired`). */
 export function isSessionExpiredError(error: unknown): boolean {
     return error instanceof Error && error.message === 'Session expired';
 }

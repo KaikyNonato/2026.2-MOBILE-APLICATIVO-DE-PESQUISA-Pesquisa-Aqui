@@ -8,6 +8,7 @@ interface DecoratedCardProps {
     style?: StyleProp<ViewStyle>; // Permite passar estilos extras (padding, margens, etc)
 }
 
+/** Card decorativo com gradiente. */
 export default function InfoCard({ children, style }: DecoratedCardProps) {
     return (
         <LinearGradient

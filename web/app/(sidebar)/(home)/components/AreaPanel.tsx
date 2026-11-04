@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { CountUp } from "@/components/ui/count-up";
 import { useId, useMemo, useState, type ReactNode } from "react";
@@ -26,6 +26,7 @@ const PR = 10;
 const PT = 24;
 const PB = 30;
 
+/** Formata um número em pt-BR, com até uma casa decimal. */
 const formatNumber = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
 
 /** Gráfico de área com cursor: passe o mouse ou use as setas para ler cada mês. */

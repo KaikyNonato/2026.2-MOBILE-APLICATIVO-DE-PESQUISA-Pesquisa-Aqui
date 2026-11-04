@@ -4,6 +4,7 @@ import "./globals.css";
 import "./responsive.css";
 import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 
+/** Fonte Hanken Grotesk, carregada pelo Next. */
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken",
   subsets: ["latin"],
@@ -22,6 +23,7 @@ export const viewport: Viewport = {
   themeColor: "#f2f4f1",
 };
 
+/** Layout raiz do painel: fonte, idioma e estilos globais. */
 export default function RootLayout({
   children,
 }: Readonly<{

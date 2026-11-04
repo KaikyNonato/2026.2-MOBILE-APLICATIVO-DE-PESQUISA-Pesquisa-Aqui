@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Button } from "@/components/ui/button";
 import { RemoteComboBox } from "@/components/ui/remoteCombobox";
@@ -15,6 +15,7 @@ interface CadastrarPesquisadorFormProps {
     onSuccess?: () => void;
 }
 
+/** Formulário de cadastro de pesquisador. */
 export default function CadastrarPesquisadorForm({ isSuperAdmin = false, onSuccess }: CadastrarPesquisadorFormProps) {
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');

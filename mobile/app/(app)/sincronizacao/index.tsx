@@ -36,6 +36,7 @@ import { useSyncState } from '@/hooks/useSyncQueue';
 
 const EMPTY_USAGE: StorageReport = { photosBytes: 0, audioBytes: 0, totalBytes: 0, freeBytes: null, releasableBytes: 0 };
 
+/** Escreve o número com a palavra no singular ou no plural. */
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 type HistoryTab = 'enviadas' | 'pendentes' | 'falhas';
@@ -54,6 +55,7 @@ const enter = (index: number) =>
         .duration(480)
         .easing(Easing.out(Easing.cubic));
 
+/** Título de uma seção da tela, com texto opcional à direita. */
 function SectionHeader({ title, right }: { title: string; right?: string }) {
     return (
         <View style={styles.sectionHeader}>
@@ -63,6 +65,7 @@ function SectionHeader({ title, right }: { title: string; right?: string }) {
     );
 }
 
+/** Número em destaque no topo da tela, com o rótulo. */
 function HeroStat({ value, label, alert }: { value: number; label: string; alert?: boolean }) {
     return (
         <View style={styles.stat}>
@@ -72,6 +75,10 @@ function HeroStat({ value, label, alert }: { value: number; label: string; alert
     );
 }
 
+/**
+ * Tela de sincronização: fila de envio, progresso das pesquisas e histórico de enviadas, pendentes
+ * e com falha.
+ */
 export default function Sincronizacao() {
     const [collections, setCollections] = useState<LocalCollection[]>([]);
     const [researches, setResearches] = useState<Research[]>([]);
@@ -140,8 +147,8 @@ export default function Sincronizacao() {
         Alert.alert(
             'Descartar esta coleta?',
             `As respostas, fotos e áudios da coleta ${item.clientId.slice(0, 8)} serão apagados deste aparelho e NÃO serão enviados ao servidor. ` +
-                `Motivo da recusa: ${item.sendState?.lastFailure?.reason ?? 'o servidor não aceitou esta coleta'} ` +
-                'Isso não pode ser desfeito.',
+            `Motivo da recusa: ${item.sendState?.lastFailure?.reason ?? 'o servidor não aceitou esta coleta'} ` +
+            'Isso não pode ser desfeito.',
             [
                 { text: 'Cancelar', style: 'cancel' },
                 {
@@ -204,7 +211,7 @@ export default function Sincronizacao() {
         collections.length === 0
             ? 'Nenhuma coleta pendente'
             : `${plural(finished.length, 'coleta aguardando envio', 'coletas aguardando envio')}` +
-              (drafts > 0 ? `, ${plural(drafts, 'rascunho', 'rascunhos')}` : '');
+            (drafts > 0 ? `, ${plural(drafts, 'rascunho', 'rascunhos')}` : '');
 
     // ---------- Envio ----------
 
@@ -214,8 +221,8 @@ export default function Sincronizacao() {
     const buttonLabel = sync.running
         ? `Enviando ${Math.min(sync.done + 1, sync.total)} de ${sync.total}…`
         : finished.length > 0
-          ? `Enviar agora (${finished.length})`
-          : 'Enviar agora';
+            ? `Enviar agora (${finished.length})`
+            : 'Enviar agora';
 
     const lastRun = sync.lastRun;
     let resultNote: { text: string; warning: boolean } | null = null;

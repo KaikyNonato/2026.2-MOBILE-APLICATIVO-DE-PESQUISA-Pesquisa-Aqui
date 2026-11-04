@@ -22,6 +22,7 @@ export async function isBiometricAvailable(): Promise<boolean> {
     }
 }
 
+/** Diz se o usuário ligou o bloqueio por biometria (sempre `false` na web). */
 export async function isBiometricEnabled(): Promise<boolean> {
     if (Platform.OS === 'web') return false;
     try {
@@ -31,6 +32,7 @@ export async function isBiometricEnabled(): Promise<boolean> {
     }
 }
 
+/** Liga ou desliga o bloqueio por biometria. */
 export async function setBiometricEnabled(enabled: boolean): Promise<void> {
     if (Platform.OS === 'web') return;
     if (enabled) await SecureStore.setItemAsync(ENABLED_KEY, '1');

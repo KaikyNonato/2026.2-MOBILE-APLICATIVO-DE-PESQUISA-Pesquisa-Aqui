@@ -3,9 +3,10 @@ import { clearToken, getToken } from "./secureStorage";
 
 const rawBaseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
 
-// Remove espaços, aspas acidentais e barras no final
+/** Remove espaços, aspas acidentais e barras no final */
 export const API_BASE_URL = rawBaseUrl.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
 
+/** Erro de resposta da API, com o status HTTP. */
 export class ApiError extends Error {
     status: number;
     constructor(message: string, status: number) {
@@ -14,6 +15,7 @@ export class ApiError extends Error {
     }
 }
 
+/** Chama a API com o token do usuário, garantindo que o caminho comece com uma barra. */
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
     const token = await getToken();
 

@@ -18,6 +18,7 @@ type Props = PropsWithChildren<{
   headerBackgroundColor: { dark: string; light: string };
 }>;
 
+/** Rolagem com imagem de cabeçalho em efeito parallax. */
 export default function ParallaxScrollView({
   children,
   headerImage,

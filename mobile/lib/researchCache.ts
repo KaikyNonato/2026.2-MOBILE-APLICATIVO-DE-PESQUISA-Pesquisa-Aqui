@@ -33,7 +33,7 @@ export interface Research {
     areaRadiusKm?: number | null;
 }
 
-// Gera ou recupera um ID único do dispositivo para controle de download
+/** Gera ou recupera um ID único do dispositivo para controle de download */
 export async function getDeviceId(): Promise<string> {
     let id = await SecureStore.getItemAsync(DEVICE_ID_KEY);
     if (!id) {
@@ -43,7 +43,7 @@ export async function getDeviceId(): Promise<string> {
     return id;
 }
 
-// Apaga o pacote da pesquisa do aparelho (a cópia deixou de valer ou foi devolvida).
+/** Apaga o pacote da pesquisa do aparelho (a cópia deixou de valer ou foi devolvida). */
 async function removeLocalPackage(id: number): Promise<void> {
     await AsyncStorage.removeItem(`research_pkg_${id}`);
 }
@@ -93,6 +93,7 @@ export async function syncResearches(): Promise<Research[]> {
     }
 }
 
+/** Lê do aparelho a última lista de pesquisas baixada. */
 export async function getCachedResearches(): Promise<Research[]> {
     const json = await AsyncStorage.getItem(RESEARCHES_CACHE_KEY);
     if (!json) return [];
@@ -101,6 +102,10 @@ export async function getCachedResearches(): Promise<Research[]> {
     return list.filter((item) => item.status !== 'DRAFT');
 }
 
+/**
+ * Baixa o pacote da pesquisa (questionário e regras), identificando o aparelho, e guarda no
+ * aparelho.
+ */
 export async function downloadResearchPackage(id: number): Promise<void> {
     const deviceId = await getDeviceId();
 
@@ -152,9 +157,11 @@ export async function returnResearchCopy(id: number): Promise<void> {
     );
 }
 
-// Pacote baixado no aparelho (seções, questões, opções e regras de exibição).
-// Pacotes baixados antes das regras existirem não têm `displayRules`: viram lista vazia
-// até a pesquisa ser baixada de novo.
+/**
+ * Pacote baixado no aparelho (seções, questões, opções e regras de exibição).
+ * Pacotes baixados antes das regras existirem não têm `displayRules`: viram lista vazia
+ * até a pesquisa ser baixada de novo.
+ */
 export async function getCachedResearchPackage(id: number): Promise<ResearchPackage | null> {
     const json = await AsyncStorage.getItem(`research_pkg_${id}`);
     if (!json) return null;
@@ -163,6 +170,7 @@ export async function getCachedResearchPackage(id: number): Promise<ResearchPack
     return { ...pkg, displayRules: pkg.displayRules ?? [] };
 }
 
+/** Apaga do aparelho as pesquisas guardadas, os pacotes e o histórico de enviadas. */
 export async function clearResearchesCache(): Promise<void> {
     const keys = await AsyncStorage.getAllKeys();
     const researchKeys = keys.filter(k => k.startsWith('research_pkg_') || k === RESEARCHES_CACHE_KEY || k === SENT_HISTORY_KEY);

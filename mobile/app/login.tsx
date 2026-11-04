@@ -20,6 +20,7 @@ import BrandMark from '@/components/BrandMark';
 import Contour from '@/components/Contour';
 import { Brand, Radius } from '@/constants/brand';
 
+/** Tela de login do pesquisador. */
 export default function Login() {
     const router = useRouter();
     const { login } = useAuth();

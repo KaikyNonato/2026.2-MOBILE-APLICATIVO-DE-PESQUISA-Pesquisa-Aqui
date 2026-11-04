@@ -12,6 +12,11 @@ import { PrismaService } from '../prisma.service.js';
 import { ALLOW_PASSWORD_CHANGE_KEY } from './allow-password-change.decorator.js';
 import { passwordVersion } from './token-payload.js';
 
+/**
+ * Guarda de autenticação das rotas. Lê o token (cookie ou cabeçalho Bearer), confere no banco se a
+ * conta e a empresa continuam ativas e se a senha não mudou, e bloqueia quem ainda precisa trocar a
+ * senha temporária.
+ */
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
@@ -20,6 +25,10 @@ export class AuthGuard implements CanActivate {
     private readonly reflector: Reflector,
   ) { }
 
+  /**
+   * Libera ou nega o acesso à rota. Em caso de sucesso, coloca o conteúdo do token em
+   * `request.user`.
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractToken(request);
@@ -34,10 +43,10 @@ export class AuthGuard implements CanActivate {
       });
 
       if (payload.companyId) {
-        const company = await this.prisma.client.orm.public.Company.where({ id: payload.companyId }).first()
+        const company = await this.prisma.client.orm.public.Company.where({ id: payload.companyId }).first();
 
         if (company && company.situation == 'INACTIVE') {
-          throw new UnauthorizedException('Your session has ended because the company has been deactivated')
+          throw new UnauthorizedException('Your session has ended because the company has been deactivated');
         }
       }
 
@@ -48,15 +57,15 @@ export class AuthGuard implements CanActivate {
         : null;
 
       if (!user) {
-        throw new UnauthorizedException('Your session has ended because your account no longer exists')
+        throw new UnauthorizedException('Your session has ended because your account no longer exists');
       }
 
       if (user.situation === 'INACTIVE') {
-        throw new UnauthorizedException('Your session has ended because your account has been deactivated')
+        throw new UnauthorizedException('Your session has ended because your account has been deactivated');
       }
 
       if (payload.pv !== passwordVersion(user.passwordHash)) {
-        throw new UnauthorizedException('Your session has ended because your password was changed')
+        throw new UnauthorizedException('Your session has ended because your password was changed');
       }
 
       // Senha temporária: só deixa ver o próprio perfil, trocar a senha e sair, até a troca ser feita.
@@ -71,15 +80,14 @@ export class AuthGuard implements CanActivate {
             statusCode: 403,
             code: 'PASSWORD_CHANGE_REQUIRED',
             message: 'You must change your temporary password before continuing',
-          })
+          });
         }
       }
 
       request['user'] = payload;
-
     } catch (error) {
       if (error instanceof UnauthorizedException || error instanceof ForbiddenException) {
-        throw error
+        throw error;
       }
       throw new UnauthorizedException('Invalid or expired token');
     }
@@ -87,6 +95,7 @@ export class AuthGuard implements CanActivate {
     return true;
   }
 
+  /** Pega o token do cookie `access_token` ou, se não houver, do cabeçalho `Authorization: Bearer`. */
   private extractToken(request: Request): string | undefined {
     const cooketToken = request.cookies?.['access_token'];
 

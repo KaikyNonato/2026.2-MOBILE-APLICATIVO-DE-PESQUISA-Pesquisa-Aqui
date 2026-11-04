@@ -2,7 +2,7 @@ import { Type } from 'class-transformer';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { OPERATORS, RULE_ACTIONS } from '../rule-logic.js';
 
-// Uma condição: a resposta da questão de origem, comparada com `triggerValue` pelo `operator`.
+/** Uma condição: a resposta da questão de origem, comparada com `triggerValue` pelo `operator`. */
 export class RuleConditionDto {
   @IsInt()
   sourceQuestionId: number;
@@ -19,9 +19,13 @@ export class RuleConditionDto {
   triggerValue?: string;
 }
 
-// Formato novo: `conditions` (1 a 10, todas valendo em conjunto = E) + alvo (questão OU seção) + ação.
-// Formato antigo (continua valendo): sourceQuestionId + triggerValue + targetQuestionId, uma condição "é igual a".
-// Várias regras no mesmo alvo valem em alternativa (OU).
+/**
+ * Formato novo: `conditions` (1 a 10, todas valendo em conjunto = E) + alvo (questão OU seção) +
+ * ação.
+ * Formato antigo (continua valendo): sourceQuestionId + triggerValue + targetQuestionId, uma
+ * condição "é igual a".
+ * Várias regras no mesmo alvo valem em alternativa (OU).
+ */
 export class CreateQuestionRuleDto {
   @IsOptional()
   @IsInt()

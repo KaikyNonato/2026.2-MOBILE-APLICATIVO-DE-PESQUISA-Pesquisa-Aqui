@@ -7,6 +7,7 @@ import { StorageModule } from '../collection/storage.module.js';
 import { ResearchService } from '../research/research.service.js';
 import { QuestionRuleModule } from '../question-rule/question-rule.module.js';
 
+/** Módulo das questões e alternativas do questionário. */
 @Module({
   imports: [PrismaModule, StorageModule, SectionModule, QuestionRuleModule],
   controllers: [QuestionController],

@@ -16,67 +16,71 @@ export const PARTIAL_MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
 
 /** Identidade do arquivo em andamento: coleta, questão (ou entrevista), tamanho total e nome no aparelho. */
 export function partialKey(collectionId: number, questionId: number | null, totalBytes: number, name: string): string {
-    return createHash('sha1').update(`${collectionId}|${questionId ?? 'interview'}|${totalBytes}|${name}`).digest('hex');
+  return createHash('sha1').update(`${collectionId}|${questionId ?? 'interview'}|${totalBytes}|${name}`).digest('hex');
 }
 
+/** Guarda em disco os pedaços de arquivos ainda incompletos, para o envio poder ser retomado. */
 @Injectable()
 export class PartialUploadStore {
-    private get root(): string {
-        if (process.env.PARTIAL_UPLOAD_DIR) return resolve(process.env.PARTIAL_UPLOAD_DIR);
-        // Na Vercel (serverless) o disco do projeto é somente leitura: só /tmp aceita escrita.
-        // Atenção: /tmp é por instância e some quando ela é reciclada; o app então recomeça o arquivo (nada se perde).
-        if (process.env.VERCEL) return join(tmpdir(), 'pesquisa-aqui-partial');
-        return resolve(join(process.cwd(), 'storage', 'partial'));
-    }
+  private get root(): string {
+    if (process.env.PARTIAL_UPLOAD_DIR) return resolve(process.env.PARTIAL_UPLOAD_DIR);
+    // Na Vercel (serverless) o disco do projeto é somente leitura: só /tmp aceita escrita.
+    // Atenção: /tmp é por instância e some quando ela é reciclada; o app então recomeça o arquivo (nada se perde).
+    if (process.env.VERCEL) return join(tmpdir(), 'pesquisa-aqui-partial');
+    return resolve(join(process.cwd(), 'storage', 'partial'));
+  }
 
-    private pathOf(key: string): string {
-        if (!/^[0-9a-f]{40}$/.test(key)) throw new Error('Invalid partial upload key');
-        return join(this.root, `${key}.part`);
-    }
+  /** Caminho do arquivo parcial de uma chave (que precisa ser um hash de 40 caracteres). */
+  private pathOf(key: string): string {
+    if (!/^[0-9a-f]{40}$/.test(key)) throw new Error('Invalid partial upload key');
+    return join(this.root, `${key}.part`);
+  }
 
-    /** Quantos bytes do arquivo já chegaram (0 se ainda não começou). */
-    async size(key: string): Promise<number> {
-        try {
-            return (await stat(this.pathOf(key))).size;
-        } catch {
-            return 0;
-        }
+  /** Quantos bytes do arquivo já chegaram (0 se ainda não começou). */
+  async size(key: string): Promise<number> {
+    try {
+      return (await stat(this.pathOf(key))).size;
+    } catch {
+      return 0;
     }
+  }
 
-    /**
-     * Acrescenta o pedaço que começa em `offset`. Só aceita se `offset` for exatamente o que já chegou:
-     * pedaço repetido (resposta perdida) ou fora de ordem não altera o arquivo. Devolve o tamanho atual.
-     */
-    async append(key: string, offset: number, chunk: Buffer): Promise<number> {
-        const current = await this.size(key);
-        if (offset !== current) return current;
-        if (current === 0) await this.purgeStale().catch(() => undefined);
-        await mkdir(this.root, { recursive: true });
-        await appendFile(this.pathOf(key), chunk);
-        return current + chunk.length;
-    }
+  /**
+   * Acrescenta o pedaço que começa em `offset`. Só aceita se `offset` for exatamente o que já chegou:
+   * pedaço repetido (resposta perdida) ou fora de ordem não altera o arquivo. Devolve o tamanho atual.
+   */
+  async append(key: string, offset: number, chunk: Buffer): Promise<number> {
+    const current = await this.size(key);
+    if (offset !== current) return current;
+    if (current === 0) await this.purgeStale().catch(() => undefined);
+    await mkdir(this.root, { recursive: true });
+    await appendFile(this.pathOf(key), chunk);
+    return current + chunk.length;
+  }
 
-    async read(key: string): Promise<Buffer> {
-        return readFile(this.pathOf(key));
-    }
+  /** Lê o arquivo parcial inteiro. */
+  async read(key: string): Promise<Buffer> {
+    return readFile(this.pathOf(key));
+  }
 
-    async remove(key: string): Promise<void> {
-        await rm(this.pathOf(key), { force: true });
-    }
+  /** Apaga o arquivo parcial. */
+  async remove(key: string): Promise<void> {
+    await rm(this.pathOf(key), { force: true });
+  }
 
-    /** Apaga os pedaços abandonados. Roda quando um arquivo novo começa, então não precisa de agendador. */
-    async purgeStale(now = Date.now()): Promise<void> {
-        let names: string[];
-        try {
-            names = await readdir(this.root);
-        } catch {
-            return;
-        }
-        for (const name of names) {
-            if (!name.endsWith('.part')) continue;
-            const target = join(this.root, name);
-            const info = await stat(target).catch(() => null);
-            if (info && now - info.mtimeMs > PARTIAL_MAX_AGE_MS) await rm(target, { force: true });
-        }
+  /** Apaga os pedaços abandonados. Roda quando um arquivo novo começa, então não precisa de agendador. */
+  async purgeStale(now = Date.now()): Promise<void> {
+    let names: string[];
+    try {
+      names = await readdir(this.root);
+    } catch {
+      return;
     }
+    for (const name of names) {
+      if (!name.endsWith('.part')) continue;
+      const target = join(this.root, name);
+      const info = await stat(target).catch(() => null);
+      if (info && now - info.mtimeMs > PARTIAL_MAX_AGE_MS) await rm(target, { force: true });
+    }
+  }
 }

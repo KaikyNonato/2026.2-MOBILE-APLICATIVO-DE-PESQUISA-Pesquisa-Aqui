@@ -44,6 +44,10 @@ const PROFILE_TRANSLATION: Record<string, string> = {
     RESEARCHER: 'Pesquisador',
 };
 
+/**
+ * Lista de administradores, com busca, paginação e as ações permitidas (editar, ativar ou desativar
+ * e excluir).
+ */
 export default function ListaAdministradores({
     allowActions = true,
     reloadKey = 0,
@@ -191,7 +195,6 @@ export default function ListaAdministradores({
             } as DataColumn<Admin>]
             : []),
     ];
-
 
     return (
         <div className="flex flex-col">

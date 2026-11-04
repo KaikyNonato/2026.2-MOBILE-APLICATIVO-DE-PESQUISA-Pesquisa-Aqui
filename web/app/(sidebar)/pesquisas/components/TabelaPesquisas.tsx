@@ -38,6 +38,7 @@ export interface Research {
 
 const CHIP_TONE = { light: 'live', clay: 'soon', gray: 'done' } as const;
 
+/** Texto sem acento e em minúsculas, para a busca. */
 const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 /** Ordem da tabela: Recentes, A-Z ou Prazo (quem encerra primeiro). Vem dos botões da página. */
@@ -50,6 +51,7 @@ interface TabelaPesquisasProps {
     onChange?: () => void;
 }
 
+/** Tabela de pesquisas, com busca, ordenação (`sort`) e as ações permitidas ao perfil. */
 export default function TabelaPesquisas({ sort = 'recent', allowActions = true, refreshTrigger = 0, onChange }: TabelaPesquisasProps) {
     const [rawResearches, setRawResearches] = useState<Research[]>([]);
     const [loading, setLoading] = useState(true);

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loadingState";
@@ -11,9 +11,12 @@ const ROUTE_COLORS = ["#447762", "#6b8fb5", "#8d6bb5", "#c9a94b", "#5aa5a5", "#b
 const FIELD = "flex min-w-0 flex-col gap-1.5";
 const LABEL = "text-xs font-medium text-muted-foreground";
 const CONTROL = "h-10 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50";
+/** Data de hoje no formato aaaa-mm-dd. */
 const todayStr = () => new Date().toISOString().slice(0, 10);
+/** Escapa caracteres HTML, para usar texto com segurança dentro de balões do mapa. */
 const esc = (t: string) => t.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 
+/** Mapa das coletas da pesquisa, com filtro de período e de pesquisador. */
 export default function MapaColetas({ researchId }: { researchId: number }) {
     const [from, setFrom] = useState('');
     const [to, setTo] = useState('');

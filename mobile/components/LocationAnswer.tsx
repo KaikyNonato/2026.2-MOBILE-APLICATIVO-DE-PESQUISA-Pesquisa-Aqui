@@ -18,8 +18,10 @@ type LocationProblem =
     | { kind: 'services-off' }
     | { kind: 'unavailable' };
 
+/** Formata uma coordenada com 6 casas decimais. */
 const formatCoordinate = (n: number) => n.toFixed(6);
 
+/** Formata a hora da captura (`null` se for inválida). */
 function formatTime(iso: string | null): string | null {
     if (!iso) return null;
     const date = new Date(iso);

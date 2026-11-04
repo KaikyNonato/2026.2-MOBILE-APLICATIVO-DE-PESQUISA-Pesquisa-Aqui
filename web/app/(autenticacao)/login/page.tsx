@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { BrandMark, Contour, Pin } from "@/components/ui/contour";
 import { Input } from "@/components/ui/input";
@@ -7,13 +7,14 @@ import { login, LoginError } from "@/lib/auth";
 import Link from "next/link";
 import { SubmitEventHandler, useState } from "react";
 
+/** Página de login. */
 export default function Login() {
-    const [username, setUsername] = useState('')
-    const [password, setPassword] = useState('')
-    const [error, setError] = useState<string | null>(null)
-    const [showForgotHint, setShowForgotHint] = useState(false)
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [showForgotHint, setShowForgotHint] = useState(false);
 
-    const [isLoadingLogin, setIsLoadingLogin] = useState(false)
+    const [isLoadingLogin, setIsLoadingLogin] = useState(false);
     const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
         e.preventDefault();
 
@@ -25,8 +26,8 @@ export default function Login() {
         try {
             ({ mustChangePassword } = await login(username, password));
         } catch (error) {
-            setError(error instanceof LoginError ? error.message : 'Não foi possível entrar agora. Tente novamente.')
-            setIsLoadingLogin(false)
+            setError(error instanceof LoginError ? error.message : 'Não foi possível entrar agora. Tente novamente.');
+            setIsLoadingLogin(false);
             return;
         }
 
@@ -42,7 +43,7 @@ export default function Login() {
         // Com location.replace o navegador pede "/" ao servidor já com o cookie novo.
         // O botão continua em "Entrando..." até a página trocar.
         window.location.replace('/');
-    }
+    };
 
     return (
         <main className="pa-login">

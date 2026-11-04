@@ -6,11 +6,19 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { corsOriginCheck, trustProxySetting } from './common/security.js';
 
+/**
+ * Inicia a API: configura proxy, `helmet`, cookies, CORS e validação global, e começa a escutar na
+ * porta `PORT` (padrão 3001).
+ */
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Atrás de proxy (Vercel, Render, o rewrite do painel...) o IP real vem em X-Forwarded-For. Só confie nisso quando
-  // houver mesmo um proxy na frente (TRUST_PROXY), senão qualquer um poderia forjar o IP e escapar do limite de requisições.
+  /**
+   * Atrás de proxy (Vercel, Render, o rewrite do painel...) o IP real vem em X-Forwarded-For. Só
+   * confie nisso quando
+   * houver mesmo um proxy na frente (TRUST_PROXY), senão qualquer um poderia forjar o IP e escapar
+   * do limite de requisições.
+   */
   const trustProxy = trustProxySetting();
   if (trustProxy !== false) app.set('trust proxy', trustProxy);
 
@@ -28,7 +36,7 @@ async function bootstrap() {
   app.enableCors({
     origin: corsOriginCheck(),
     credentials: true,
-  })
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

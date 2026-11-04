@@ -1,26 +1,26 @@
-"use client"
+"use client";
 
 import { CountUp } from "@/components/ui/count-up";
-import { BrandMark, Contour } from "@/components/ui/contour"
-import { GlobalSearch } from "@/components/ui/global-search"
-import { useCurrentUser } from "@/hooks/useCurrentUser"
-import { UserAvatar } from "@/components/ui/user-avatar"
-import { useFieldSnapshot } from "@/hooks/useFieldSnapshot"
-import { logout } from "@/lib/auth"
-import { avatarTone, teamRowsOf } from "@/lib/fieldData"
-import { Building2, ChevronLeft, LayoutDashboard, LogIn, LogOut, Menu, NotebookPen, ShieldCheck, UsersRound, X, type LucideIcon } from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { BrandMark, Contour } from "@/components/ui/contour";
+import { GlobalSearch } from "@/components/ui/global-search";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { useFieldSnapshot } from "@/hooks/useFieldSnapshot";
+import { logout } from "@/lib/auth";
+import { avatarTone, teamRowsOf } from "@/lib/fieldData";
+import { Building2, ChevronLeft, LayoutDashboard, LogIn, LogOut, Menu, NotebookPen, ShieldCheck, UsersRound, X, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 type NavItem = {
-    href: string
-    label: string
-    icon: LucideIcon
-    profiles: ReadonlyArray<"SUPERADMINISTRATOR" | "ADMINISTRATOR" | "RESEARCHER">
+    href: string;
+    label: string;
+    icon: LucideIcon;
+    profiles: ReadonlyArray<"SUPERADMINISTRATOR" | "ADMINISTRATOR" | "RESEARCHER">;
     /** Contador mostrado ao lado do nome (só para o administrador). */
-    count?: "researches" | "researchers"
-}
+    count?: "researches" | "researchers";
+};
 
 const NAV_ITEMS: NavItem[] = [
     { href: "/", label: "Início", icon: LayoutDashboard, profiles: ["SUPERADMINISTRATOR", "ADMINISTRATOR", "RESEARCHER"] },
@@ -29,68 +29,69 @@ const NAV_ITEMS: NavItem[] = [
     { href: "/empresa", label: "Empresa", icon: Building2, profiles: ["ADMINISTRATOR"] },
     { href: "/pesquisadores", label: "Pesquisadores", icon: UsersRound, profiles: ["ADMINISTRATOR"], count: "researchers" },
     { href: "/pesquisas", label: "Pesquisas", icon: NotebookPen, profiles: ["ADMINISTRATOR", "RESEARCHER"], count: "researches" },
-]
+];
 
 const PROFILE_LABELS: Record<string, string> = {
     SUPERADMINISTRATOR: "Superadministrador",
     ADMINISTRATOR: "Administrador",
     RESEARCHER: "Pesquisador",
-}
+};
 
+/** Menu lateral do painel, com os itens de acordo com o perfil do usuário logado. */
 export function AppSidebar() {
-    const pathname = usePathname()
-    const { user } = useCurrentUser()
-    const [collapsed, setCollapsed] = useState(false)
+    const pathname = usePathname();
+    const { user } = useCurrentUser();
+    const [collapsed, setCollapsed] = useState(false);
     // Celular: o menu é uma gaveta que abre pelo botão da barra superior.
-    const [menuOpen, setMenuOpen] = useState(false)
-    const closeMenu = () => setMenuOpen(false)
+    const [menuOpen, setMenuOpen] = useState(false);
+    const closeMenu = () => setMenuOpen(false);
 
     useEffect(() => {
-        if (!menuOpen) return
+        if (!menuOpen) return;
 
-        document.body.classList.add("pa-menu-open")
+        document.body.classList.add("pa-menu-open");
         const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") setMenuOpen(false)
-        }
+            if (event.key === "Escape") setMenuOpen(false);
+        };
         // Se a tela crescer (ex.: girar o aparelho) a gaveta deixa de existir: libera a rolagem.
-        const media = window.matchMedia("(min-width: 1025px)")
-        const onResize = () => { if (media.matches) setMenuOpen(false) }
+        const media = window.matchMedia("(min-width: 1025px)");
+        const onResize = () => { if (media.matches) setMenuOpen(false); };
 
-        window.addEventListener("keydown", onKeyDown)
-        media.addEventListener("change", onResize)
+        window.addEventListener("keydown", onKeyDown);
+        media.addEventListener("change", onResize);
         return () => {
-            document.body.classList.remove("pa-menu-open")
-            window.removeEventListener("keydown", onKeyDown)
-            media.removeEventListener("change", onResize)
-        }
-    }, [menuOpen])
+            document.body.classList.remove("pa-menu-open");
+            window.removeEventListener("keydown", onKeyDown);
+            media.removeEventListener("change", onResize);
+        };
+    }, [menuOpen]);
 
-    const items = NAV_ITEMS.filter((item) => user && item.profiles.includes(user.profile))
+    const items = NAV_ITEMS.filter((item) => user && item.profiles.includes(user.profile));
 
     // Só o administrador tem a equipe e as coletas da empresa para acompanhar.
-    const isAdmin = user?.profile === "ADMINISTRATOR"
-    const { snapshot, loading: fieldLoading } = useFieldSnapshot(isAdmin)
+    const isAdmin = user?.profile === "ADMINISTRATOR";
+    const { snapshot, loading: fieldLoading } = useFieldSnapshot(isAdmin);
     const inField = useMemo(
         () => teamRowsOf(snapshot).filter((row) => row.inField),
         [snapshot]
-    )
+    );
     const counts = {
         researches: snapshot?.totals.researches,
         researchers: snapshot?.totals.researchers,
-    }
+    };
 
     const isActive = (href: string) =>
-        href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`)
+        href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
     const logoutUser = async () => {
         try {
-            await logout()
+            await logout();
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
-    }
+    };
 
-    const identityClass = "flex min-w-0 flex-1 items-center gap-[10px]"
+    const identityClass = "flex min-w-0 flex-1 items-center gap-[10px]";
     const identity = user && (
         <>
             <UserAvatar name={user.name} src={user.avatarUrl} size={38} className="avatar-pa avatar" />
@@ -99,7 +100,7 @@ export function AppSidebar() {
                 <span>{PROFILE_LABELS[user.profile] ?? user.profile}</span>
             </div>
         </>
-    )
+    );
 
     return (
         <aside className={`pa-side ${collapsed ? "c" : ""} ${menuOpen ? "open" : ""}`}>
@@ -216,5 +217,5 @@ export function AppSidebar() {
                 )}
             </div>
         </aside>
-    )
+    );
 }

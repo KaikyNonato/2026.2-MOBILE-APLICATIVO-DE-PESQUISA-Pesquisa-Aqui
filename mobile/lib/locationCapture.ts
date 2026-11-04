@@ -19,8 +19,10 @@ export type LocationCaptureResult =
     // Sem sinal do GPS a tempo, ou erro ao ler.
     | { status: 'unavailable' };
 
+/** Marcador devolvido quando a espera estoura o tempo. */
 const TIMED_OUT = Symbol('timeout');
 
+/** Espera a promessa, mas devolve `TIMED_OUT` se passar de `ms`. */
 function raceTimeout<T>(promise: Promise<T>, ms: number): Promise<T | typeof TIMED_OUT> {
     return new Promise((resolve, reject) => {
         const timer = setTimeout(() => resolve(TIMED_OUT), ms);

@@ -12,6 +12,7 @@ import { removeCollectionFiles } from './confirmedFiles';
 /** Falhas definitivas que baixar a pesquisa de novo resolve: a coleta não é descartável. */
 const RECOVERABLE_CODES = new Set(['PACKAGE_MISSING']);
 
+/** Diz se a coleta pode ser descartada: só as que o servidor recusou de vez. */
 export function canDiscard(collection: Pick<LocalCollection, 'status' | 'sendState'>): boolean {
     const failure = collection.sendState?.lastFailure;
     return (
@@ -22,6 +23,7 @@ export function canDiscard(collection: Pick<LocalCollection, 'status' | 'sendSta
     );
 }
 
+/** Erro ao tentar descartar uma coleta que ainda deve ser enviada. */
 export class CollectionNotDiscardableError extends Error {
     constructor() {
         super('Só é possível descartar uma coleta que o servidor recusou de vez. As demais ficam na fila para serem enviadas.');

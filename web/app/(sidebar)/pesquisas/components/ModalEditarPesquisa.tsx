@@ -11,10 +11,9 @@ interface ModalEditarPesquisaProps {
     onSuccess: (updated: Research) => void;
     isMontagem?: boolean;
     isPesquisa?: boolean;
-
 }
 
-
+/** Edição da pesquisa em abas: dados gerais e montagem do questionário. */
 export default function ModalEditarPesquisa({ research, onSuccess, isMontagem = true, isPesquisa = true }: ModalEditarPesquisaProps) {
     return (
         <Tabs defaultValue="info" className="w-full ">

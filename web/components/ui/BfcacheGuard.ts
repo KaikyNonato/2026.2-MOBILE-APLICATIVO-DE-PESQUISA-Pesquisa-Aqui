@@ -1,7 +1,11 @@
-'use client'
+'use client';
 
 import { useEffect } from "react";
 
+/**
+ * Recarrega a página quando o navegador a restaura do cache de voltar/avançar, para não mostrar a
+ * tela de uma sessão antiga.
+ */
 export function BfcacheGuard() {
     useEffect(() => {
         const handlePageShow = (event: PageTransitionEvent) => {

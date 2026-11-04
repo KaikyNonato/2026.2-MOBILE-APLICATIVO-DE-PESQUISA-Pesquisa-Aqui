@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { CountUp } from "@/components/ui/count-up";
@@ -39,14 +39,18 @@ const TONES = [
     'bg-[#e6e0cc] text-[#5b4d1c]',
 ];
 
+/** Escolhe uma cor de avatar a partir do nome (sempre a mesma para o mesmo nome). */
 const toneOfName = (name?: string | null) =>
     TONES[[...(name ?? '?')].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % TONES.length];
 
+/** Converte uma data ISO em milissegundos (0 se vazia). */
 const timeOf = (value: string | null) => (value ? new Date(value).getTime() : 0) || 0;
 
+/** Formata a hora como hh:mm (`-` se vazia). */
 const formatTime = (value: string | null) =>
     value ? new Date(value).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
 
+/** Formata um tamanho em bytes como KB ou MB. */
 const formatSize = (bytes: number) =>
     bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
@@ -65,6 +69,10 @@ interface ColetasPesquisaProps {
     openCollectionId?: number;
 }
 
+/**
+ * Aba de coletas da pesquisa: carrega a lista e controla filtro, ordem, visualização e o player de
+ * áudio.
+ */
 export default function ColetasPesquisa({ researchId, recordInterview, openCollectionId }: ColetasPesquisaProps) {
     const loadingAudio = useBusySet<number>();
     // Só a resposta do último "Ouvir" clicado pode abrir o player (respostas antigas são descartadas).
@@ -193,6 +201,7 @@ interface ColetasViewProps {
     onPlayerError: (message: string) => void;
 }
 
+/** Parte visual da aba de coletas: estatísticas, filtros, lista, respostas e player. */
 function ColetasView({
     list, stats, recordInterview, filter, setFilter, sort, setSort, view, setView, now,
     loadingAudioIds, onListen, onView, viewing, onCloseView, player, onPlayerError,

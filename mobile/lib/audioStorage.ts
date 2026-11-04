@@ -15,6 +15,7 @@ export const LOW_SPACE_BYTES = 30 * 1024 * 1024;
 /** Abaixo disso nem começa a gravar: a gravação cairia no meio. */
 export const MIN_SPACE_TO_RECORD_BYTES = 15 * 1024 * 1024;
 
+/** Pasta dos áudios de uma coleta no aparelho. */
 const collectionAudioDir = (collectionId: string) => new Directory(Paths.document, AUDIO_ROOT, collectionId);
 
 // ---------- Permissão do microfone ----------
@@ -52,6 +53,7 @@ export function getFreeSpaceBytes(): number | null {
 
 // ---------- Arquivos ----------
 
+/** Apaga o arquivo sem lançar erro (ignora se não existir ou se falhar). */
 function deleteQuietly(uri: string): void {
     try {
         const file = new File(uri);
@@ -103,6 +105,7 @@ export function getQuestionAudioBytes(collectionId: string): number {
     }
 }
 
+/** Formata segundos como mm:ss. */
 export function formatClock(totalSeconds: number): string {
     const safe = Math.max(0, Math.floor(totalSeconds));
     const m = Math.floor(safe / 60);

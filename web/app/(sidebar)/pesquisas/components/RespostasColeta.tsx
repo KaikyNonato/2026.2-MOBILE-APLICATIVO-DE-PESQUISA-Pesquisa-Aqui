@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +16,11 @@ import {
 } from "@/lib/collection";
 import { useEffect, useState } from "react";
 
+/** Formata data e hora curtas em pt-BR (`-` se vazia). */
 const formatDateTime = (value: string | null) =>
     value ? new Date(value).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '-';
 
+/** Endereço do OpenStreetMap com o ponto da coleta marcado. */
 const mapUrl = (latitude: number, longitude: number) =>
     `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`;
 
@@ -30,6 +32,7 @@ const AUDIO_ERRORS: Record<number, string> = {
     4: 'O navegador não reconhece o formato deste áudio (gravado antes da atualização do aplicativo?).',
 };
 
+/** Mostra uma resposta de acordo com o tipo (vazio, texto, escolhas, localização, foto, áudio...). */
 function AnswerView({ answer }: { answer: FormattedAnswer }) {
     switch (answer.kind) {
         case 'empty':
@@ -97,7 +100,10 @@ type MediaState =
     | { status: 'error'; message: string }
     | { status: 'ready'; url: string };
 
-// Baixa o arquivo pela API autenticada e mostra como imagem ou player. O endereço temporário é liberado ao sair.
+/**
+ * Baixa o arquivo pela API autenticada e mostra como imagem ou player. O endereço temporário é
+ * liberado ao sair.
+ */
 function MediaItem({ collectionId, file }: { collectionId: number; file: CollectionMediaFile }) {
     const [state, setState] = useState<MediaState>({ status: 'loading' });
     const [playError, setPlayError] = useState<string | null>(null);
@@ -167,6 +173,7 @@ function MediaItem({ collectionId, file }: { collectionId: number; file: Collect
     );
 }
 
+/** Uma questão com a resposta dela e a situação dos arquivos esperados. */
 function QuestionItem({ number, question, collectionId }: { number: number; question: CollectionQuestion; collectionId: number }) {
     const answer = formatAnswer(question);
     const expected = question.expectedFiles ?? [];
@@ -202,6 +209,7 @@ type DetailState =
     | { status: 'error'; message: string }
     | { status: 'ready'; detail: CollectionDetail };
 
+/** Carrega e mostra as respostas de uma coleta (carregando, erro ou lista de questões). */
 function RespostasConteudo({ collectionId }: { collectionId: number }) {
     const [state, setState] = useState<DetailState>({ status: 'loading' });
 
@@ -285,6 +293,7 @@ interface RespostasColetaProps {
     onClose: () => void;
 }
 
+/** Caixa que mostra as respostas de uma coleta. */
 export default function RespostasColeta({ collection, onClose }: RespostasColetaProps) {
     return (
         <Dialog open={collection !== null} onOpenChange={(open) => { if (!open) onClose(); }}>

@@ -1,28 +1,33 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
+import * as React from "react";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { XIcon } from "lucide-react"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { XIcon } from "lucide-react";
 
+/** Caixa de diálogo (modal). */
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
 
+/** Elemento que abre o diálogo. */
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
+  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
 }
 
+/** Renderiza o diálogo fora da árvore da página. */
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
+  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
 }
 
+/** Elemento que fecha o diálogo. */
 function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
+  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
+/** Fundo escurecido atrás do diálogo. */
 function DialogOverlay({
   className,
   ...props
@@ -36,16 +41,17 @@ function DialogOverlay({
       )}
       {...props}
     />
-  )
+  );
 }
 
+/** Conteúdo do diálogo, com botão de fechar. */
 function DialogContent({
   className,
   children,
   showCloseButton = true,
   ...props
 }: DialogPrimitive.Popup.Props & {
-  showCloseButton?: boolean
+  showCloseButton?: boolean;
 }) {
   return (
     <DialogPortal>
@@ -77,9 +83,10 @@ function DialogContent({
         )}
       </DialogPrimitive.Popup>
     </DialogPortal>
-  )
+  );
 }
 
+/** Cabeçalho do diálogo. */
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -87,16 +94,17 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("flex flex-col gap-2", className)}
       {...props}
     />
-  )
+  );
 }
 
+/** Rodapé do diálogo, com as ações. */
 function DialogFooter({
   className,
   showCloseButton = false,
   children,
   ...props
 }: React.ComponentProps<"div"> & {
-  showCloseButton?: boolean
+  showCloseButton?: boolean;
 }) {
   return (
     <div
@@ -114,9 +122,10 @@ function DialogFooter({
         </DialogPrimitive.Close>
       )}
     </div>
-  )
+  );
 }
 
+/** Título do diálogo. */
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
@@ -127,9 +136,10 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
       )}
       {...props}
     />
-  )
+  );
 }
 
+/** Descrição do diálogo. */
 function DialogDescription({
   className,
   ...props
@@ -143,7 +153,7 @@ function DialogDescription({
       )}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -157,4 +167,4 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
-}
+};

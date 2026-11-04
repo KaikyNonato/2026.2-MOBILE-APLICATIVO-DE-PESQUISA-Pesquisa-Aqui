@@ -34,6 +34,7 @@ const enter = (index: number) =>
         .duration(480)
         .easing(Easing.out(Easing.cubic));
 
+/** Título de uma seção da tela, com texto opcional à direita. */
 function SectionHeader({ title, right }: { title: string; right?: string }) {
     return (
         <View style={styles.sectionHeader}>
@@ -43,6 +44,7 @@ function SectionHeader({ title, right }: { title: string; right?: string }) {
     );
 }
 
+/** Número em destaque no topo da tela, com o rótulo. */
 function HeroStat({ value, label }: { value: number; label: string }) {
     return (
         <View style={styles.stat}>
@@ -52,6 +54,10 @@ function HeroStat({ value, label }: { value: number; label: string }) {
     );
 }
 
+/**
+ * Tela de pesquisas: lista as pesquisas do pesquisador, baixa e devolve do aparelho e inicia
+ * coletas.
+ */
 export default function Pesquisas() {
     const [pesquisas, setPesquisas] = useState<Research[]>([]);
     const [refreshing, setRefreshing] = useState(false);
@@ -102,7 +108,7 @@ export default function Pesquisas() {
         useCallback(() => {
             const run = async () => {
                 if (isOnline) {
-                    try { await syncAndWarn(); } 
+                    try { await syncAndWarn(); }
                     catch (error) { console.log('Falha ao sincronizar pesquisas:', error); }
                 }
                 await loadFromCache();
@@ -114,7 +120,7 @@ export default function Pesquisas() {
     const handleRefresh = async () => {
         setRefreshing(true);
         if (isOnline) {
-            try { await syncAndWarn(); } 
+            try { await syncAndWarn(); }
             catch (error) { console.log('Falha ao sincronizar no refresh:', error); }
         }
         await loadFromCache();
@@ -321,11 +327,10 @@ export default function Pesquisas() {
                                     tone="calm"
                                     icon={<PlayCircle size={22} color={Brand.greenDeep} strokeWidth={1.8} />}
                                     title="Entrevista interrompida"
-                                    text={`${pesquisas.find((p) => p.id === interrupted.researchId)?.title ?? 'Pesquisa'}${
-                                        draftProgress[interrupted.clientId]
+                                    text={`${pesquisas.find((p) => p.id === interrupted.researchId)?.title ?? 'Pesquisa'}${draftProgress[interrupted.clientId]
                                             ? ` · ${draftProgress[interrupted.clientId].answered} de ${draftProgress[interrupted.clientId].total} questões`
                                             : ''
-                                    } · editada ${formatRelativeTime(interrupted.updatedAt)}`}
+                                        } · editada ${formatRelativeTime(interrupted.updatedAt)}`}
                                     cta="Continuar"
                                     onPress={() => openDraft(interrupted.researchId, interrupted.clientId)}
                                 />

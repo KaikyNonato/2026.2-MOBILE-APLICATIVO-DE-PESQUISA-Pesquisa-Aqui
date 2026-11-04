@@ -31,6 +31,7 @@ const PROFILE_KEYS = {
     RESEARCHER: 'profile.roles.RESEARCHER',
 } as const;
 
+/** Iniciais (até duas letras) de um nome. */
 const initialsOf = (name?: string) =>
     (name ?? '')
         .split(' ')
@@ -45,6 +46,7 @@ const enter = (index: number) =>
         .duration(480)
         .easing(Easing.out(Easing.cubic));
 
+/** Título de uma seção da tela. */
 function SectionHeader({ title }: { title: string }) {
     return (
         <View style={styles.sectionHeader}>
@@ -86,6 +88,7 @@ function SwitchRow({ icon, label, hint, value, onValueChange }: { icon: ReactNod
     );
 }
 
+/** Tela do usuário: dados do perfil, atalhos e saída da conta. */
 export default function Usuario() {
     const router = useRouter();
     const { user, logout } = useAuth();

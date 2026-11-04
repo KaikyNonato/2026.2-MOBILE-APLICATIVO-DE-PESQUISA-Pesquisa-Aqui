@@ -55,6 +55,7 @@ function deadline(endDate: string): { text: string; urgent: boolean } | null {
     return { text: `Encerra em ${days} dias`, urgent: false };
 }
 
+/** Card de uma pesquisa na lista do pesquisador, com os dados, o progresso e as ações. */
 export default function PesquisaCard({
     titulo,
     targetAudience,
@@ -240,8 +241,8 @@ export default function PesquisaCard({
                                 {revoked
                                     ? 'Acesso revogado neste aparelho'
                                     : !isOnline
-                                      ? 'Precisa de internet para baixar'
-                                      : 'Baixar pesquisa'}
+                                        ? 'Precisa de internet para baixar'
+                                        : 'Baixar pesquisa'}
                             </Text>
                         </>
                     )}
@@ -251,6 +252,7 @@ export default function PesquisaCard({
     );
 }
 
+/** Cores de fundo do ícone, por tom. */
 const iconPillTone = StyleSheet.create({
     green: { backgroundColor: Brand.chipLight },
     gray: { backgroundColor: Brand.chipGray },

@@ -32,14 +32,17 @@ type GpsState =
 
 const MAX_FONT = 1.6;
 
+/** Formata a hora e o minuto de uma data ISO. */
 const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+/** Texto da distância, em metros ou quilômetros. */
 const distanceText = (meters: number) => {
     const { unit, value } = formatDistance(meters);
     return t(unit === 'km' ? 'field.kmUnit' : 'field.mUnit', { value });
 };
 
+/** Acompanha a posição do GPS e devolve o estado (procurando, com posição ou com erro). */
 function useGps(): GpsState {
     const [state, setState] = useState<GpsState>({ status: 'searching' });
 
@@ -88,6 +91,7 @@ function useGps(): GpsState {
     return state;
 }
 
+/** Tela do modo campo: mapa com a área da pesquisa, a posição atual e a distância. */
 export default function CampoScreen() {
     const router = useRouter();
     const mapRef = useRef<MapView>(null);
@@ -113,7 +117,7 @@ export default function CampoScreen() {
         useCallback(() => {
             void load();
             // syncState muda a cada coleta enviada: refaz a leitura para a meta acompanhar.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [load, syncState]),
     );
 
@@ -123,10 +127,10 @@ export default function CampoScreen() {
         () =>
             research
                 ? computeProgress(
-                      research,
-                      sent,
-                      collections.filter((c) => c.researchId === research.id && c.status === 'FINISHED').map((c) => c.clientId),
-                  )
+                    research,
+                    sent,
+                    collections.filter((c) => c.researchId === research.id && c.status === 'FINISHED').map((c) => c.clientId),
+                )
                 : null,
         [research, sent, collections],
     );
@@ -166,8 +170,8 @@ export default function CampoScreen() {
         ? progress.target === null
             ? t('field.goalNoTarget')
             : progress.remaining === 0
-              ? t('field.goalReached')
-              : tp('field.goalRemaining', progress.remaining ?? 0)
+                ? t('field.goalReached')
+                : tp('field.goalRemaining', progress.remaining ?? 0)
         : '';
 
     return (
@@ -330,11 +334,11 @@ export default function CampoScreen() {
                                     <Text style={styles.statusText} maxFontSizeMultiplier={MAX_FONT}>
                                         {area
                                             ? (() => {
-                                                  const outside = distanceOutsideArea(gps.position, area);
-                                                  return outside === 0
-                                                      ? t('field.areaInside')
-                                                      : t('field.areaOutside', { distance: distanceText(outside) });
-                                              })()
+                                                const outside = distanceOutsideArea(gps.position, area);
+                                                return outside === 0
+                                                    ? t('field.areaInside')
+                                                    : t('field.areaOutside', { distance: distanceText(outside) });
+                                            })()
                                             : t('field.areaNone')}
                                     </Text>
                                 </>
@@ -392,8 +396,8 @@ export default function CampoScreen() {
                                     entry.status === 'DRAFT'
                                         ? t('field.statusDraft')
                                         : entry.status === 'PENDING'
-                                          ? t('field.statusPending')
-                                          : t('field.statusSent');
+                                            ? t('field.statusPending')
+                                            : t('field.statusSent');
                                 const tappable = entry.status === 'DRAFT';
                                 return (
                                     <Pressable

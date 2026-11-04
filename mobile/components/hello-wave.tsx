@@ -1,5 +1,6 @@
 import Animated from 'react-native-reanimated';
 
+/** Emoji de aceno animado. */
 export function HelloWave() {
   return (
     <Animated.Text

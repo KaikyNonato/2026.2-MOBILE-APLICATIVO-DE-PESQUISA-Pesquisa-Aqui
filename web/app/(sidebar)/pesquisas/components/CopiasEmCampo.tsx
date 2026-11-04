@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { CountUp } from "@/components/ui/count-up";
@@ -19,6 +19,7 @@ import toast from "react-hot-toast";
 
 const MAX_REASON = 300;
 
+/** Formata data e hora (dd/mm/aaaa hh:mm); devolve o texto de reserva se a data for inválida. */
 const fmtDateTime = (iso?: string | null) => {
     const t = iso ? new Date(iso) : null;
     return t && !Number.isNaN(t.getTime())
@@ -26,9 +27,13 @@ const fmtDateTime = (iso?: string | null) => {
         : '-';
 };
 
+/** Escreve o número com a palavra no singular ou no plural. */
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
-// Aparelhos têm um identificador longo (device_<hora>_<sufixo>): mostra o fim, que é o que os diferencia.
+/**
+ * Aparelhos têm um identificador longo (device_<hora>_<sufixo>): mostra o fim, que é o que os
+ * diferencia.
+ */
 const shortDevice = (id: string) => (id.length > 18 ? `…${id.slice(-12)}` : id);
 
 type HistoryFilter = 'ALL' | 'RETURNED' | 'REVOKED';
@@ -44,6 +49,7 @@ interface CopiasEmCampoProps {
     onChanged?: () => void;
 }
 
+/** Aba de cópias em campo: aparelhos com a pesquisa baixada e o histórico, com a ação de revogar. */
 export default function CopiasEmCampo({ researchId, onChanged }: CopiasEmCampoProps) {
     // Busca e filtro do histórico (feitos no servidor, que devolve uma página do histórico por vez).
     const [filter, setFilter] = useState<HistoryFilter>('ALL');
@@ -134,9 +140,8 @@ export default function CopiasEmCampo({ researchId, onChanged }: CopiasEmCampoPr
             >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                     <div
-                        className={`grid size-14 shrink-0 place-items-center rounded-2xl ${
-                            data.locked ? 'bg-[#f3e0d9] text-[var(--clay-ink)]' : 'bg-white/70 text-[var(--green-deep)]'
-                        }`}
+                        className={`grid size-14 shrink-0 place-items-center rounded-2xl ${data.locked ? 'bg-[#f3e0d9] text-[var(--clay-ink)]' : 'bg-white/70 text-[var(--green-deep)]'
+                            }`}
                     >
                         {data.locked ? <Lock className="size-6" /> : <LockOpen className="size-6" />}
                     </div>

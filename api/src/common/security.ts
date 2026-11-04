@@ -22,6 +22,10 @@ export function isOriginAllowed(origin: string | undefined, allowed: string[], p
   return allowed.length === 0 && !production;
 }
 
+/**
+ * Cria a função de verificação de origem usada pelo CORS no `main.ts`, lendo `CORS_ORIGINS` e o
+ * ambiente (produção ou não).
+ */
 export function corsOriginCheck() {
   const allowed = parseOrigins(process.env.CORS_ORIGINS);
   const production = process.env.NODE_ENV === 'production';

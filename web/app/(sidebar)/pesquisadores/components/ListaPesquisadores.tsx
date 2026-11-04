@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Button } from "@/components/ui/button";
 import { Contour } from "@/components/ui/contour";
@@ -58,13 +58,14 @@ const DAY = 24 * 60 * 60 * 1000;
 /** Usuário sem o campo (resposta antiga) conta como ativo. */
 const isActive = (u: UserItem) => u.situation !== 'INACTIVE';
 
-
+/** Formata uma data ISO como dd/mm/aaaa (`—` se for inválida). */
 const formatDate = (iso?: string) => {
     if (!iso) return '—';
     const d = new Date(iso);
     return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
 };
 
+/** Converte uma data ISO em milissegundos (0 se for inválida), para ordenar. */
 const timeValue = (iso?: string) => {
     const t = iso ? new Date(iso).getTime() : NaN;
     return Number.isNaN(t) ? 0 : t;
@@ -98,6 +99,7 @@ const AVATAR_TONES: Record<string, string> = {
     a4: 'bg-[#e6e0cc] text-[#5b4d1c]',
 };
 
+/** Avatar do usuário (foto ou iniciais), em três tamanhos. */
 function Avatar({ user, size = 'md' }: { user: UserItem; size?: 'sm' | 'md' | 'lg' }) {
     const sizes = {
         sm: 'size-9 text-[13px]',
@@ -116,6 +118,7 @@ function Avatar({ user, size = 'md' }: { user: UserItem; size?: 'sm' | 'md' | 'l
     );
 }
 
+/** Lista de pesquisadores, com busca, paginação e as ações permitidas ao perfil. */
 export default function ListaPesquisadores({
     companyNames,
     reloadKey = 0,
@@ -361,105 +364,105 @@ export default function ListaPesquisadores({
                 />
             ) : (
                 <div className="pa-dt-root" data-fetching={list.fetching || undefined}>
-                <div className={`${maxHeightClassName} overflow-y-auto pr-1`}>
-                    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                        {list.items.map((r) => {
-                            const company = r.companyName ?? companyNames[r.companyId ?? -1];
-                            const fresh = isNew(r);
-                            const since = relativeDays(r.createdAt, referenceTime);
+                    <div className={`${maxHeightClassName} overflow-y-auto pr-1`}>
+                        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            {list.items.map((r) => {
+                                const company = r.companyName ?? companyNames[r.companyId ?? -1];
+                                const fresh = isNew(r);
+                                const since = relativeDays(r.createdAt, referenceTime);
 
-                            return (
-                                <li
-                                    key={r.id ?? r.username}
-                                    className={`group relative flex flex-col gap-4 overflow-hidden rounded-[22px] border border-border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#c6d0c9] hover:shadow-[0_20px_34px_-26px_rgba(10,20,16,0.45)] ${isActive(r) ? 'bg-white' : 'bg-[#f6f7f6]'}`}
-                                >
-                                    {/* curvas de nível discretas que aparecem no hover */}
-                                    <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-44 opacity-0 transition-opacity duration-300 group-hover:opacity-60">
-                                        <Contour seed={r.id} rings={6} cx={0.5} cy={0.5} size={0.9} width={220} height={180} />
-                                    </div>
-
-                                    <div className="relative z-10 flex items-start gap-3">
-                                        <Avatar user={r} size="lg" />
-                                        <div className="min-w-0 flex-1 pt-0.5">
-                                            <div className="flex items-center gap-2">
-                                                <p className="truncate text-[15px] font-semibold tracking-tight" title={r.name}>
-                                                    {r.name}
-                                                </p>
-                                                {!isActive(r) && (
-                                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#f3e0d9] px-2 py-0.5 text-[11px] font-semibold text-[#8a432f]">
-                                                        <PowerOff className="size-3" /> Inativo
-                                                    </span>
-                                                )}
-                                                {fresh && (
-                                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#e4ece7] px-2 py-0.5 text-[11px] font-semibold text-green-deep">
-                                                        <Sparkles className="size-3" /> Novo
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="truncate font-mono text-[12.5px] text-muted-foreground" title={r.username}>
-                                                @{r.username}
-                                            </p>
+                                return (
+                                    <li
+                                        key={r.id ?? r.username}
+                                        className={`group relative flex flex-col gap-4 overflow-hidden rounded-[22px] border border-border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#c6d0c9] hover:shadow-[0_20px_34px_-26px_rgba(10,20,16,0.45)] ${isActive(r) ? 'bg-white' : 'bg-[#f6f7f6]'}`}
+                                    >
+                                        {/* curvas de nível discretas que aparecem no hover */}
+                                        <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-44 opacity-0 transition-opacity duration-300 group-hover:opacity-60">
+                                            <Contour seed={r.id} rings={6} cx={0.5} cy={0.5} size={0.9} width={220} height={180} />
                                         </div>
 
-                                        {(canEdit || canDelete || canDeactivate) && (
-                                            <div className="flex shrink-0 items-center gap-1">
-                                                {canDeactivate && (
-                                                    <button
-                                                        type="button"
-                                                        aria-label={`${isActive(r) ? 'Desativar' : 'Reativar'} ${r.name}`}
-                                                        title={isActive(r) ? 'Desativar pesquisador' : 'Reativar pesquisador'}
-                                                        disabled={togglingSituation.has(r.username)}
-                                                        onClick={() => handleToggleSituation(r)}
-                                                        className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-all hover:bg-[#e9ede9] hover:text-foreground disabled:opacity-50 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
-                                                    >
-                                                        {isActive(r) ? <PowerOff className="size-4" /> : <Power className="size-4" />}
-                                                    </button>
-                                                )}
-                                                {canEdit && (
-                                                    <button
-                                                        type="button"
-                                                        aria-label={`Editar ${r.name}`}
-                                                        title="Editar pesquisador"
-                                                        onClick={() => setEditing(r)}
-                                                        className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-all hover:bg-[#e9ede9] hover:text-foreground md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
-                                                    >
-                                                        <Pencil className="size-4" />
-                                                    </button>
-                                                )}
-                                                {canDelete && (
-                                                    <button
-                                                        type="button"
-                                                        aria-label={`Excluir ${r.name}`}
-                                                        title="Excluir pesquisador"
-                                                        disabled={deleting.has(r.username)}
-                                                        onClick={() => handleDelete(r)}
-                                                        className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-all hover:bg-[#f3e0d9] hover:text-[#8a432f] disabled:opacity-50 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                    </button>
-                                                )}
+                                        <div className="relative z-10 flex items-start gap-3">
+                                            <Avatar user={r} size="lg" />
+                                            <div className="min-w-0 flex-1 pt-0.5">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="truncate text-[15px] font-semibold tracking-tight" title={r.name}>
+                                                        {r.name}
+                                                    </p>
+                                                    {!isActive(r) && (
+                                                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#f3e0d9] px-2 py-0.5 text-[11px] font-semibold text-[#8a432f]">
+                                                            <PowerOff className="size-3" /> Inativo
+                                                        </span>
+                                                    )}
+                                                    {fresh && (
+                                                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#e4ece7] px-2 py-0.5 text-[11px] font-semibold text-green-deep">
+                                                            <Sparkles className="size-3" /> Novo
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="truncate font-mono text-[12.5px] text-muted-foreground" title={r.username}>
+                                                    @{r.username}
+                                                </p>
                                             </div>
-                                        )}
-                                    </div>
 
-                                    <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-border pt-3 text-[12.5px] text-muted-foreground">
-                                        <span className="inline-flex items-center gap-1.5">
-                                            <CalendarClock className="size-3.5" />
-                                            {since ? <>{since} · {formatDate(r.createdAt)}</> : formatDate(r.createdAt)}
-                                        </span>
-                                        {showCompany && company && (
-                                            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#ebeeeb] px-2.5 py-0.5 text-xs font-medium">
-                                                <Building2 className="size-3 shrink-0" />
-                                                <span className="truncate">{company}</span>
+                                            {(canEdit || canDelete || canDeactivate) && (
+                                                <div className="flex shrink-0 items-center gap-1">
+                                                    {canDeactivate && (
+                                                        <button
+                                                            type="button"
+                                                            aria-label={`${isActive(r) ? 'Desativar' : 'Reativar'} ${r.name}`}
+                                                            title={isActive(r) ? 'Desativar pesquisador' : 'Reativar pesquisador'}
+                                                            disabled={togglingSituation.has(r.username)}
+                                                            onClick={() => handleToggleSituation(r)}
+                                                            className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-all hover:bg-[#e9ede9] hover:text-foreground disabled:opacity-50 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+                                                        >
+                                                            {isActive(r) ? <PowerOff className="size-4" /> : <Power className="size-4" />}
+                                                        </button>
+                                                    )}
+                                                    {canEdit && (
+                                                        <button
+                                                            type="button"
+                                                            aria-label={`Editar ${r.name}`}
+                                                            title="Editar pesquisador"
+                                                            onClick={() => setEditing(r)}
+                                                            className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-all hover:bg-[#e9ede9] hover:text-foreground md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+                                                        >
+                                                            <Pencil className="size-4" />
+                                                        </button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <button
+                                                            type="button"
+                                                            aria-label={`Excluir ${r.name}`}
+                                                            title="Excluir pesquisador"
+                                                            disabled={deleting.has(r.username)}
+                                                            onClick={() => handleDelete(r)}
+                                                            className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-all hover:bg-[#f3e0d9] hover:text-[#8a432f] disabled:opacity-50 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+                                                        >
+                                                            <Trash2 className="size-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-border pt-3 text-[12.5px] text-muted-foreground">
+                                            <span className="inline-flex items-center gap-1.5">
+                                                <CalendarClock className="size-3.5" />
+                                                {since ? <>{since} · {formatDate(r.createdAt)}</> : formatDate(r.createdAt)}
                                             </span>
-                                        )}
-                                    </div>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </div>
-                <ServerPagination server={list.server} label="Pesquisadores" pageSizeOptions={pageSizes} />
+                                            {showCompany && company && (
+                                                <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#ebeeeb] px-2.5 py-0.5 text-xs font-medium">
+                                                    <Building2 className="size-3 shrink-0" />
+                                                    <span className="truncate">{company}</span>
+                                                </span>
+                                            )}
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                    <ServerPagination server={list.server} label="Pesquisadores" pageSizeOptions={pageSizes} />
                 </div>
             )}
 

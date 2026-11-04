@@ -5,6 +5,7 @@ import { ResearchService } from '../research/research.service.js';
 import { QuestionRuleController } from './question-rule.controller.js';
 import { QuestionRuleService } from './question-rule.service.js';
 
+/** Módulo das regras de exibição condicional das questões. */
 @Module({
   imports: [PrismaModule, StorageModule],
   controllers: [QuestionRuleController],

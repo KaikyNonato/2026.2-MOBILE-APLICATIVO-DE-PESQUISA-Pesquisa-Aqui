@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
     Combobox,
@@ -7,7 +7,7 @@ import {
     ComboboxInput,
     ComboboxItem,
     ComboboxList,
-} from "@/components/ui/combobox"
+} from "@/components/ui/combobox";
 
 interface ComboBoxLayoutProps<T extends string> {
     items: readonly T[];
@@ -18,6 +18,7 @@ interface ComboBoxLayoutProps<T extends string> {
     emptyMessage?: string;
 }
 
+/** Seletor com busca (combobox) pronto, montado a partir de uma lista de valores e rótulos. */
 export function ComboBoxLayout<T extends string>({
     items,
     labels,
@@ -54,5 +55,5 @@ export function ComboBoxLayout<T extends string>({
                 </ComboboxList>
             </ComboboxContent>
         </Combobox>
-    )
+    );
 }

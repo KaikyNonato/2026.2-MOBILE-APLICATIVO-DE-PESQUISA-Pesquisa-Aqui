@@ -1,28 +1,33 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
+import * as React from "react";
+import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { XIcon } from "lucide-react"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { XIcon } from "lucide-react";
 
+/** Painel lateral deslizante. */
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />
+  return <SheetPrimitive.Root data-slot="sheet" {...props} />;
 }
 
+/** Elemento que abre o painel. */
 function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props) {
-  return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
+  return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
 }
 
+/** Elemento que fecha o painel. */
 function SheetClose({ ...props }: SheetPrimitive.Close.Props) {
-  return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
+  return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
 }
 
+/** Renderiza o painel fora da árvore da página. */
 function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
-  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
+  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 
+/** Fundo escurecido atrás do painel. */
 function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
   return (
     <SheetPrimitive.Backdrop
@@ -33,9 +38,10 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
       )}
       {...props}
     />
-  )
+  );
 }
 
+/** Conteúdo do painel, com botão de fechar. */
 function SheetContent({
   className,
   children,
@@ -43,8 +49,8 @@ function SheetContent({
   showCloseButton = true,
   ...props
 }: SheetPrimitive.Popup.Props & {
-  side?: "top" | "right" | "bottom" | "left"
-  showCloseButton?: boolean
+  side?: "top" | "right" | "bottom" | "left";
+  showCloseButton?: boolean;
 }) {
   return (
     <SheetPortal>
@@ -77,9 +83,10 @@ function SheetContent({
         )}
       </SheetPrimitive.Popup>
     </SheetPortal>
-  )
+  );
 }
 
+/** Cabeçalho do painel. */
 function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -87,9 +94,10 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("flex flex-col gap-0.5 p-4", className)}
       {...props}
     />
-  )
+  );
 }
 
+/** Rodapé do painel. */
 function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -97,9 +105,10 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("mt-auto flex flex-col gap-2 p-4", className)}
       {...props}
     />
-  )
+  );
 }
 
+/** Título do painel. */
 function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
   return (
     <SheetPrimitive.Title
@@ -110,9 +119,10 @@ function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
       )}
       {...props}
     />
-  )
+  );
 }
 
+/** Descrição do painel. */
 function SheetDescription({
   className,
   ...props
@@ -123,7 +133,7 @@ function SheetDescription({
       className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -135,4 +145,4 @@ export {
   SheetFooter,
   SheetTitle,
   SheetDescription,
-}
+};

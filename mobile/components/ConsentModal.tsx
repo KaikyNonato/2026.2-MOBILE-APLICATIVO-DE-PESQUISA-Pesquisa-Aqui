@@ -9,8 +9,10 @@ interface ConsentModalProps {
     onCancel: () => void;
 }
 
-// Pedido de consentimento antes de a coleta começar, nas pesquisas que gravam a entrevista.
-// A confirmação é do pesquisador, atestando que o entrevistado foi informado e consentiu.
+/**
+ * Pedido de consentimento antes de a coleta começar, nas pesquisas que gravam a entrevista.
+ * A confirmação é do pesquisador, atestando que o entrevistado foi informado e consentiu.
+ */
 export default function ConsentModal({ visible, researchTitle, onConfirm, onCancel }: ConsentModalProps) {
     const [informed, setInformed] = useState(false);
 

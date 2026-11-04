@@ -24,6 +24,7 @@ interface SyncCardProps {
     discardDisabled?: boolean;
 }
 
+/** Card de uma coleta na tela de sincronização, com a situação e as ações. */
 export default function SyncCard({
     identificador,
     pesquisa,

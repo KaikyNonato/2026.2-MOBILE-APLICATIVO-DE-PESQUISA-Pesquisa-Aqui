@@ -4,8 +4,10 @@ import { SyncCollectionsDto } from './dto/sync-collections.dto';
 
 type Row = Record<string, any>;
 
-// Banco em memória, só o suficiente para a sincronização: respeita o índice único
-// (pesquisador + UUID) da coleta e desfaz a transação inteira se algo falhar dentro dela.
+/**
+ * Banco em memória, só o suficiente para a sincronização: respeita o índice único
+ * (pesquisador + UUID) da coleta e desfaz a transação inteira se algo falhar dentro dela.
+ */
 function makeDb() {
   let tables: Record<string, Row[]> = {
     User: [

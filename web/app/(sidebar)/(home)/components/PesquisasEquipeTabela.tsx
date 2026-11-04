@@ -38,6 +38,7 @@ type Situation = { label: string; tone: "light" | "clay" | "gray"; endingSoon: b
 /** Cor do selo na tabela padrão para cada tom de situação. */
 const CHIP_TONE = { light: "live", clay: "soon", gray: "done" } as const;
 
+/** Situação da pesquisa na tabela da equipe: rótulo, cor e se encerra em breve. */
 export function situationOf(research: Research, now: number): Situation {
     if (research.status === "DRAFT") return { label: "Rascunho", tone: "gray", endingSoon: false };
     if (research.status === "CLOSED") return { label: "Encerrada", tone: "gray", endingSoon: false };

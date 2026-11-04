@@ -67,10 +67,12 @@ export interface ResearchReport {
     questions: QuestionChart[];
 }
 
-// O dia escolhido vale no fuso de quem está olhando: 00:00 do primeiro dia até 23:59:59 do último.
+/** O dia escolhido vale no fuso de quem está olhando: 00:00 do primeiro dia até 23:59:59 do último. */
 const startOfDay = (day: string) => new Date(`${day}T00:00:00`).toISOString();
+/** Último instante do dia (`AAAA-MM-DD`), em formato ISO. */
 const endOfDay = (day: string) => new Date(`${day}T23:59:59.999`).toISOString();
 
+/** Monta a query string dos filtros do relatório (período e pesquisador). */
 export const reportQueryString = (filters: ReportFilters): string => {
     const params = new URLSearchParams();
     if (filters.from) params.set("from", startOfDay(filters.from));
@@ -81,6 +83,7 @@ export const reportQueryString = (filters: ReportFilters): string => {
     return text ? `?${text}` : "";
 };
 
+/** Converte a resposta de erro da API em um `Error` com a mensagem e o status. */
 const readError = async (response: Response, fallback: string) => {
     const errorBody = await response.json().catch(() => null);
     const message = Array.isArray(errorBody?.message) ? errorBody.message.join(", ") : errorBody?.message;
@@ -89,12 +92,14 @@ const readError = async (response: Response, fallback: string) => {
     return error;
 };
 
+/** Busca o painel de resultados de uma pesquisa. */
 export const getResearchPanel = async (researchId: number, filters: ReportFilters = {}): Promise<ResearchPanel> => {
     const response = await apiFetch(`/research/${researchId}/panel${reportQueryString(filters)}`, { method: "GET", credentials: "include" });
     if (!response.ok) throw await readError(response, "Falha ao carregar o painel");
     return response.json();
 };
 
+/** Busca o relatório de uma pesquisa. */
 export const getResearchReport = async (researchId: number, filters: ReportFilters = {}): Promise<ResearchReport> => {
     const response = await apiFetch(`/research/${researchId}/report${reportQueryString(filters)}`, { method: "GET", credentials: "include" });
     if (!response.ok) throw await readError(response, "Falha ao carregar o relatório");
@@ -187,6 +192,7 @@ export interface ResearchQuality {
     }[];
 }
 
+/** Busca a auditoria de qualidade das coletas de uma pesquisa. */
 export const getResearchQuality = async (researchId: number, filters: ReportFilters = {}): Promise<ResearchQuality> => {
     const response = await apiFetch(`/research/${researchId}/quality${reportQueryString(filters)}`, { method: "GET", credentials: "include" });
     if (!response.ok) throw await readError(response, "Falha ao carregar a auditoria de qualidade");
@@ -215,6 +221,7 @@ export interface ResearchMap {
     points: MapPoint[];
 }
 
+/** Busca os pontos do mapa das coletas de uma pesquisa. */
 export const getResearchMap = async (researchId: number, filters: ReportFilters = {}): Promise<ResearchMap> => {
     const response = await apiFetch(`/research/${researchId}/map${reportQueryString(filters)}`, { method: "GET", credentials: "include" });
     if (!response.ok) throw await readError(response, "Falha ao carregar o mapa");
@@ -227,6 +234,7 @@ export const closeResearch = async (researchId: number): Promise<void> => {
     if (!response.ok) throw await readError(response, "Falha ao encerrar a pesquisa");
 };
 
+/** Formata segundos como horas, minutos e segundos (`-` quando não há valor). */
 export const formatSeconds = (seconds: number | null): string => {
     if (seconds === null) return "-";
     const h = Math.floor(seconds / 3600);

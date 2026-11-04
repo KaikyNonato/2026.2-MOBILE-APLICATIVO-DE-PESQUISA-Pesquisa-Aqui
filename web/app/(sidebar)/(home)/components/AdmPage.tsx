@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import BannerComponent from "@/components/ui/bannerComponent";
 import { Pin } from "@/components/ui/contour";
@@ -28,6 +28,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 type TeamTab = "pesquisas" | "pesquisadores";
 
+/**
+ * Painel inicial do administrador: totais, gráficos, equipe e mapa de calor, calculados no
+ * servidor.
+ */
 export default function AdmPage({ userName }: { userName?: string }) {
     const [teamTab, setTeamTab] = useState<TeamTab>("pesquisas");
 

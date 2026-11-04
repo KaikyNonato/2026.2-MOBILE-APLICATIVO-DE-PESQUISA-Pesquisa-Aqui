@@ -1,6 +1,7 @@
 import { listCollections } from './collectionStore';
 import { getCachedResearches, returnResearchCopy } from './researchCache';
 
+/** Escreve o número com a palavra no singular ou no plural. */
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 /** Coletas desta pesquisa que ainda estão no aparelho: finalizadas aguardando envio (ou com falha) e rascunhos. */
@@ -9,6 +10,10 @@ export interface PendingCollections {
     drafts: number;
 }
 
+/**
+ * Texto que descreve as coletas pendentes (por exemplo, "2 coletas ainda não enviadas e 1
+ * rascunho").
+ */
 export function describePending({ finished, drafts }: PendingCollections): string {
     const parts: string[] = [];
     if (finished > 0) parts.push(plural(finished, 'coleta ainda não enviada', 'coletas ainda não enviadas'));
@@ -16,6 +21,7 @@ export function describePending({ finished, drafts }: PendingCollections): strin
     return parts.join(' e ');
 }
 
+/** Erro ao devolver uma pesquisa que ainda tem coletas no aparelho. */
 export class PendingCollectionsError extends Error {
     pending: PendingCollections;
 
@@ -23,7 +29,7 @@ export class PendingCollectionsError extends Error {
         const detail = describePending(pending);
         super(
             `${detail ? `Esta pesquisa ainda tem ${detail} neste aparelho. ` : 'Esta pesquisa ainda tem coletas neste aparelho. '}` +
-                'Envie tudo (ou conclua os rascunhos e envie) antes de removê-la.',
+            'Envie tudo (ou conclua os rascunhos e envie) antes de removê-la.',
         );
         this.pending = pending;
     }

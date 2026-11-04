@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { isSessionExpiredError } from "@/lib/apiFetcher"
+import { isSessionExpiredError } from "@/lib/apiFetcher";
 import {
     KIND_LABELS,
     KIND_ORDER,
@@ -10,7 +10,7 @@ import {
     type SearchEntry,
     type SearchKind,
     type SearchProfile,
-} from "@/lib/globalSearch"
+} from "@/lib/globalSearch";
 import {
     ArrowUpRight,
     Building2,
@@ -25,25 +25,25 @@ import {
     UsersRound,
     X,
     type LucideIcon,
-} from "lucide-react"
-import { useRouter } from "next/navigation"
-import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
-import { createPortal } from "react-dom"
-import "./global-search.css"
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import "./global-search.css";
 
 export type SearchPage = {
-    href: string
-    label: string
-    icon: LucideIcon
-}
+    href: string;
+    label: string;
+    icon: LucideIcon;
+};
 
 type GlobalSearchProps = {
-    profile?: SearchProfile
+    profile?: SearchProfile;
     /** Páginas do menu que o perfil pode abrir. */
-    pages: SearchPage[]
+    pages: SearchPage[];
     /** Menu lateral recolhido: mostra só o ícone no botão. */
-    collapsed?: boolean
-}
+    collapsed?: boolean;
+};
 
 const KIND_ICONS: Record<SearchKind, LucideIcon> = {
     page: LayoutDashboard,
@@ -52,25 +52,27 @@ const KIND_ICONS: Record<SearchKind, LucideIcon> = {
     researcher: UserRound,
     company: Building2,
     admin: ShieldCheck,
-}
+};
 
-const noopSubscribe = () => () => {}
-const shortcutLabel = () => (/mac|iphone|ipad/i.test(navigator.userAgent) ? "⌘ K" : "Ctrl K")
+/** Inscrição que não faz nada (não há o que escutar). */
+const noopSubscribe = () => () => { };
+/** Texto do atalho da busca: ⌘ K no Mac e Ctrl K nos demais. */
+const shortcutLabel = () => (/mac|iphone|ipad/i.test(navigator.userAgent) ? "⌘ K" : "Ctrl K");
 
 /** Escreve o texto com os trechos que casam com a busca em destaque. */
 function Highlight({ text, query }: { text: string; query: string }): ReactNode {
-    const ranges = highlightRanges(text, query)
-    if (ranges.length === 0) return text
+    const ranges = highlightRanges(text, query);
+    if (ranges.length === 0) return text;
 
-    const parts: ReactNode[] = []
-    let cursor = 0
+    const parts: ReactNode[] = [];
+    let cursor = 0;
     ranges.forEach(([start, end], i) => {
-        if (start > cursor) parts.push(<Fragment key={`t${i}`}>{text.slice(cursor, start)}</Fragment>)
-        parts.push(<mark key={`m${i}`}>{text.slice(start, end)}</mark>)
-        cursor = end
-    })
-    if (cursor < text.length) parts.push(<Fragment key="rest">{text.slice(cursor)}</Fragment>)
-    return parts
+        if (start > cursor) parts.push(<Fragment key={`t${i}`}>{text.slice(cursor, start)}</Fragment>);
+        parts.push(<mark key={`m${i}`}>{text.slice(start, end)}</mark>);
+        cursor = end;
+    });
+    if (cursor < text.length) parts.push(<Fragment key="rest">{text.slice(cursor)}</Fragment>);
+    return parts;
 }
 
 /**
@@ -78,41 +80,41 @@ function Highlight({ text, query }: { text: string; query: string }): ReactNode 
  * e encontra páginas, pesquisas, pesquisadores, empresas e administradores só de digitar.
  */
 export function GlobalSearch({ profile, pages, collapsed = false }: GlobalSearchProps) {
-    const router = useRouter()
-    const [open, setOpen] = useState(false)
-    const triggerRef = useRef<HTMLButtonElement>(null)
+    const router = useRouter();
+    const [open, setOpen] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
     // No servidor (e na hidratação) usa "Ctrl K"; no navegador troca para ⌘ K no Mac.
-    const shortcut = useSyncExternalStore(noopSubscribe, shortcutLabel, () => "Ctrl K")
+    const shortcut = useSyncExternalStore(noopSubscribe, shortcutLabel, () => "Ctrl K");
 
     const close = useCallback(() => {
-        setOpen(false)
-        triggerRef.current?.focus()
-    }, [])
+        setOpen(false);
+        triggerRef.current?.focus();
+    }, []);
 
     useEffect(() => {
-        if (!profile) return
+        if (!profile) return;
 
         const onKeyDown = (event: KeyboardEvent) => {
             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
-                event.preventDefault()
-                setOpen((value) => !value)
-                return
+                event.preventDefault();
+                setOpen((value) => !value);
+                return;
             }
             if (event.key === "/" && !event.ctrlKey && !event.metaKey && !event.altKey) {
-                const target = event.target as HTMLElement | null
+                const target = event.target as HTMLElement | null;
                 const typing =
-                    !!target && (target.isContentEditable || /^(input|textarea|select)$/i.test(target.tagName))
-                if (typing) return
-                event.preventDefault()
-                setOpen(true)
+                    !!target && (target.isContentEditable || /^(input|textarea|select)$/i.test(target.tagName));
+                if (typing) return;
+                event.preventDefault();
+                setOpen(true);
             }
-        }
+        };
 
-        document.addEventListener("keydown", onKeyDown)
-        return () => document.removeEventListener("keydown", onKeyDown)
-    }, [profile])
+        document.addEventListener("keydown", onKeyDown);
+        return () => document.removeEventListener("keydown", onKeyDown);
+    }, [profile]);
 
-    if (!profile) return null
+    if (!profile) return null;
 
     return (
         <>
@@ -137,73 +139,73 @@ export function GlobalSearch({ profile, pages, collapsed = false }: GlobalSearch
                         pages={pages}
                         onClose={close}
                         onNavigate={(href) => {
-                            setOpen(false)
-                            router.push(href)
+                            setOpen(false);
+                            router.push(href);
                         }}
                     />,
                     document.body
                 )}
         </>
-    )
+    );
 }
 
 type SearchPanelProps = {
-    profile: SearchProfile
-    pages: SearchPage[]
-    onClose: () => void
-    onNavigate: (href: string) => void
-}
+    profile: SearchProfile;
+    pages: SearchPage[];
+    onClose: () => void;
+    onNavigate: (href: string) => void;
+};
 
 /** Painel aberto: é montado a cada abertura, então começa sempre limpo. */
 function SearchPanel({ profile, pages, onClose, onNavigate }: SearchPanelProps) {
-    const [query, setQuery] = useState("")
-    const [records, setRecords] = useState<SearchEntry[]>([])
-    const [loading, setLoading] = useState(true)
-    const [failed, setFailed] = useState(false)
-    const [active, setActive] = useState(0)
+    const [query, setQuery] = useState("");
+    const [records, setRecords] = useState<SearchEntry[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [failed, setFailed] = useState(false);
+    const [active, setActive] = useState(0);
 
-    const inputRef = useRef<HTMLInputElement>(null)
-    const listRef = useRef<HTMLDivElement>(null)
-    const listId = useId()
+    const inputRef = useRef<HTMLInputElement>(null);
+    const listRef = useRef<HTMLDivElement>(null);
+    const listId = useId();
 
     /* ---------- busca os registros no servidor (poucos por tipo, depois de uma pausa na digitação) ---------- */
-    const searched = query.trim()
+    const searched = query.trim();
     useEffect(() => {
-        let cancelled = false
+        let cancelled = false;
 
         const timer = window.setTimeout(() => {
             loadSearchEntries(profile, searched)
                 .then((entries) => {
                     if (!cancelled) {
-                        setRecords(entries)
-                        setFailed(false)
+                        setRecords(entries);
+                        setFailed(false);
                     }
                 })
                 .catch((error) => {
-                    if (cancelled || isSessionExpiredError(error)) return
-                    console.error(error)
-                    setFailed(true)
+                    if (cancelled || isSessionExpiredError(error)) return;
+                    console.error(error);
+                    setFailed(true);
                 })
                 .finally(() => {
-                    if (!cancelled) setLoading(false)
-                })
-        }, searched ? 250 : 0)
+                    if (!cancelled) setLoading(false);
+                });
+        }, searched ? 250 : 0);
 
         return () => {
-            cancelled = true
-            window.clearTimeout(timer)
-        }
-    }, [profile, searched])
+            cancelled = true;
+            window.clearTimeout(timer);
+        };
+    }, [profile, searched]);
 
     /* ---------- foco e rolagem da página ---------- */
     useEffect(() => {
-        const previous = document.body.style.overflow
-        document.body.style.overflow = "hidden"
-        inputRef.current?.focus()
+        const previous = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        inputRef.current?.focus();
         return () => {
-            document.body.style.overflow = previous
-        }
-    }, [])
+            document.body.style.overflow = previous;
+        };
+    }, []);
 
     /* ---------- resultados ---------- */
     const pageEntries = useMemo<SearchEntry[]>(
@@ -216,18 +218,18 @@ function SearchPanel({ profile, pages, onClose, onNavigate }: SearchPanelProps) 
                 href,
             })),
         [pages]
-    )
+    );
 
-    const iconByKey = useMemo(() => new Map(pages.map((p) => [`page:${p.href}`, p.icon])), [pages])
+    const iconByKey = useMemo(() => new Map(pages.map((p) => [`page:${p.href}`, p.icon])), [pages]);
 
-    const trimmed = query.trim()
+    const trimmed = query.trim();
 
     const results = useMemo(() => {
-        if (trimmed) return searchEntries([...pageEntries, ...records], trimmed).map((r) => r.entry)
+        if (trimmed) return searchEntries([...pageEntries, ...records], trimmed).map((r) => r.entry);
         // Sem texto: as páginas e algumas pesquisas, para o usuário já ter por onde começar.
-        const recent = records.filter((r) => r.kind === "research").slice(0, 4)
-        return [...pageEntries, ...recent]
-    }, [trimmed, pageEntries, records])
+        const recent = records.filter((r) => r.kind === "research").slice(0, 4);
+        return [...pageEntries, ...recent];
+    }, [trimmed, pageEntries, records]);
 
     const groups = useMemo(
         () =>
@@ -236,57 +238,57 @@ function SearchPanel({ profile, pages, onClose, onNavigate }: SearchPanelProps) 
                 items: results.filter((entry) => entry.kind === kind),
             })).filter((group) => group.items.length > 0),
         [results]
-    )
+    );
 
     // Índice de cada resultado na lista contínua (para a navegação por setas).
-    const flat = useMemo(() => groups.flatMap((g) => g.items), [groups])
+    const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
     // A seleção nunca passa do último resultado, mesmo quando a lista encolhe.
-    const current = Math.min(active, Math.max(0, flat.length - 1))
+    const current = Math.min(active, Math.max(0, flat.length - 1));
 
     useEffect(() => {
-        listRef.current?.querySelector<HTMLElement>(`[data-index="${current}"]`)?.scrollIntoView({ block: "nearest" })
-    }, [current])
+        listRef.current?.querySelector<HTMLElement>(`[data-index="${current}"]`)?.scrollIntoView({ block: "nearest" });
+    }, [current]);
 
     const choose = (entry: SearchEntry | undefined) => {
-        if (entry) onNavigate(entry.href)
-    }
+        if (entry) onNavigate(entry.href);
+    };
 
     const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === "ArrowDown") {
-            event.preventDefault()
-            setActive(flat.length ? (current + 1) % flat.length : 0)
+            event.preventDefault();
+            setActive(flat.length ? (current + 1) % flat.length : 0);
         } else if (event.key === "ArrowUp") {
-            event.preventDefault()
-            setActive(flat.length ? (current - 1 + flat.length) % flat.length : 0)
+            event.preventDefault();
+            setActive(flat.length ? (current - 1 + flat.length) % flat.length : 0);
         } else if (event.key === "Home") {
-            event.preventDefault()
-            setActive(0)
+            event.preventDefault();
+            setActive(0);
         } else if (event.key === "End") {
-            event.preventDefault()
-            setActive(Math.max(0, flat.length - 1))
+            event.preventDefault();
+            setActive(Math.max(0, flat.length - 1));
         } else if (event.key === "Enter") {
-            event.preventDefault()
-            choose(flat[current])
+            event.preventDefault();
+            choose(flat[current]);
         } else if (event.key === "Escape") {
-            event.preventDefault()
+            event.preventDefault();
             if (query) {
-                setQuery("")
-                setActive(0)
-            } else onClose()
+                setQuery("");
+                setActive(0);
+            } else onClose();
         } else if (event.key === "Tab") {
             // Mantém o foco no campo enquanto o painel está aberto.
-            event.preventDefault()
+            event.preventDefault();
         }
-    }
+    };
 
-    const optionId = (index: number) => `${listId}-opt-${index}`
+    const optionId = (index: number) => `${listId}-opt-${index}`;
 
     const panel = (
         <div
             className="pa-gs-back"
             onMouseDown={(event) => {
-                if (event.target === event.currentTarget) onClose()
+                if (event.target === event.currentTarget) onClose();
             }}
         >
             <div className="pa-gs" role="dialog" aria-modal="true" aria-label="Busca global">
@@ -297,8 +299,8 @@ function SearchPanel({ profile, pages, onClose, onNavigate }: SearchPanelProps) 
                         type="text"
                         value={query}
                         onChange={(event) => {
-                            setQuery(event.target.value)
-                            setActive(0)
+                            setQuery(event.target.value);
+                            setActive(0);
                         }}
                         onKeyDown={onInputKeyDown}
                         placeholder="Buscar páginas, pesquisas, coletas, pessoas…"
@@ -317,9 +319,9 @@ function SearchPanel({ profile, pages, onClose, onNavigate }: SearchPanelProps) 
                             type="button"
                             className="pa-gs-clear"
                             onClick={() => {
-                                setQuery("")
-                                setActive(0)
-                                inputRef.current?.focus()
+                                setQuery("");
+                                setActive(0);
+                                inputRef.current?.focus();
                             }}
                             aria-label="Limpar busca"
                         >
@@ -337,8 +339,8 @@ function SearchPanel({ profile, pages, onClose, onNavigate }: SearchPanelProps) 
                                     {KIND_LABELS[group.kind]}
                                 </p>
                                 {group.items.map((entry) => {
-                                    const index = flat.indexOf(entry)
-                                    const Icon = iconByKey.get(entry.key) ?? KIND_ICONS[entry.kind]
+                                    const index = flat.indexOf(entry);
+                                    const Icon = iconByKey.get(entry.key) ?? KIND_ICONS[entry.kind];
                                     return (
                                         <div
                                             key={entry.key}
@@ -364,10 +366,10 @@ function SearchPanel({ profile, pages, onClose, onNavigate }: SearchPanelProps) 
                                             )}
                                             <ArrowUpRight className="pa-gs-go" aria-hidden="true" />
                                         </div>
-                                    )
+                                    );
                                 })}
                             </div>
-                        )
+                        );
                     })}
 
                     {flat.length === 0 && (
@@ -400,7 +402,7 @@ function SearchPanel({ profile, pages, onClose, onNavigate }: SearchPanelProps) 
                 </div>
             </div>
         </div>
-    )
+    );
 
-    return panel
+    return panel;
 }

@@ -44,6 +44,7 @@ const PROFILE_LABELS: Record<string, string> = {
     RESEARCHER: 'Pesquisador',
 };
 
+/** Formata uma data ISO por extenso (dia, mês e ano); `—` se for vazia ou inválida. */
 const formatLong = (iso?: string) => {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -85,6 +86,7 @@ function Panel({
     );
 }
 
+/** Campo de formulário com rótulo. */
 function Field({ id, label, children }: { id: string; label: string; children: ReactNode }) {
     return (
         <div className="flex flex-col gap-1.5">
@@ -94,6 +96,7 @@ function Field({ id, label, children }: { id: string; label: string; children: R
     );
 }
 
+/** Texto do botão de salvar, com spinner enquanto salva. */
 function SaveLabel({ saving, label }: { saving: boolean; label: string }) {
     return saving ? (
         <span className="flex items-center gap-2">
@@ -331,9 +334,8 @@ function PasswordForm() {
     const rule = (ok: boolean, text: string) => (
         <li className={`flex items-center gap-2 text-xs ${ok ? 'text-[var(--green-deep)]' : 'text-muted-foreground'}`}>
             <span
-                className={`grid size-4 place-items-center rounded-full ${
-                    ok ? 'bg-[var(--green-deep)] text-white' : 'bg-muted'
-                }`}
+                className={`grid size-4 place-items-center rounded-full ${ok ? 'bg-[var(--green-deep)] text-white' : 'bg-muted'
+                    }`}
             >
                 {ok && <Check className="size-2.5" strokeWidth={3} />}
             </span>
@@ -402,6 +404,7 @@ function PasswordForm() {
     );
 }
 
+/** Página de perfil: dados pessoais, foto e troca de senha do usuário logado. */
 export default function PerfilPage() {
     const { user, loading: userLoading } = useCurrentUser();
     const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -473,11 +476,10 @@ export default function PerfilPage() {
                                 {profileLabel}
                             </span>
                             <span
-                                className={`inline-flex h-7 items-center gap-2 rounded-full px-3 text-[13px] font-medium ${
-                                    active
+                                className={`inline-flex h-7 items-center gap-2 rounded-full px-3 text-[13px] font-medium ${active
                                         ? 'bg-[rgba(191,227,208,0.16)] text-[var(--mint)]'
                                         : 'bg-[rgba(224,145,122,0.18)] text-[#f0b09c]'
-                                }`}
+                                    }`}
                             >
                                 <span className={`size-2 rounded-full ${active ? 'bg-[var(--mint)]' : 'bg-[#e0917a]'}`} />
                                 {active ? 'Conta ativa' : 'Conta inativa'}
@@ -534,34 +536,34 @@ export default function PerfilPage() {
                             <dd className="font-medium">{profileLabel}</dd>
                         </div>
                         {!isSuper && (
-                        <div className="flex items-center justify-between gap-4 py-2.5">
-                            <dt className="text-muted-foreground">Empresa</dt>
-                            <dd className="flex min-w-0 items-center justify-end gap-2 font-medium">
-                                {profile.companyLogoUrl && (
-                                    <UserAvatar
-                                        name={profile.companyName ?? ''}
-                                        src={profile.companyLogoUrl}
-                                        size={24}
-                                        fit="contain"
-                                        ariaHidden
-                                        className="grid size-6 shrink-0 place-items-center rounded-md border border-border bg-white text-[10px]"
-                                    />
-                                )}
-                                {profile.companyName && isResearcher ? (
-                                    <span className="truncate">{profile.companyName}</span>
-                                ) : profile.companyName ? (
-                                    <Link
-                                        href="/empresa"
-                                        className="group inline-flex max-w-full items-center gap-1 text-[var(--green-deep)] hover:underline"
-                                    >
+                            <div className="flex items-center justify-between gap-4 py-2.5">
+                                <dt className="text-muted-foreground">Empresa</dt>
+                                <dd className="flex min-w-0 items-center justify-end gap-2 font-medium">
+                                    {profile.companyLogoUrl && (
+                                        <UserAvatar
+                                            name={profile.companyName ?? ''}
+                                            src={profile.companyLogoUrl}
+                                            size={24}
+                                            fit="contain"
+                                            ariaHidden
+                                            className="grid size-6 shrink-0 place-items-center rounded-md border border-border bg-white text-[10px]"
+                                        />
+                                    )}
+                                    {profile.companyName && isResearcher ? (
                                         <span className="truncate">{profile.companyName}</span>
-                                        <ArrowUpRight className="size-3.5 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                                    </Link>
-                                ) : (
-                                    '—'
-                                )}
-                            </dd>
-                        </div>
+                                    ) : profile.companyName ? (
+                                        <Link
+                                            href="/empresa"
+                                            className="group inline-flex max-w-full items-center gap-1 text-[var(--green-deep)] hover:underline"
+                                        >
+                                            <span className="truncate">{profile.companyName}</span>
+                                            <ArrowUpRight className="size-3.5 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                                        </Link>
+                                    ) : (
+                                        '—'
+                                    )}
+                                </dd>
+                            </div>
                         )}
                         <div className="flex items-center justify-between gap-4 py-2.5">
                             <dt className="text-muted-foreground">Cadastro em</dt>

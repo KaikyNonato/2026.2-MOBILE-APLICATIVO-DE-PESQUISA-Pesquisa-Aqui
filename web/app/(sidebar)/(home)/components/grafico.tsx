@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
+import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 type ChartProps = {
     variant?: "line" | 'bar';
@@ -13,15 +13,16 @@ type ChartProps = {
     seriesLabel?: string;
 };
 
+/** Gráfico de linhas ou de barras, conforme `variant`. */
 export function Chart({ variant, data = [], seriesKey = "Pesquisas", seriesLabel }: ChartProps) {
     const chartConfig: ChartConfig = {
         [seriesKey]: {
             label: seriesLabel ?? seriesKey,
             color: "#447762",
         },
-    }
+    };
 
-    const color = `var(--color-${seriesKey})`
+    const color = `var(--color-${seriesKey})`;
 
     return (
         <ChartContainer config={chartConfig} className="max-h-175 max-w-175 w-full min-w-50">
@@ -68,5 +69,5 @@ export function Chart({ variant, data = [], seriesKey = "Pesquisas", seriesLabel
             )}
 
         </ChartContainer>
-    )
+    );
 }

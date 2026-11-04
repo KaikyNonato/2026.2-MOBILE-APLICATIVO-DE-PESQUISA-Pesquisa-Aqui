@@ -29,6 +29,7 @@ const PROFILE_ERRORS: Record<string, string> = {
     'Armazenamento de imagens não configurado.': 'O armazenamento de imagens não está configurado no servidor.',
 };
 
+/** Converte o erro da API de perfil em um `Error` (foto grande demais tem mensagem própria). */
 const profileError = async (response: Response, fallback: string) => {
     // O servidor recusa antes de ler o arquivo grande demais.
     if (response.status === 413) return new Error('A foto deve ter no máximo 5 MB.');
@@ -39,6 +40,7 @@ const profileError = async (response: Response, fallback: string) => {
     return new Error(PROFILE_ERRORS[typeof message === 'string' ? message : ''] ?? fallback);
 };
 
+/** Busca o perfil do usuário logado. */
 export const getProfile = async (): Promise<ProfileData> => {
     const response = await apiFetch('/auth/profile', { method: 'GET', credentials: 'include' });
 

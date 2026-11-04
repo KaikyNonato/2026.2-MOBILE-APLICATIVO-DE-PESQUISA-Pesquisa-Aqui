@@ -2,6 +2,7 @@ import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { PlatformPressable } from '@react-navigation/elements';
 import * as Haptics from 'expo-haptics';
 
+/** Botão da barra de abas com vibração leve ao tocar (iOS). */
 export function HapticTab(props: BottomTabBarButtonProps) {
   return (
     <PlatformPressable

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import BannerComponent from "@/components/ui/bannerComponent";
 import DialogLayout from "@/components/ui/dialogLayout";
@@ -18,6 +18,7 @@ import { Chart } from "../(home)/components/grafico";
 import CadastrarEmpresaForm from "./components/CadastrarEmpresaForm";
 import ListaEmpresas from "./components/ListaEmpresas";
 
+/** Página de empresas: cadastros e lista, com as ações liberadas conforme o perfil. */
 export default function EmpresaPage() {
     const { user } = useCurrentUser();
     const isSuperAdmin = user?.profile === 'SUPERADMINISTRATOR';

@@ -9,6 +9,7 @@ import '@/lib/backgroundSync';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/brand';
 
+/** Navegação raiz: espera a sessão carregar e define as telas que o usuário pode ver. */
 function RootLayoutNav() {
     const { isAuthenticated, isLoading } = useAuth();
 
@@ -43,6 +44,7 @@ function RootLayoutNav() {
     );
 }
 
+/** Layout raiz: monta os provedores de sessão e de bloqueio por biometria e a navegação. */
 export default function RootLayout() {
     return (
         <AuthProvider>
