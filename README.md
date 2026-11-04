@@ -6,7 +6,7 @@ Plataforma para criar, aplicar e acompanhar pesquisas de campo. O projeto reúne
 - **Web** (`web/`): painel administrativo em Next.js, usado por administradores para montar pesquisas e acompanhar resultados.
 - **Mobile** (`mobile/`): aplicativo Expo / React Native, usado pelos pesquisadores em campo para coletar respostas, inclusive sem internet.
 
-> Esta é a documentação da branch **`main`**. Ela contém a evolução mais recente do painel web (dashboard com dados reais, paginação e busca no servidor), da API e do app mobile.
+> Esta é a documentação da branch **`main`**. Ela contém a evolução mais recente do painel web (dashboard com dados reais, paginação e busca no servidor), da API e do app mobile (biometria, notificações, sincronização em segundo plano e modo campo).
 
 ---
 
@@ -50,13 +50,17 @@ O fluxo de uso do sistema é:
 ### Painel web
 - Login com sessão por cookie (`access_token`) e rotas protegidas.
 - Dashboards diferentes para superadministrador e administrador (cards, gráficos, mapa de calor de coletas, equipe em campo e últimas atualizações), calculados no servidor.
-- Cadastro e gestão de empresas e administradores.
+- Cadastro e gestão de empresas e administradores, com **logo e capa** da empresa.
+- Tela de **perfil** (editar dados, trocar senha e enviar **avatar**) e troca obrigatória de senha temporária.
 - Cadastro, edição, ativação/desativação e listagem de pesquisadores (lista ou cartões).
-- Criação, edição, publicação e encerramento de pesquisas, com lista em cartões ou linhas e calendário de campo.
+- Criação, edição, publicação, **volta para rascunho** (se nenhum pesquisador baixou) e encerramento de pesquisas, com lista em cartões ou linhas e calendário de campo.
+- **Modelos de pesquisa**: biblioteca com 5 questionários prontos, **modelos salvos pela empresa** e duplicação de pesquisa.
+- **Mapa de coletas** (Leaflet) e **auditoria de qualidade** (coletas rápidas demais, fora da área, sem localização, respostas repetidas, áudio ausente).
 - Montagem do questionário: seções, questões, opções, reordenação e regras de exibição condicional.
 - Vinculação de pesquisadores a uma pesquisa, com meta de coletas por pesquisador.
 - Consulta das coletas recebidas (com resposta a resposta, fotos e áudio), painel de resultados com filtros, relatório por questão e exportação em CSV.
 - **Cópias em campo**: quem está com a pesquisa baixada, histórico de devoluções e revogações, revogação forçada e desbloqueio de aparelho.
+- O **pesquisador** que abre o painel só acessa o início, a lista das próprias pesquisas, o perfil e a troca de senha (`proxy.ts`); a coleta é feita no aplicativo.
 - **Busca global** (atalho no topo) por pesquisas, pesquisadores, empresas, administradores e coletas.
 - **Paginação em todas as listas e tabelas**, com busca, filtro e ordem feitos no servidor, e **seletores com pesquisa e rolagem infinita** (veja [Paginação e limites de dados](#paginação-e-limites-de-dados)).
 
@@ -68,6 +72,13 @@ O fluxo de uso do sistema é:
 - Termo de consentimento do entrevistado e gravação de áudio da entrevista, quando a pesquisa exige.
 - Registro automático do local onde a entrevista começa.
 - Sincronização das coletas com a API, com banner de modo offline e envio idempotente (reenviar a mesma coleta não duplica no servidor).
+- **Rascunhos**: entrevistas em andamento ficam salvas no aparelho, com o progresso (questões visíveis respondidas) e seletor para retomar.
+- **Modo campo**: acompanha a área-alvo da pesquisa (distância ao centro, por Haversine) e a lista de entrevistas do dia, tudo offline.
+- **Sincronização em segundo plano** (`expo-background-task`): com o app fechado, o sistema acorda o app de tempos em tempos, com rede, para enviar a fila, atualizar a lista de pesquisas e dar avisos. O horário é decidido pelo sistema (no Android, no mínimo a cada 15 min; no iOS é mais irregular).
+- **Notificações locais** (`expo-notifications`; nenhum servidor envia nada): pesquisa nova vinculada, pesquisa encerrada e meta não atingida 24 h antes do prazo. O aviso chega quando o app atualiza, não no instante em que o administrador age.
+- **Desbloqueio por biometria** (digital, Face ID): o login continua sendo usuário e senha; a biometria só libera a sessão já guardada no aparelho, sem armazenar senha.
+- **Avisos de espaço do aparelho** (alerta abaixo de 500 MB livres e crítico abaixo de 150 MB), histórico de envios, descarte de coleta, devolução da pesquisa ao aparelho e edição de perfil com avatar.
+- Textos da interface fora do código (`mobile/i18n`, hoje só `pt-BR`) e tema claro/escuro automático.
 
 ### API
 - Autenticação JWT, via cookie (web) e via cabeçalho `Authorization: Bearer` (mobile).
@@ -76,7 +87,8 @@ O fluxo de uso do sistema é:
 - Armazenamento de mídias no Cloudinary (privado) ou, só em desenvolvimento, em disco.
 - Controle de cópias da pesquisa por aparelho (download, devolução, revogação e desbloqueio).
 - Painel de resultados, relatório por questão e exportação em CSV, Excel (XLSX), JSON e relatório em PDF.
-- Mapa de coletas, auditoria de qualidade, modelos de pesquisa e duplicação de pesquisa.
+- Mapa de coletas, auditoria de qualidade, modelos de pesquisa (biblioteca, modelos salvos pela empresa e duplicação).
+- Avatar de usuário e logo/capa de empresa, entregues por `/media`.
 - **Listagens paginadas com limite de 100 itens por página** e endpoints de totais prontos para os dashboards.
 - Validação automática de entradas (`class-validator`, com `whitelist` e `transform`).
 
@@ -84,9 +96,9 @@ O fluxo de uso do sistema é:
 
 | Parte | Principais tecnologias |
 | --- | --- |
-| API | NestJS 11, TypeScript, Prisma Next (`@prisma/orm-postgres`), PostgreSQL ≥ 15, JWT (`@nestjs/jwt`), bcrypt, class-validator, Jest |
-| Web | Next.js 16, React 19, Tailwind CSS 4, shadcn/ui + Base UI, Recharts, jose, react-hot-toast |
-| Mobile | Expo 57, React Native 0.86, React 19, Expo Router (rotas por arquivo), expo-audio, expo-location, expo-secure-store, AsyncStorage, NetInfo, Reanimated |
+| API | NestJS 11, TypeScript, Prisma Next (`@prisma/orm-postgres`), PostgreSQL ≥ 15, JWT (`@nestjs/jwt`), bcrypt, class-validator, helmet, `@nestjs/throttler`, Cloudinary, ExcelJS, PDFKit, Jest |
+| Web | Next.js 16, React 19, Tailwind CSS 4, shadcn/ui + Base UI, Recharts, Leaflet, jose, jwt-decode, react-hot-toast |
+| Mobile | Expo 58, React Native 0.88, React 19, Expo Router (rotas por arquivo), expo-audio, expo-location, expo-image-picker, expo-secure-store, expo-local-authentication, expo-notifications, expo-background-task, react-native-maps, AsyncStorage, NetInfo, Reanimated |
 
 ## Estrutura do repositório
 
@@ -97,31 +109,37 @@ O fluxo de uso do sistema é:
 │   │   ├── auth/             # Login, logout, /auth/me, guard JWT
 │   │   ├── user/             # Usuários (admins e pesquisadores) e totais de pesquisadores
 │   │   ├── company/          # Empresas e totais de empresas
-│   │   ├── research/         # Pesquisas, publicação, encerramento, painel, relatório, CSV, equipe e cópias
+│   │   ├── research/         # Pesquisas, publicação, encerramento, painel, relatório, exportações, modelos, qualidade, equipe e cópias
 │   │   ├── section/          # Seções do questionário
 │   │   ├── question/         # Questões e opções
 │   │   ├── question-rule/    # Regras de exibição condicional
 │   │   ├── collection/       # Coletas (respostas, consentimento, mídias, sincronização)
 │   │   ├── dashboard/        # Painel do administrador já calculado (GET /dashboard/admin)
-│   │   ├── common/           # Paginação compartilhada (pagination.ts)
+│   │   ├── common/           # Paginação compartilhada (pagination.ts) e segurança (CORS e proxy: security.ts)
+│   │   ├── media/            # Entrega de avatares e imagens de empresa (/media)
 │   │   └── prisma/           # Contrato do banco (contract.prisma), cliente e seeds
 │   ├── migrations/           # Snapshots de contrato do Prisma Next
-│   ├── test/                 # Testes e2e
+│   ├── test/                 # Teste e2e (apenas o básico do Nest)
+│   ├── prisma-next.md        # Guia do Prisma Next
 │   └── .env.example
 ├── web/                      # Painel administrativo Next.js
 │   ├── app/
 │   │   ├── (autenticacao)/login
-│   │   └── (sidebar)/        # Home (dashboards), empresa, empresas, pesquisadores, pesquisas
+│   │   ├── (autenticacao)/trocar-senha
+│   │   └── (sidebar)/        # Home (dashboards), empresa, empresas, administradores, pesquisadores, pesquisas, perfil
 │   ├── components/ui/        # Componentes de interface (shadcn/ui), DataTable, Pagination e RemoteComboBox
 │   ├── hooks/                # useCurrentUser, useFieldSnapshot, usePagedResource
 │   ├── lib/                  # Clientes da API (auth, research, company, user, collection...) e pagination.ts
 │   └── proxy.ts              # Proteção de rotas por JWT
 └── mobile/                   # App Expo / React Native
-    ├── app/                  # Rotas (login, home, pesquisas, sincronização, usuário, coleta)
-    ├── components/           # Componentes (QuestionInput, ConsentModal, OfflineBanner...)
-    ├── context/              # AuthContext
-    ├── hooks/                # useInterviewRecording, useNetworkStatus...
-    └── lib/                  # API, cache de pesquisas, fila de coletas, envio de arquivos, regras de exibição
+    ├── app/                  # Rotas (login, trocar-senha, editar-perfil, campo, coleta, e abas home, pesquisas, sincronização, usuário)
+    ├── components/           # Componentes (QuestionInput, ConsentModal, OfflineBanner, BiometricGate...)
+    ├── constants/            # Marca e tema
+    ├── context/              # AuthContext e BiometricLockContext
+    ├── hooks/                # useInterviewRecording, useNetworkStatus, useSyncQueue, useNotifications...
+    ├── i18n/                 # Textos da interface (pt-BR)
+    ├── lib/                  # API, cache de pesquisas, fila e envio de coletas, sincronização em segundo plano, notificações, biometria, regras de exibição, modo campo
+    └── scripts/              # Utilitários do Expo (reset-project)
 ```
 
 ## Pré-requisitos
@@ -138,7 +156,7 @@ Clone o repositório e entre na branch:
 ```bash
 git clone https://github.com/GirlaneSL/2026.2-MOBILE-APLICATIVO-DE-PESQUISA-Pesquisa-Aqui.git
 cd 2026.2-MOBILE-APLICATIVO-DE-PESQUISA-Pesquisa-Aqui
-git checkout dev-kaiky
+git checkout main
 ```
 
 Suba as partes nesta ordem: **API → Web → Mobile**.
@@ -154,6 +172,9 @@ cp .env.example .env     # depois edite o .env (veja "Variáveis de ambiente")
 Crie um banco PostgreSQL vazio e aponte o `DATABASE_URL` para ele. Em seguida:
 
 ```bash
+# cria as tabelas no banco
+npx prisma db init
+
 # gera/atualiza os arquivos do contrato (contract.json e contract.d.ts)
 npm run contract:emit
 
@@ -188,7 +209,7 @@ SEED_COLLECTIONS=250 npm run seed:demo
 SEED_DEMO_PASSWORD=MinhaSenha1 npm run seed:demo
 ```
 
-O banco precisa estar com o contrato aplicado (`npx prisma db update`). O seed cria:
+O banco precisa ter as tabelas criadas (`npx prisma db init`, veja [Publicar na Vercel](#publicar-na-vercel)). O seed cria:
 
 | O quê | Detalhes |
 | --- | --- |
@@ -252,9 +273,12 @@ Inicie o app:
 npm start            # abre o Expo; escaneie o QR Code com o Expo Go
 npm run android      # emulador Android
 npm run ios          # simulador iOS
+npm run web          # versão web (recursos nativos como biometria e segundo plano não funcionam)
 ```
 
-> O app usa microfone (gravação de entrevista) e localização. As permissões são solicitadas em tempo de uso.
+> O app usa microfone (gravação de entrevista), localização, câmera, notificações e biometria. As permissões são solicitadas em tempo de uso.
+>
+> **Expo Go x development build:** se notificações ou sincronização em segundo plano não funcionarem no Expo Go, use um *development build* (`npx expo run:android` / `npx expo run:ios`).
 
 ## Variáveis de ambiente
 
@@ -268,6 +292,7 @@ npm run ios          # simulador iOS
 | `CLOUDINARY_URL` | Recomendada | Credenciais do Cloudinary (`cloudinary://API_KEY:API_SECRET@CLOUD_NAME`), onde ficam todas as fotos e áudios como arquivos privados. Alternativa: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` e `CLOUDINARY_API_SECRET` |
 | `CLOUDINARY_FOLDER` | Não | Pasta raiz no Cloudinary; cada pesquisa ganha uma subpasta própria |
 | `AUDIO_STORAGE_DIR` | Não | Só para desenvolvimento **sem** Cloudinary: pasta em disco dos áudios (padrão `./storage/audio`) |
+| `PARTIAL_UPLOAD_DIR` | Não | Pasta dos pedaços de arquivo ainda em envio (padrão `storage/partial`; na Vercel usa `/tmp`). Em produção use um disco que sobreviva a reinício |
 | `AUDIO_MAX_BYTES` | Não | Tamanho máximo do áudio de uma coleta, em bytes (padrão `157286400`, ou 150 MB) |
 | `PHOTO_MAX_BYTES` | Não | Tamanho máximo de cada foto, em bytes (padrão `31457280`, ou 30 MB) |
 | `CORS_ORIGINS` | Em produção, se um navegador chamar a API direto | Origens autorizadas, separadas por vírgula (ex.: `https://painel.exemplo.com`). Vazia em desenvolvimento libera tudo; vazia em produção nega todas as origens de navegador. O painel (usa `/api` do próprio domínio) e o app mobile (sem `Origin`) não dependem dela |
@@ -276,6 +301,7 @@ npm run ios          # simulador iOS
 | `LOGIN_MAX_ATTEMPTS` / `LOGIN_LOCK_MINUTES` | Não | Tentativas erradas seguidas até trancar a conta (padrão `5`) e por quanto tempo (padrão `15` minutos) |
 | `SEED_ADMIN_PASSWORD` | Não | Senha inicial do superadministrador criado por `npm run seed` (vazia = aleatória, mostrada no terminal) |
 | `SEED_DEMO_PASSWORD` | Não | Senha dos usuários de demonstração criados por `npm run seed:demo` (vazia = `demo1234`; precisa seguir a política de senha) |
+| `SEED_COLLECTIONS` | Não | Quantidade de coletas geradas na primeira pesquisa por `npm run seed:demo` |
 
 ### Web (`web/.env.local`)
 
@@ -289,6 +315,8 @@ npm run ios          # simulador iOS
 | Variável | Obrigatória | Descrição |
 | --- | --- | --- |
 | `EXPO_PUBLIC_API_URL` | Recomendada | URL base da API (padrão `http://localhost:3001`) |
+
+> O repositório tem `.env.example` na API e no web. O mobile não tem: crie `mobile/.env` à mão com a variável acima.
 
 > Nunca faça commit de arquivos `.env` com valores reais.
 
@@ -360,7 +388,8 @@ Principais entidades (definidas em `api/src/prisma/contract.prisma`):
 - **QuestionRule**: uma **condição** sobre a resposta de uma questão anterior (`operator` + `triggerValue`), que mostra (`SHOW`) ou esconde (`HIDE`) uma questão **ou uma seção inteira**. Condições do mesmo alvo com a mesma `groupKey` valem em conjunto (E); grupos diferentes valem em alternativa (OU).
 - **Collection**: uma entrevista feita por um pesquisador (respostas, consentimento, áudio opcional).
 - **Answer**: resposta a uma questão dentro de uma coleta.
-- **ResearchResearcher**: vínculo entre pesquisa e pesquisadores.
+- **ResearchResearcher**: vínculo entre pesquisa e pesquisadores (com meta de coletas).
+- **SavedTemplate**: modelo de questionário salvo na biblioteca da empresa.
 - **ResearchDownload**: cópia da pesquisa baixada por um aparelho (data, devolução, revogação e desbloqueio).
 - **SyncLog**: registro de cada sincronização em lote (aparelho, horário e resultado por coleta).
 
@@ -368,24 +397,26 @@ Tipos de questão (`QuestionType`): `FREE_TEXT`, `NUMERIC`, `DATE`, `TIME`, `YES
 
 ## Endpoints da API
 
-Todas as rotas, exceto `POST /auth/login` e `POST /auth/logout`, exigem autenticação (`AuthGuard`).
+Todas as rotas, exceto `GET /`, `POST /auth/login` e `POST /auth/logout`, exigem autenticação (`AuthGuard`).
 
 | Recurso | Rotas |
 | --- | --- |
-| Auth | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `GET/PATCH /auth/profile`, `POST /auth/change-password` |
-| Usuários | `POST /user`, `GET /user` ⁽ᵖ⁾, `GET /user/admins` ⁽ᵖ⁾, `GET /user/researchers/stats`, `PATCH /user/:username`, `POST /user/:username/reset-password`, `PATCH /user/:username/situation`, `DELETE /user/:username` |
-| Empresas | `GET /company` ⁽ᵖ⁾, `GET /company/stats`, `POST /company`, `PUT /company/:id`, `PATCH /company/:id`, `DELETE /company/:id` |
-| Pesquisas | `POST /research`, `GET /research` ⁽ᵖ⁾, `GET /research/summary`, `GET /research/:id`, `PATCH /research/:id`, `DELETE /research/:id`, `POST /research/:id/publish`, `POST /research/:id/close` |
+| Auth | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `GET/PATCH /auth/profile`, `POST /auth/change-password`, `POST /auth/avatar`, `DELETE /auth/avatar` |
+| Usuários | `POST /user`, `GET /user` ⁽ᵖ⁾, `GET /user/admins` ⁽ᵖ⁾, `GET /user/researchers/stats`, `PATCH /user/researchers/situation` (em lote), `PATCH /user/:username`, `POST /user/:username/reset-password`, `PATCH /user/:username/situation`, `DELETE /user/:username` |
+| Empresas | `GET /company` ⁽ᵖ⁾, `GET /company/stats`, `POST /company`, `PUT /company/:id`, `PATCH /company/:id`, `DELETE /company/:id`, `POST` e `DELETE /company/:id/images/:kind` (`kind` = `logo` ou `cover`) |
+| Pesquisas | `POST /research`, `GET /research` ⁽ᵖ⁾, `GET /research/summary`, `GET /research/:id`, `PATCH /research/:id`, `DELETE /research/:id`, `POST /research/:id/publish`, `POST /research/:id/unpublish` (volta a rascunho, só se ninguém baixou), `POST /research/:id/close` |
 | Resultados | `GET /research/:id/panel`, `GET /research/:id/report`, `GET /research/:id/export.csv`, `export.xlsx`, `export.json`, `GET /research/:id/report.pdf` |
 | Mapa e qualidade | `GET /research/:id/map`, `GET /research/:id/quality` (filtros `from`, `to`, `researcherId`, `flagged`; só administrador da empresa) |
-| Modelos | `GET /research/templates`, `POST /research/from-template`, `POST /research/:id/duplicate` |
+| Modelos | `GET /research/templates`, `POST /research/from-template`, `POST /research/:id/duplicate`, `GET` e `POST /research/saved-templates`, `POST /research/saved-templates/:templateId/use`, `DELETE /research/saved-templates/:templateId`, `POST /research/:id/save-as-template` |
 | Equipe da pesquisa | `GET /research/:id/researchers` ⁽ᵖ⁾, `GET /research/:id/team` ⁽ᵖ⁾, `POST /research/:id/researchers/:userId`, `PATCH /research/:id/researchers/:userId`, `DELETE /research/:id/researchers/:userId` |
 | Cópias em campo | `GET /research/:id/copies` ⁽ᵖ⁾, `POST /research/:id/copies/:copyId/revoke`, `POST /research/:id/copies/:copyId/unblock`, `POST /research/:id/return`, `GET /research/:id/download` |
-| Seções | `POST /section`, `POST /section/reorder`, `GET /section`, `GET /section/:id`, `PATCH /section/:id`, `DELETE /section/:id` |
+| Seções | `POST /section`, `POST /section/reorder`, `GET /section/questionnaire`, `GET /section`, `GET /section/:id`, `PATCH /section/:id`, `DELETE /section/:id` |
 | Questões | `POST /question`, `POST /question/reorder`, `GET /question`, `GET /question/:id`, `PATCH /question/:id`, `DELETE /question/:id`, `POST /question/:id/option`, `GET /question/:id/options`, `PATCH /question/option/:id`, `DELETE /question/option/:id` |
 | Regras | `POST /question-rule` (uma ou várias condições; alvo questão ou seção), `GET /question-rule`, `DELETE /question-rule/:id` (apaga o grupo inteiro) |
 | Coletas | `POST /collection`, `POST /collection/sync`, `POST /collection/:clientId/files`, `GET /collection/:clientId/files/progress`, `POST /collection/:clientId/files/chunk`, `GET /collection?researchId=` ⁽ᵖ⁾, `GET /collection/stats?researchId=`, `GET /collection/:id`, `GET /collection/:id/media/:name`, `GET /collection/:id/audio` |
 | Dashboard | `GET /dashboard/admin` (administrador) |
+| Mídia | `GET /media/avatars/:userId`, `GET /media/companies/:companyId/:kind` |
+| Saúde | `GET /` (a API está no ar) |
 
 ⁽ᵖ⁾ = aceita paginação (veja a próxima seção).
 
@@ -508,7 +539,7 @@ Dependências novas: `exceljs` e `pdfkit` (API) e `leaflet` (web); rode `npm ins
 cd api
 npm run test         # testes unitários (Jest)
 npm run test:cov     # cobertura
-npm run test:e2e     # testes ponta a ponta
+npm run test:e2e     # teste ponta a ponta (hoje só confere a rota GET /)
 npm run lint         # ESLint
 npm run format       # Prettier
 
@@ -522,12 +553,14 @@ cd mobile
 npm run lint
 ```
 
+> Hoje só a API tem testes automatizados (31 arquivos `*.spec.ts`: autenticação, coletas, sincronização, consentimento, exportações, qualidade, cópias, modelos e segurança). Web e mobile contam apenas com lint e, no web, com o `npm run build`.
+
 ## Fluxo de trabalho com branches
 
 | Branch | Uso |
 | --- | --- |
-| `main` | Versão estável |
-| `dev-kaiky` | Desenvolvimento de Kaiky (esta branch) |
+| `main` | Versão estável (esta documentação) |
+| `dev-kaiky` | Desenvolvimento de Kaiky |
 | `dev-girlane` | Desenvolvimento de Girlane |
 | `mobile` | Desenvolvimento do aplicativo mobile |
 
@@ -543,7 +576,9 @@ Sugestão de fluxo:
 - **Painel web redireciona sempre para `/login`**: o `JWT_SECRET` do `web/.env.local` precisa ser idêntico ao da API.
 - **Erro de conexão com o banco ao subir a API**: verifique o `DATABASE_URL` e se o PostgreSQL é versão 15 ou superior.
 - **Tipos do banco desatualizados após mudar o contrato**: rode `npm run contract:emit` dentro de `api/`.
-- **Falha de login no web por CORS/cookie**: a API aceita qualquer origem com credenciais; confirme que o painel está chamando o endereço correto da API.
+- **Falha de login no web por CORS/cookie**: o painel deve chamar a API pelo caminho `/api` do próprio domínio (rewrite do `next.config.ts`, com `API_URL` correto). Só chamadas diretas de outro navegador/origem dependem de `CORS_ORIGINS`; em produção, vazia nega todas.
+- **Notificações ou sincronização em segundo plano não funcionam no mobile**: teste em um development build (veja [Mobile](#3-mobile)); o sistema também pode adiar a tarefa com bateria fraca ou app sem uso.
+- **Muitas respostas `429`**: é o limite de requisições (300/min no geral, 10/min no login) ou o bloqueio da conta após `LOGIN_MAX_ATTEMPTS` erros (`ACCOUNT_LOCKED`).
 
 ---
 
