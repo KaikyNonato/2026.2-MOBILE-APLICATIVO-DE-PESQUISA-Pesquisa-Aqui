@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/spinner";
 //   list            lista de linhas com ícone, dois textos e um selo (empresas, administradores)
 //   people          grade de cartões com avatar (pesquisadores)
 //   team-cards      equipe de uma pesquisa: painel de progresso, filtros e cartões (aba Pesquisadores)
+//   quality         aba Qualidade: 5 indicadores, área-alvo e coletas sinalizadas
 //   results-panel   aba Resultados: filtros, quatro indicadores e tabela por pesquisador
 //   copies          aba Cópias em campo: faixa verde do questionário e cartão "Quem está com a pesquisa"
 //   research-cards  grade de cartões de pesquisa (página Pesquisas)
@@ -36,6 +37,7 @@ export type LoadingShape =
     | "copies"
     | "results-panel"
     | "team-cards"
+    | "quality"
     | "table"
     | "sections"
     | "collections"
@@ -68,6 +70,7 @@ const DEFAULT_COUNT: Record<LoadingShape, number> = {
     copies: 1,
     "results-panel": 4,
     "team-cards": 8,
+    quality: 3,
     table: 4,
     sections: 2,
     collections: 3,
@@ -197,6 +200,69 @@ export function LoadingState({ label, shape = "list", count, columns = 5, tone =
                             </div>
                             <div className={cn("flex justify-end border-t border-dashed pt-3.5", line)}>
                                 {bar("w-28", "h-9")}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (shape === "quality") {
+        const metricWidths = ["w-28", "w-24", "w-28", "w-32", "w-24"];
+        content = (
+            <div className="flex flex-col gap-5">
+                {/* 5 indicadores de qualidade */}
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                    {times(5).map((i) => (
+                        <div key={i} className={cn("space-y-2 rounded-2xl border p-3", panel)}>
+                            {bar("w-8", "h-7")}
+                            {bar(metricWidths[i % metricWidths.length], "h-3")}
+                        </div>
+                    ))}
+                </div>
+
+                {/* resumo de coletas com alerta */}
+                {bar("w-96 max-w-full", "h-3.5")}
+
+                {/* bloco de área-alvo com inputs e botão */}
+                <div className={cn("space-y-3 rounded-2xl border p-4", panel)}>
+                    {bar("w-20", "h-4")}
+                    {bar("w-3/4 max-w-xl", "h-3")}
+                    <div className="flex flex-wrap items-end gap-3 pt-1">
+                        <div className="space-y-1.5">
+                            {bar("w-12", "h-2.5")}
+                            <div className={cn("h-9 w-32 rounded-md border", panel)} />
+                        </div>
+                        <div className="space-y-1.5">
+                            {bar("w-14", "h-2.5")}
+                            <div className={cn("h-9 w-32 rounded-md border", panel)} />
+                        </div>
+                        <div className="space-y-1.5">
+                            {bar("w-16", "h-2.5")}
+                            <div className={cn("h-9 w-24 rounded-md border", panel)} />
+                        </div>
+                        <div className={cn("h-9 w-24 rounded-md", fill)} />
+                    </div>
+                </div>
+
+                {/* coletas sinalizadas com cabeçalho e cartões */}
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        {bar("w-36", "h-4")}
+                        <div className="flex items-center gap-1.5">
+                            <div className={cn("size-3.5 rounded", fill)} />
+                            {bar("w-36", "h-3")}
+                        </div>
+                    </div>
+                    {times(total).map((i) => (
+                        <div key={i} className={cn("space-y-2 rounded-xl border p-3", panel)}>
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                {bar(i % 2 === 0 ? "w-36" : "w-44", "h-4")}
+                                {bar("w-44", "h-3")}
+                            </div>
+                            <div className="pt-0.5">
+                                {bar(i % 2 === 0 ? "w-4/5 max-w-2xl" : "w-3/5 max-w-xl", "h-3")}
                             </div>
                         </div>
                     ))}

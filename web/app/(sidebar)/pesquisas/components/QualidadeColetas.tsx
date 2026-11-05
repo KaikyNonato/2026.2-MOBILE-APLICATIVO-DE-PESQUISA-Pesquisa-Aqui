@@ -51,7 +51,7 @@ export default function QualidadeColetas({ researchId, onAreaChanged }: { resear
         }
     };
 
-    if (loading) return <LoadingState label="Carregando..." />;
+    if (loading) return <LoadingState label="Carregando..." shape="quality" />;
     if (!data) return <p className="text-sm text-destructive">Não foi possível carregar a auditoria.</p>;
 
     const items = data.items.filter((i) => !onlyWarnings || i.flags.some((f) => f.severity === 'warning'));
