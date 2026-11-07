@@ -3,8 +3,9 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { ChevronLeft, LocateFixed, MapPin, Plus } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import MapView, { Circle, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import FieldMap from '@/components/FieldMap';
+import type { FieldMapHandle } from '@/components/FieldMap.types';
 import { Brand, Radius } from '@/constants/brand';
 import { useSyncState } from '@/hooks/useSyncQueue';
 import { listCollections, type LocalCollection } from '@/lib/collectionStore';
@@ -94,7 +95,7 @@ function useGps(): GpsState {
 /** Tela do modo campo: mapa com a área da pesquisa, a posição atual e a distância. */
 export default function CampoScreen() {
     const router = useRouter();
-    const mapRef = useRef<MapView>(null);
+    const mapRef = useRef<FieldMapHandle>(null);
     const gps = useGps();
     const syncState = useSyncState();
 
@@ -276,35 +277,19 @@ export default function CampoScreen() {
                         </Text>
                         <View style={styles.mapBox} accessible accessibilityLabel={t('field.mapA11y')}>
                             {initialRegion ? (
-                                <MapView
+                                <FieldMap
                                     ref={mapRef}
-                                    style={StyleSheet.flatten(styles.map)}
-                                    provider={PROVIDER_DEFAULT}
                                     initialRegion={initialRegion}
-                                    showsUserLocation
-                                    showsMyLocationButton={false}
-                                    toolbarEnabled={false}
-                                >
-                                    {area ? (
-                                        <Circle
-                                            center={area.center}
-                                            radius={area.radiusMeters}
-                                            strokeColor={Brand.green}
-                                            fillColor="rgba(68, 119, 98, 0.14)"
-                                            strokeWidth={2}
-                                        />
-                                    ) : null}
-                                    {entries
+                                    area={area}
+                                    markers={entries
                                         .filter((e) => e.position)
-                                        .map((e) => (
-                                            <Marker
-                                                key={e.clientId}
-                                                coordinate={e.position as Coordinate}
-                                                pinColor={e.status === 'DRAFT' ? Brand.clay : Brand.green}
-                                                title={formatTime(e.startedAt)}
-                                            />
-                                        ))}
-                                </MapView>
+                                        .map((e) => ({
+                                            key: e.clientId,
+                                            coordinate: e.position as Coordinate,
+                                            color: e.status === 'DRAFT' ? Brand.clay : Brand.green,
+                                            title: formatTime(e.startedAt),
+                                        }))}
+                                />
                             ) : (
                                 <View style={styles.mapPlaceholder}>
                                     <MapPin size={28} color={Brand.muted} />

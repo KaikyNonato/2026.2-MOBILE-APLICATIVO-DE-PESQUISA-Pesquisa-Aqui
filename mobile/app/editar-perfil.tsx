@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     avatarImage: { width: '100%', height: '100%' },
     avatarText: { color: Brand.forest, fontWeight: '700', fontSize: 40 },
     avatarBusy: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(10, 20, 16, 0.55)',
         alignItems: 'center',
         justifyContent: 'center',
