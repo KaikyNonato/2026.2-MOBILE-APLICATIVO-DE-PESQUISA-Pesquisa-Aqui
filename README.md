@@ -21,6 +21,7 @@ Plataforma para criar, aplicar e acompanhar pesquisas de campo. O projeto reúne
   - [1. API](#1-api)
   - [2. Web](#2-web)
   - [3. Mobile](#3-mobile)
+  - [4. Do código ao celular: gerar e instalar o APK](#4-do-código-ao-celular-gerar-e-instalar-o-apk)
 - [Variáveis de ambiente](#variáveis-de-ambiente)
 - [Publicar na Vercel](#publicar-na-vercel)
 - [Perfis de usuário](#perfis-de-usuário)
@@ -73,7 +74,7 @@ O fluxo de uso do sistema é:
 - Registro automático do local onde a entrevista começa.
 - Sincronização das coletas com a API, com banner de modo offline e envio idempotente (reenviar a mesma coleta não duplica no servidor).
 - **Rascunhos**: entrevistas em andamento ficam salvas no aparelho, com o progresso (questões visíveis respondidas) e seletor para retomar.
-- **Modo campo**: acompanha a área-alvo da pesquisa (distância ao centro, por Haversine) e a lista de entrevistas do dia, tudo offline.
+- **Modo campo** (desativado na tela inicial por enquanto; veja [Do código ao celular](#4-do-código-ao-celular-gerar-e-instalar-o-apk)): acompanha a área-alvo da pesquisa (distância ao centro, por Haversine) e a lista de entrevistas do dia, tudo offline.
 - **Sincronização em segundo plano** (`expo-background-task`): com o app fechado, o sistema acorda o app de tempos em tempos, com rede, para enviar a fila, atualizar a lista de pesquisas e dar avisos. O horário é decidido pelo sistema (no Android, no mínimo a cada 15 min; no iOS é mais irregular).
 - **Notificações locais** (`expo-notifications`; nenhum servidor envia nada): pesquisa nova vinculada, pesquisa encerrada e meta não atingida 24 h antes do prazo. O aviso chega quando o app atualiza, não no instante em que o administrador age.
 - **Desbloqueio por biometria** (digital, Face ID): o login continua sendo usuário e senha; a biometria só libera a sessão já guardada no aparelho, sem armazenar senha.
@@ -279,6 +280,82 @@ npm run web          # versão web (recursos nativos como biometria e segundo pl
 > O app usa microfone (gravação de entrevista), localização, câmera, notificações e biometria. As permissões são solicitadas em tempo de uso.
 >
 > **Expo Go x development build:** se notificações ou sincronização em segundo plano não funcionarem no Expo Go, use um *development build* (`npx expo run:android` / `npx expo run:ios`).
+
+### 4. Do código ao celular: gerar e instalar o APK
+
+Rodar com `npm start` e o Expo Go serve para desenvolver. Para ter o app **instalado de verdade** no celular (sem computador, com notificações, biometria e sincronização em segundo plano), gere um APK com o **EAS Build**, o serviço de build do Expo. O build roda na nuvem, então não precisa de Android Studio.
+
+**O que você precisa**
+
+- Node.js instalado e o projeto baixado (`cd mobile && npm install`).
+- Uma conta gratuita em [expo.dev](https://expo.dev).
+- Um celular Android. (Para iPhone é preciso conta paga da Apple; este passo a passo cobre só Android.)
+
+**Passo a passo**
+
+1. **Entre na pasta do app e instale as dependências**
+
+   ```bash
+   cd mobile
+   npm install
+   npx expo install expo-build-properties
+   ```
+
+   O `expo-build-properties` é obrigatório: o `app.json` o usa para proteger o WorkManager (sincronização em segundo plano) do minificador do Android. Sem ele o APK instala, mas **fecha na hora ao abrir** (veja [Problemas comuns](#problemas-comuns)).
+
+2. **Instale o EAS CLI e faça login**
+
+   ```bash
+   npm install -g eas-cli
+   eas login
+   ```
+
+3. **Vincule o projeto à sua conta Expo** (só na primeira vez, ou se o `projectId` do `app.json` for de outra conta)
+
+   ```bash
+   eas init
+   ```
+
+4. **Confira o endereço da API**. O APK carrega o endereço fixo definido em `mobile/eas.json`, no perfil `preview`:
+
+   ```json
+   "env": { "EXPO_PUBLIC_API_URL": "https://SUA-API.vercel.app" }
+   ```
+
+   O `mobile/.env` **não** entra no build da nuvem. Para trocar a API, edite o `eas.json` e gere o APK de novo.
+
+5. **Gere o APK**
+
+   ```bash
+   eas build -p android --profile preview
+   ```
+
+   O build leva alguns minutos. Ao terminar, o terminal mostra um **link e um QR Code** do APK. Você também o encontra em [expo.dev](https://expo.dev), no projeto, na aba *Builds*.
+
+6. **Baixe o APK no celular**: abra o link ou escaneie o QR Code com a câmera do celular e baixe o arquivo `.apk`. Se preferir baixar no computador, passe o arquivo ao celular por cabo USB, WhatsApp ou Drive.
+
+7. **Instale**: abra o arquivo baixado. Se o Android avisar que a instalação de fontes desconhecidas está bloqueada, toque em **Configurações** e permita para o navegador ou gerenciador de arquivos que você usou. Depois toque em **Instalar**. Por cabo, também funciona: `adb install caminho/do/app.apk`.
+
+8. **Abra o app e entre** com um usuário de perfil pesquisador. Aceite as permissões (notificações, localização, microfone e câmera) quando o app pedir.
+
+**Gerar uma nova versão**
+
+Toda mudança no código (ou no `app.json`) só chega ao celular com um **novo build**: repita o passo 5 e instale o APK novo por cima do antigo. Aumente o `version` no `app.json` se quiser acompanhar as versões.
+
+**Se o app fechar ao abrir: ver o erro real**
+
+Ative as *Opções do desenvolvedor* e a *Depuração USB* no celular, conecte o cabo e rode (no Mac/Linux troque `findstr /i` por `grep -i`):
+
+```bash
+adb logcat -c
+adb logcat *:E AndroidRuntime:E ReactNativeJS:E | findstr /i "pesquisaaqui AndroidRuntime FATAL"
+```
+
+Abra o app e procure as linhas que começam com `FATAL EXCEPTION`.
+
+**Publicar na Play Store**: use o perfil `production` (`eas build -p android --profile production`), que gera um pacote `.aab`, e envie com `eas submit -p android`. Isso exige conta de desenvolvedor do Google Play.
+
+> **Modo campo:** o card que abre o modo campo está **desativado** na tela inicial, porque o mapa do Android precisa de uma chave do Google Maps. Para reativar, ative o *Maps SDK for Android* no Google Cloud, coloque a chave em `android.config.googleMaps.apiKey` no `app.json`, recoloque o card na tela inicial (`app/(app)/(home)/index.tsx`, com `onPress={() => router.push('/campo')}`) e gere um novo APK.
 
 ## Variáveis de ambiente
 
@@ -578,6 +655,8 @@ Sugestão de fluxo:
 - **Tipos do banco desatualizados após mudar o contrato**: rode `npm run contract:emit` dentro de `api/`.
 - **Falha de login no web por CORS/cookie**: o painel deve chamar a API pelo caminho `/api` do próprio domínio (rewrite do `next.config.ts`, com `API_URL` correto). Só chamadas diretas de outro navegador/origem dependem de `CORS_ORIGINS`; em produção, vazia nega todas.
 - **Notificações ou sincronização em segundo plano não funcionam no mobile**: teste em um development build (veja [Mobile](#3-mobile)); o sistema também pode adiar a tarefa com bateria fraca ou app sem uso.
+- **O APK instala mas fecha na hora ao abrir** (`NoSuchMethodException: androidx.work.impl.WorkDatabase_Impl.<init>` no `adb logcat`): o minificador (R8) removeu uma classe do WorkManager. Confirme que o plugin `expo-build-properties` está no `app.json` com as regras `extraProguardRules`, que o pacote está instalado (`npx expo install expo-build-properties`) e gere um **novo** build; reinstalar o APK antigo não resolve.
+- **O app fecha ao abrir um mapa** (modo campo): falta a chave do Google Maps em `android.config.googleMaps.apiKey` no `app.json`.
 - **Muitas respostas `429`**: é o limite de requisições (300/min no geral, 10/min no login) ou o bloqueio da conta após `LOGIN_MAX_ATTEMPTS` erros (`ACCOUNT_LOCKED`).
 
 ---
