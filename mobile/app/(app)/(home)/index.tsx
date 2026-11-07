@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Check, CloudUpload, Download, FileText, MapPinned, PenLine } from 'lucide-react-native';
+import { Check, CloudUpload, Download, FileText, PenLine } from 'lucide-react-native';
 import Animated, {
     Easing,
     FadeInDown,
@@ -249,16 +249,7 @@ export default function Home() {
                         />
                     ) : null}
 
-                    {hasDownloaded ? (
-                        <ActionCard
-                            tone="green"
-                            icon={<MapPinned size={22} color={Brand.greenDeep} strokeWidth={1.8} />}
-                            title={t('field.homeCardTitle')}
-                            text={t('field.homeCardText')}
-                            cta={t('field.homeCardCta')}
-                            onPress={() => router.push('/campo')}
-                        />
-                    ) : null}
+                    {/* Modo campo desativado: o card que abria /campo foi removido (o mapa precisa de chave do Google Maps) */}
 
                     {nothingToDo ? (
                         hasDownloaded ? (
